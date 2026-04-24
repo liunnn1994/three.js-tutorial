@@ -1,0 +1,521 @@
+---
+title: 16 鬼屋
+description: 综合运用光照、阴影和材质，从零开始一步步搭建一个完整的鬼屋场景
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 项目概述
+
+欢迎来到第一个综合项目课！在这节课中，我们将把之前学到的所有知识综合起来，从零开始搭建一个完整的鬼屋 3D 场景。这不是一个简单的练习——你将学会如何把墙壁、屋顶、门、灌木、墓碑、雾效、灯光和阴影组合在一起，创造出一个有氛围感的恐怖场景。
+
+通过这个项目，你将掌握：
+
+- 如何用 **Group** 组织复杂的场景层级
+- 如何用 **多种基础几何体** 搭建房屋
+- 如何给每个部分添加 **PBR 纹理**
+- 如何用 **程序化方法** 随机放置大量物体
+- 如何用 **雾效** 和 **灯光** 营造恐怖氛围
+- 如何开启和优化 **阴影**
+
+
+<LessonPreview lesson="16-haunted-house" />
+
+## 单位概念：1 个单位 = 1 米
+
+在开始搭建之前，先确立一个重要的约定：**把 1 个 Three.js 单位当作 1 米来思考**。这样你在设置尺寸时就能直接参考现实世界的尺寸：
+
+- 一扇门大约 **2.2 米**高
+- 墙壁大约 **2.5 米**高、**4 米**宽
+- 灌木的半径大约 **1 米**（自然世界里灌木丛的大小）
+
+这个约定会让你的直觉更准确，不需要反复试错。
+
+## 用 Group 组织场景层级
+
+当场景中有多个物体属于同一个"整体"时（比如一栋房子的墙壁、屋顶、门都属于"房子"），我们应该用一个 **Group** 把它们组织在一起。这样当你想移动、旋转或缩放整栋房子时，只需要操作 Group 就行了。
+
+:::info
+`THREE.Group` 本质上就是一个"空对象"——它没有自己的几何体和材质，仅仅充当一个容器。你也可以把 Mesh 添加到另一个 Mesh 上，但那样在语义上很奇怪（球体里面套一个立方体？），所以 Three.js 专门提供了 Group。
+:::
+
+参考文档：[THREE.Group](https://threejs.org/docs/#api/en/core/Group)
+
+```js
+// 创建一个 Group 来装整栋房子
+const house = new THREE.Group()
+scene.add(house)
+
+// 之后所有属于房子的东西都 add 到 house，而不是 scene
+// house.add(walls)
+// house.add(roof)
+// house.add(door)
+```
+
+## 第一步：搭建墙壁
+
+墙壁可以用一个简单的 **BoxGeometry** 来表示。虽然是"墙壁"，但我们不需要创建 4 个平面——一个盒子就够了（底面看不到，但也没关系，性能方面可以接受）。
+
+参考文档：[THREE.BoxGeometry](https://threejs.org/docs/#api/en/geometries/BoxGeometry)
+
+```js
+// 墙壁：宽 4 米、高 2.5 米、深 4 米
+const walls = new THREE.Mesh(
+    new THREE.BoxGeometry(4, 2.5, 4),
+    new THREE.MeshStandardMaterial({ color: '#ac8e68' })
+)
+
+// 把墙壁往上移，让它"站"在地面上
+// 移动量 = 高度的一半
+walls.position.y = 2.5 / 2
+
+// 添加到 house Group，而不是 scene
+house.add(walls)
+```
+
+:::caution
+BoxGeometry 的中心在几何体的正中间。如果你直接放在 y=0 的位置，墙壁会有一半埋在地下。所以需要把 `position.y` 设为高度的一半（2.5 / 2 = 1.25），让墙壁的底部刚好贴着地面。
+:::
+
+:::tip
+建议在代码中保留计算过程（如 `2.5 / 2`）而不是直接写 `1.25`。这样当你修改墙壁高度时，不需要同时去修改位置值。
+:::
+
+## 第二步：搭建屋顶
+
+屋顶是一个金字塔形状。Three.js 没有专门的 PyramidGeometry，但我们可以用 **ConeGeometry** 并将径向段数设为 **4** 来实现。
+
+参考文档：[THREE.ConeGeometry](https://threejs.org/docs/#api/en/geometries/ConeGeometry)
+
+```js
+const roof = new THREE.Mesh(
+    new THREE.ConeGeometry(3.5, 1, 4),  // 半径 3.5，高度 1，4 个径向段 = 金字塔
+    new THREE.MeshStandardMaterial({ color: '#b35f45' })
+)
+
+// 旋转 45 度（即 PI/4），让金字塔的尖角对齐墙壁的对角线
+roof.rotation.y = Math.PI * 0.25
+
+// 往上移动：墙壁高度 + 屋顶高度的一半
+roof.position.y = 2.5 + 0.5
+
+house.add(roof)
+```
+
+:::info
+为什么旋转 `Math.PI / 4`（45 度）？ConeGeometry 默认的 4 边锥体，有一个面是正对着摄像机的。旋转 45 度后，尖角就对齐了墙壁的边，看起来更像传统的屋顶。
+:::
+
+## 第三步：创建门
+
+门只是一个带有纹理的 **PlaneGeometry**。我们会用到之前纹理课中学到的全部 PBR 纹理技术。
+
+### 加载门的纹理
+
+```js
+const doorColorTexture = textureLoader.load('/textures/door/color.jpg')
+const doorAlphaTexture = textureLoader.load('/textures/door/alpha.jpg')
+const doorAmbientOcclusionTexture = textureLoader.load('/textures/door/ambientOcclusion.jpg')
+const doorHeightTexture = textureLoader.load('/textures/door/height.jpg')
+const doorNormalTexture = textureLoader.load('/textures/door/normal.jpg')
+const doorMetalnessTexture = textureLoader.load('/textures/door/metalness.jpg')
+const doorRoughnessTexture = textureLoader.load('/textures/door/roughness.jpg')
+```
+
+### 创建门的 Mesh
+
+```js
+const door = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.2, 2.2, 100, 100),
+    new THREE.MeshStandardMaterial({
+        map: doorColorTexture,
+        transparent: true,
+        alphaMap: doorAlphaTexture,
+        aoMap: doorAmbientOcclusionTexture,
+        displacementMap: doorHeightTexture,
+        displacementScale: 0.1,
+        normalMap: doorNormalTexture,
+        metalnessMap: doorMetalnessTexture,
+        roughnessMap: doorRoughnessTexture
+    })
+)
+
+// 门需要放在墙壁正面，稍微往前移一点点（避免 z-fighting）
+door.position.y = 1
+door.position.z = 2 + 0.01
+
+house.add(door)
+```
+
+:::caution
+使用 `alphaMap` 时，别忘了把 `transparent` 设为 `true`，否则透明度信息不会生效！
+
+使用 `aoMap`（环境光遮蔽贴图）时，需要额外提供一个 `uv2` 属性给几何体，否则 AO 贴图不会显示效果：
+
+```js
+door.geometry.setAttribute(
+    'uv2',
+    new THREE.BufferAttribute(door.geometry.attributes.uv.array, 2)
+)
+```
+:::
+
+### 关于 displacementMap 的细分
+
+`displacementMap`（位移贴图）会真正移动几何体的顶点。如果 PlaneGeometry 的细分段数太少（比如默认的 1x1），位移效果就完全看不出来。这里我们用了 `100, 100` 的细分，这样门的木纹凹凸细节才能显现。`displacementScale: 0.1` 控制位移的幅度——数值太大会让门变形得不像样。
+
+## 第四步：添加灌木
+
+我们想在房子前方放几丛灌木。**关键优化技巧**：所有灌木使用**同一个几何体和同一个材质**，只是每丛的大小和位置不同。这样 Three.js 只需要在 GPU 上存一份几何数据和一份材质数据。
+
+```js
+const bushGeometry = new THREE.SphereGeometry(1, 16, 16)
+const bushMaterial = new THREE.MeshStandardMaterial({ color: '#89c854' })
+
+// 每丛灌木的位置和缩放
+const bushData = [
+    { x: 0.8, y: 0.2, z: 2.2, scale: 0.5 },
+    { x: 1.4, y: 0.1, z: 2.1, scale: 0.25 },
+    { x: -0.8, y: 0.1, z: 2.2, scale: 0.4 },
+    { x: -1, y: 0.05, z: 2.6, scale: 0.15 }
+]
+
+bushData.forEach(({ x, y, z, scale }) => {
+    const bush = new THREE.Mesh(bushGeometry, bushMaterial)
+    bush.position.set(x, y, z)
+    bush.scale.set(scale, scale, scale)
+    bush.castShadow = true
+    scene.add(bush)
+})
+```
+
+:::tip
+可以用数组 + `forEach` 循环来批量创建灌木，代码更简洁。如果想更进一步，你可以尝试用数组存储配置数据然后循环创建——这是一种非常实用的编程模式。
+:::
+
+## 第五步：用程序化方法放置墓碑
+
+我们不想手动放置 50 个墓碑——那太累了！相反，我们用数学公式让它们**随机地**围绕房子排成一个圆圈。
+
+### 核心思路：极坐标
+
+从顶部俯视场景，墓碑应该分布在房子周围的一个环形区域内。我们用**极坐标**来实现：
+
+1. 随机生成一个角度（0 到 2*PI 之间）
+2. 用 `Math.sin(angle)` 和 `Math.cos(angle)` 算出 x 和 z 坐标
+3. 乘以一个随机半径，控制离房子的远近
+
+```js
+const graves = new THREE.Group()
+scene.add(graves)
+
+const graveGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.3)
+const graveMaterial = new THREE.MeshStandardMaterial({ color: '#b2b6b1' })
+
+for (let i = 0; i < 50; i++) {
+    // 随机角度（0 到 2*PI = 完整一圈）
+    const angle = Math.random() * Math.PI * 2
+
+    // 随机半径（3 到 9 之间，确保不穿过房子也不离得太远）
+    const radius = 3 + Math.random() * 6
+
+    // 用三角函数把极坐标转换成 x, z 坐标
+    const x = Math.cos(angle) * radius
+    const z = Math.sin(angle) * radius
+
+    const grave = new THREE.Mesh(graveGeometry, graveMaterial)
+    grave.position.set(x, 0.3, z)
+
+    // 加一点随机旋转，让墓碑看起来更自然（像地下有僵尸在推它们）
+    grave.rotation.z = (Math.random() - 0.5) * 0.4
+    grave.rotation.y = (Math.random() - 0.5) * 0.4
+
+    grave.castShadow = true
+    graves.add(grave)
+}
+```
+
+:::info
+为什么 `Math.random() - 0.5`？`Math.random()` 返回 0 到 1 的值，减去 0.5 后就变成了 -0.5 到 0.5 的值。这样旋转既有正向也有负向，效果更自然。
+:::
+
+同样地，所有 50 个墓碑共享**同一个几何体和材质**，这对性能非常重要。
+
+## 第六步：添加雾效
+
+恐怖电影里总有大雾弥漫的场景——我们也来加！Three.js 内置了雾效支持。
+
+参考文档：[THREE.Fog](https://threejs.org/docs/#api/en/scenes/Fog)
+
+```js
+// 参数：颜色, 开始距离, 完全不透明距离
+const fog = new THREE.Fog('#262837', 1, 15)
+scene.fog = fog
+```
+
+### 关键细节：背景色必须和雾色一致
+
+如果你加了雾但还能看到世界的"边缘"（场景突然结束的地方），那是因为**渲染器的清除颜色**和雾的颜色不一致。必须把它们设成相同的颜色：
+
+```js
+// 渲染器的背景色 = 雾的颜色 → 完美衔接
+renderer.setClearColor('#262837')
+```
+
+:::tip
+`Fog(color, near, far)` 中：
+- `near`：离相机多近开始有雾
+- `far`：离相机多远雾变得完全不透明
+
+调节这两个值可以控制雾的浓度和可见距离。对于鬼屋场景，较短的可见距离能增加神秘感。
+:::
+
+## 第七步：为墙壁和地板添加纹理
+
+### 墙壁纹理
+
+给墙壁加上砖块纹理（颜色贴图 + 法线贴图 + 粗糙度贴图 + AO 贴图）：
+
+```js
+const bricksColorTexture = textureLoader.load('/textures/bricks/color.jpg')
+const bricksAmbientOcclusionTexture = textureLoader.load('/textures/bricks/ambientOcclusion.jpg')
+const bricksNormalTexture = textureLoader.load('/textures/bricks/normal.jpg')
+const bricksRoughnessTexture = textureLoader.load('/textures/bricks/roughness.jpg')
+
+walls.material.map = bricksColorTexture
+walls.material.aoMap = bricksAmbientOcclusionTexture
+walls.material.normalMap = bricksNormalTexture
+walls.material.roughnessMap = bricksRoughnessTexture
+
+// 别忘了 AO 贴图需要 uv2
+walls.geometry.setAttribute(
+    'uv2',
+    new THREE.BufferAttribute(walls.geometry.attributes.uv.array, 2)
+)
+```
+
+### 地板纹理（草地）
+
+地板使用草地纹理。由于地板是一个很大的平面，而纹理图片只有一张，默认情况下草会被拉伸得很大，看起来不自然。我们需要让纹理**重复平铺**：
+
+```js
+const grassColorTexture = textureLoader.load('/textures/grass/color.jpg')
+const grassAmbientOcclusionTexture = textureLoader.load('/textures/grass/ambientOcclusion.jpg')
+const grassNormalTexture = textureLoader.load('/textures/grass/normal.jpg')
+const grassRoughnessTexture = textureLoader.load('/textures/grass/roughness.jpg')
+
+// 让纹理在两个方向各重复 8 次
+grassColorTexture.repeat.set(8, 8)
+grassAmbientOcclusionTexture.repeat.set(8, 8)
+grassNormalTexture.repeat.set(8, 8)
+grassRoughnessTexture.repeat.set(8, 8)
+
+// 必须开启重复包裹模式，否则只会拉伸最后一个像素
+grassColorTexture.wrapS = THREE.RepeatWrapping
+grassColorTexture.wrapT = THREE.RepeatWrapping
+grassAmbientOcclusionTexture.wrapS = THREE.RepeatWrapping
+grassAmbientOcclusionTexture.wrapT = THREE.RepeatWrapping
+grassNormalTexture.wrapS = THREE.RepeatWrapping
+grassNormalTexture.wrapT = THREE.RepeatWrapping
+grassRoughnessTexture.wrapS = THREE.RepeatWrapping
+grassRoughnessTexture.wrapT = THREE.RepeatWrapping
+```
+
+:::caution
+调用 `repeat.set()` 后如果不设置 `wrapS` 和 `wrapT` 为 `THREE.RepeatWrapping`，纹理不会真正重复，而是把最后一个像素拉伸到边界——效果非常怪异！每个草地的贴图都需要设置。
+:::
+
+## 第八步：灯光设计
+
+灯光是营造恐怖氛围的关键。我们的场景需要三种灯光：
+
+### 1. 环境光（微弱的底光）
+
+```js
+const ambientLight = new THREE.AmbientLight('#b9d5ff', 0.12)
+scene.add(ambientLight)
+```
+
+极低强度的蓝色环境光模拟月光的漫反射，让整个场景不至于完全漆黑。
+
+### 2. 方向光（月光）
+
+```js
+const moonLight = new THREE.DirectionalLight('#b9d5ff', 0.12)
+moonLight.position.set(4, 5, -2)
+scene.add(moonLight)
+```
+
+用偏蓝色的方向光模拟从天空照射下来的月光。
+
+### 3. 门灯（暖色点光源）
+
+```js
+const doorLight = new THREE.PointLight('#ff7d54', 1, 7)
+doorLight.position.set(0, 2.2, 2.7)
+house.add(doorLight)  // 门灯是房子的一部分
+```
+
+暖色的点光源放在门上方，为场景增加一丝温暖，和冷色调的月光形成对比。
+
+参考文档：[THREE.PointLight](https://threejs.org/docs/#api/en/lights/PointLight)
+
+:::tip
+PointLight 的构造函数参数依次是：颜色、强度、距离。"距离"是指光线能照多远，超过这个距离就完全黑暗了。
+:::
+
+## 第九步：幽灵（飘浮的彩色灯光）
+
+真正的恐怖在于那些在墓地里飘浮的"幽灵"。我们不会创建实际的幽灵模型（那太复杂了），而是用**彩色点光源**来模拟它们的发光效果。然后在动画循环中让这些灯光绕着房子旋转并上下浮动。
+
+### 创建三个幽灵灯光
+
+```js
+const ghost1 = new THREE.PointLight('#ff00ff', 6, 3)
+scene.add(ghost1)
+
+const ghost2 = new THREE.PointLight('#00ffff', 6, 3)
+scene.add(ghost2)
+
+const ghost3 = new THREE.PointLight('#ffff00', 6, 3)
+scene.add(ghost3)
+```
+
+### 在动画循环中让幽灵运动
+
+我们用三角函数（`Math.sin` 和 `Math.cos`）让幽灵沿着圆形轨道运动，同时上下浮动：
+
+```js
+const tick = () => {
+    const elapsedTime = clock.getElapsedTime()
+
+    // 幽灵 1：绕房子旋转 + 上下浮动
+    const ghost1Angle = elapsedTime * 0.5
+    ghost1.position.x = Math.cos(ghost1Angle) * 4
+    ghost1.position.z = Math.sin(ghost1Angle) * 4
+    ghost1.position.y = Math.sin(elapsedTime * 3)
+
+    // 幽灵 2：反向旋转，不同速度
+    const ghost2Angle = -elapsedTime * 0.32
+    ghost2.position.x = Math.cos(ghost2Angle) * 5
+    ghost2.position.z = Math.sin(ghost2Angle) * 5
+    ghost2.position.y = Math.sin(elapsedTime * 4) + Math.sin(elapsedTime * 2.5)
+
+    // 幽灵 3：更远的轨道 + 变化的半径
+    const ghost3Angle = elapsedTime * 0.18
+    ghost3.position.x = Math.cos(ghost3Angle) * (7 + Math.sin(elapsedTime * 0.32))
+    ghost3.position.z = Math.sin(ghost3Angle) * (7 + Math.cos(elapsedTime * 0.5))
+    ghost3.position.y = Math.sin(elapsedTime * 5) * (Math.sin(elapsedTime * 0.5) + 1)
+
+    renderer.render(scene, camera)
+    window.requestAnimationFrame(tick)
+}
+```
+
+:::tip
+三个幽灵使用**不同的旋转速度**（0.5、0.32、0.18）、**不同的半径**和**不同的上下浮动频率**，这样它们的运动轨迹各不相同，看起来更自然。幽灵 3 甚至有"变化的半径"（`7 + Math.sin(...)`），让它的轨道像花瓣形一样更有趣。
+:::
+
+## 第十步：添加阴影
+
+阴影会让场景的真实感大幅提升。启用阴影需要 3 个步骤：
+
+### 步骤 1：开启渲染器的阴影贴图
+
+```js
+renderer.shadowMap.enabled = true
+renderer.shadowMap.type = THREE.PCFSoftShadowMap  // 使用柔和阴影
+```
+
+参考文档：[WebGLRenderer.shadowMap](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.shadowMap)
+
+### 步骤 2：让灯光投射阴影
+
+```js
+// 月光
+moonLight.castShadow = true
+
+// 门灯
+doorLight.castShadow = true
+
+// 幽灵
+ghost1.castShadow = true
+ghost2.castShadow = true
+ghost3.castShadow = true
+```
+
+注意：环境光（AmbientLight）不支持阴影。
+
+### 步骤 3：让物体投射和接收阴影
+
+```js
+// 投射阴影的物体
+walls.castShadow = true
+// 每个灌木和墓碑也要投射阴影
+bush1.castShadow = true
+// ... 在墓碑循环中：grave.castShadow = true
+
+// 接收阴影的物体（最重要的是地板）
+floor.receiveShadow = true
+```
+
+### 优化阴影性能
+
+阴影是非常消耗性能的功能。以下优化措施很重要：
+
+```js
+// 降低阴影贴图分辨率（默认 512，这里用 256 足够）
+doorLight.shadow.mapSize.width = 256
+doorLight.shadow.mapSize.height = 256
+
+// 调整阴影相机的近远裁剪面
+doorLight.shadow.camera.far = 7
+
+// 对所有幽灵灯光也做同样的优化
+ghost1.shadow.mapSize.width = 256
+ghost1.shadow.mapSize.height = 256
+ghost1.shadow.camera.far = 7
+// ghost2, ghost3 同理
+```
+
+:::caution
+尽量让**最少**的物体投射阴影。墙壁会投下阴影，那屋顶就不需要了（反正被墙壁挡住）。能不投射阴影的就不投射，这对帧率有很大帮助。
+:::
+
+## 完整项目结构总览
+
+```
+scene
+├── ambientLight          （环境光）
+├── moonLight             （方向光 / 月光）
+├── fog                   （雾效）
+├── floor                 （地面 / 草地纹理）
+├── house (Group)
+│   ├── walls             （墙壁 / 砖块纹理）
+│   ├── roof              （屋顶 / 锥形几何体）
+│   ├── door              （门 / 多张贴图）
+│   └── doorLight         （点光源 / 暖色）
+├── bush1, bush2, ...     （灌木 / 球形几何体）
+├── graves (Group)
+│   └── grave x 50        （墓碑 / 随机圆形分布）
+├── ghost1 (PointLight)   （品红色幽灵）
+├── ghost2 (PointLight)   （青色幽灵）
+└── ghost3 (PointLight)   （黄色幽灵）
+```
+
+## 营造恐怖氛围的核心技巧
+
+回顾一下我们用了哪些手法来让场景变得"恐怖"：
+
+1. **冷色调环境**：蓝色月光 + 极低亮度
+2. **雾效**：限制可见距离，隐藏世界边缘
+3. **彩色幽灵灯光**：品红、青色、黄色三色飘浮光源
+4. **暖色门灯**：唯一的光明来源，吸引视线
+5. **阴影**：物体投射的动态阴影增加层次感
+6. **随机放置的墓碑**：有轻微倾斜，像地下有东西在推它们
+7. **PBR 纹理**：砖块、草地、门的细节让场景更逼真
+
+:::tip
+本课是一个重要的里程碑——你已经能够将多种技术组合起来创建完整的 3D 场景了！试着在这个基础上继续添加元素：窗户、从地下伸出的手、动画摄像机等。发挥你的创造力！
+:::

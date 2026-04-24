@@ -1,0 +1,223 @@
+---
+title: 39 粒子光标动画着色器
+description: 实现粒子跟随光标运动的交互效果
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 光标交互粒子简介
+
+在本课中，我们将创建一个粒子光标动画效果。粒子会通过点的大小和颜色排列来形成某种图像，并且当鼠标移动时，粒子会对光标位置产生排斥或吸引的交互反应，创造出流动的、有机的视觉效果。
+
+这个项目不仅是学习粒子动画的好机会，还涉及到两个重要的技术点：
+
+1. **2D Canvas 作为纹理** — 我们将使用一张 2D Canvas 渲染的图像作为纹理，控制粒子的外观（大小和颜色）。这展示了如何将普通的 2D Canvas 绘制内容转换为 WebGL 纹理使用。
+2. **鼠标交互着色器** — 通过将鼠标位置传入着色器 uniform，在 GPU 上实时计算每个粒子与鼠标的距离和受力，实现高性能的交互效果。
+
+
+<LessonPreview lesson="39-particles-cursor-animation-shader" />
+
+## 项目设置
+
+场景中已经有一个由粒子组成的网格平面，使用 `THREE.Points` 渲染。着色器材质已经设置完毕，着色器文件位于 `src/shaders/particles/` 文件夹中。
+
+粒子大小的处理方式与之前课程中一致（如在烟花课程中所改进的）：大小会根据渲染分辨率进行适配，确保在不同分辨率的屏幕上粒子看起来大小一致。这是通过 `uResolution` uniform 和透视公式实现的：
+
+```glsl
+gl_PointSize = uSize * aScale * uResolution.y * (1.0 / -viewPosition.z);
+```
+
+这样粒子大小与渲染高度成正比 — 当你水平调整窗口大小时粒子不会改变大小，只有垂直方向变化时才会缩放，符合 Three.js 的默认行为。
+
+静态文件夹中准备了多张 128x128 分辨率的灰度图像，用于控制粒子的外观。这些图像可以使用自己准备的素材，但需要注意使用**正方形**图像。纹理不需要很大，128x128 已经足够。
+
+## 核心概念：纹理控制粒子
+
+我们希望实现以下效果：
+
+- **粒子大小取决于图片亮度** — 如果粒子位于图像的白色区域，粒子应该较大；如果在黑暗区域，粒子应该非常小甚至消失。
+- **粒子颜色也受亮度影响** — 白色区域的粒子颜色较亮（接近白色），黑暗区域的粒子颜色较深。
+
+这意味着每个粒子需要知道自己对应纹理位置上的亮度值。这个亮度值将在片元着色器中通过采样纹理获得，然后在顶点着色器中用来调整点的大小。
+
+## 粒子圆形绘制 — discard 技巧
+
+在片元着色器中，我们需要在每个粒子内部绘制一个圆形的点，而不是默认的方形。这里有两个常用的技术：
+
+**方法一：使用 alpha 透明度** — 根据到中心的距离设置 alpha 值，圆形外部设为透明。但这会在深度缓冲区（depth buffer）中引发视觉 bug，因为透明的片段仍然会写入深度值，遮挡后方即使不可见的粒子。
+
+**方法二：使用 discard 关键字**（推荐） — 在圆形外部直接丢弃片段，使其完全不被渲染，也不会写入深度缓冲区：
+
+```glsl
+void main() {
+    // 获取到粒子中心的距离
+    float distToCenter = distance(gl_PointCoord, vec2(0.5));
+
+    // 超出圆形范围的片段直接丢弃
+    if (distToCenter > 0.5) discard;
+}
+```
+
+`gl_PointCoord` 是 GLSL 内置变量，提供当前片段在点精灵内部的归一化坐标（0 到 1 范围）。`distance()` 函数计算当前片段到中心点 (0.5, 0.5) 的距离，如果超过 0.5（即超出了半径为 0.5 的圆），就直接丢弃。
+
+:::caution
+`discard` 会阻止被丢弃的片段写入深度缓冲区，这通常是好事（避免了透明片段的遮挡问题），但在某些极端情况下可能导致排序问题。如果场景中有大量半透明对象叠加，需要额外的排序处理。
+:::
+
+## 传递鼠标位置到着色器
+
+鼠标位置需要从 JavaScript 的屏幕坐标转换为着色器可用的坐标系统：
+
+```js
+const material = new THREE.ShaderMaterial({
+    uniforms: {
+        uTime: { value: 0 },
+        uMouse: { value: new THREE.Vector2(0, 0) },
+        uSize: { value: 30 * renderer.getPixelRatio() },
+        uTexture: { value: null }   // 粒子控制纹理
+    }
+})
+
+// 将鼠标位置归一化到 [-1, 1] 范围
+window.addEventListener('mousemove', (event) => {
+    material.uniforms.uMouse.value.x = (event.clientX / sizes.width) * 2 - 1
+    material.uniforms.uMouse.value.y = -(event.clientY / sizes.height) * 2 + 1
+})
+```
+
+坐标转换的关键点：
+
+- X 轴：`clientX / width * 2 - 1` 将 `[0, width]` 映射到 `[-1, 1]`。
+- Y 轴：`-(clientY / height) * 2 + 1` 将 `[0, height]` 映射到 `[1, -1]`（注意负号，因为屏幕坐标 Y 轴向下，而着色器/3D 坐标 Y 轴向上）。
+
+这个归一化后的坐标可以方便地映射到着色器中粒子的局部坐标系。
+
+## 顶点着色器 — 完整实现
+
+```glsl
+uniform float uTime;
+uniform vec2 uMouse;
+uniform float uSize;
+uniform float uResolution;
+attribute float aScale;
+attribute vec3 aRandomness;
+varying vec3 vColor;
+varying float vDistToCenter;
+
+void main() {
+    vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+
+    // 将鼠标位置映射到粒子平面的坐标系
+    // 假设粒子平面范围大约在 [-2, 2] 的 XY 平面上
+    vec3 mousePos = vec3(uMouse * 2.0, 0.0);
+
+    // 计算粒子到鼠标的距离
+    float dist = distance(modelPosition.xy, mousePos.xy);
+
+    // 使用 smoothstep 创建平滑的影响范围
+    // dist < 0 时 influence = 1（在鼠标正中心）
+    // dist > 1.5 时 influence = 0（超出影响范围）
+    float influence = smoothstep(1.5, 0.0, dist);
+
+    // 计算粒子到鼠标的方向（用于排斥/吸引）
+    vec2 direction = normalize(modelPosition.xy - mousePos.xy);
+
+    // 排斥效果 — 粒子沿远离鼠标的方向偏移
+    modelPosition.xy += direction * influence * 0.5;
+
+    // Z 方向抬起 — 鼠标附近的粒子略微"浮起"
+    modelPosition.z += influence * 0.3;
+
+    // 基础呼吸动画
+    modelPosition.y += sin(uTime + aRandomness.x * 6.28) * 0.1;
+
+    vec4 viewPosition = viewMatrix * modelPosition;
+    gl_Position = projectionMatrix * viewPosition;
+
+    // 粒子大小 — 基础大小 + 鼠标影响区域的放大
+    gl_PointSize = uSize * aScale * (1.0 + influence * 2.0) * uResolution.y * (1.0 / -viewPosition.z);
+
+    // 鼠标附近的粒子颜色更亮（从基础色到高亮色的渐变）
+    vColor = mix(vec3(0.5), vec3(1.0, 0.5, 0.2), influence);
+
+    // 传递到中心的距离用于片元着色器绘制圆形
+    vDistToCenter = 1.0;  // 占位，实际使用 gl_PointCoord
+}
+```
+
+### 关键实现细节
+
+**`smoothstep` 平滑影响范围**：`smoothstep(1.5, 0.0, dist)` 创建了一个从中心到边缘的平滑衰减曲线。当距离为 0 时返回 1（最大影响），距离为 1.5 时返回 0（无影响）。中间线性插值，没有硬边界。这种平滑过渡让粒子排斥效果看起来自然流畅。
+
+**`normalize` 方向计算**：`normalize(modelPosition.xy - mousePos.xy)` 计算从鼠标指向粒子的单位方向向量。在排斥模式中，粒子沿此方向移动（远离鼠标）；在吸引模式中，粒子沿相反方向移动（靠近鼠标）。
+
+**Z 方向抬起效果**：`modelPosition.z += influence * 0.3` 让鼠标附近的粒子在 Z 轴方向微微浮起。由于透视投影的缘故，这会导致近处的粒子看起来更大，增强了"掀起"的视觉效果。
+
+**`aRandomness` 属性**：每个粒子拥有随机的初始参数（在 JavaScript 中预先生成），用于让呼吸动画（`sin(uTime + aRandomness.x * 6.28)`）在粒子间产生相位差，避免所有粒子同步运动。
+
+## 片元着色器
+
+```glsl
+varying vec3 vColor;
+
+void main() {
+    // 计算当前片段到粒子中心的距离
+    float dist = length(gl_PointCoord - vec2(0.5));
+
+    // 丢弃圆形外的片段
+    if (dist > 0.5) discard;
+
+    // 计算亮度 — 从中心到边缘平滑衰减
+    float strength = 1.0 - dist * 2.0;
+    strength = pow(strength, 1.5);  // 使用幂函数调整衰减曲线
+
+    gl_FragColor = vec4(vColor * strength, strength);
+}
+```
+
+- `strength = 1.0 - dist * 2.0` — 距离为 0 时 strength 为 1（最亮），距离为 0.5 时 strength 为 0（完全透明）。
+- `pow(strength, 1.5)` — 将衰减曲线从线性变为非线性。指数大于 1 会使衰减更集中在边缘，让粒子的亮点更加突出。
+- `gl_FragColor` 同时设置了 RGB 颜色和 alpha 值为 `strength`，使粒子边缘自然地淡出。
+
+## 吸引效果
+
+将排斥改为吸引只需一行代码的修改：
+
+```glsl
+// 吸引模式 — 向鼠标方向移动（direction 取反）
+modelPosition.xy -= direction * influence * 0.3;
+```
+
+吸引模式下需要注意几个问题：
+
+1. **粒子堆积** — 吸引会让粒子聚集到鼠标位置附近，造成密度过高。可以通过限制最大偏移量来缓解。
+2. **Z 轴处理** — 吸引时通常不需要 Z 方向的抬起效果，可以将其移除或改为下沉。
+3. **强度调整** — 吸引的力度通常应比排斥小一些（如 0.3 vs 0.5），避免粒子过度聚拢。
+
+## 波纹扩散效果
+
+从鼠标位置向外传播的波纹是一种非常酷的交互增强效果：
+
+```glsl
+// 波纹 — 正弦波从鼠标位置向外传播
+float wave = sin(dist * 10.0 - uTime * 5.0) * influence;
+modelPosition.z += wave * 0.2;
+```
+
+这段代码的解析：
+
+- `dist * 10.0` — 控制波纹的空间频率（波浪的疏密）。值越大，波纹越密。
+- `-uTime * 5.0` — 控制波纹的时间传播速度。减号使波纹从中心向外扩散（因为随着 dist 增大，相位也会增大以保持同步）。
+- `* influence` — 让波纹强度随距离衰减，只出现在鼠标附近。
+- `* 0.2` — 控制波纹的振幅（高度）。
+
+:::tip
+使用 `smoothstep` 控制影响范围可以实现平滑的过渡效果，避免粒子在影响区域边缘突然"跳入"或"跳出"动画。如果希望影响范围更大，可以增大 `smoothstep` 的上限值；如果希望影响更集中，可以减小上限值。
+:::
+
+## 性能注意事项
+
+1. **鼠标坐标空间**：本例中使用 `uMouse * 2.0` 来近似映射到模型空间。在实际项目中，可能需要使用射线投射（Raycasting）来获取更精确的鼠标在 3D 空间中的位置，特别是在使用透视相机且粒子平面距离相机较远时。
+2. **粒子数量**：即使 10 万个粒子也可以在现代 GPU 上流畅运行，因为所有计算都在顶点着色器中并行完成。但如果在 JavaScript 侧（CPU）更新每帧的属性数据，性能会急剧下降 — 这也是为什么我们要在着色器中实现这些效果。
+3. **discard 的性能影响**：虽然 `discard` 在概念上是"跳过渲染"，但某些 GPU 架构上大量使用 `discard` 可能导致性能下降，因为它会打断片段着色器的正常执行流程。对于粒子这种场景，影响通常可以忽略。

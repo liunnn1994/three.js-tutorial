@@ -1,0 +1,613 @@
+---
+title: 19 滚动驱动动画
+description: 将 Three.js 场景作为经典 HTML 网站的背景，通过滚动和鼠标实现沉浸式交互体验
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 本课概览
+
+到目前为止，我们创建的都是"纯 WebGL"体验 -- Canvas 占据整个视口，用户通过拖拽来控制相机。但实际项目中，很多时候我们需要把 Three.js 场景嵌入到**传统的 HTML 网页**中：页面上有文字、按钮、导航栏等内容，而 3D 场景作为背景随滚动而变化。
+
+这就是**滚动驱动动画（Scroll-based Animation）** -- 用户的滚动行为成为驱动 3D 场景变化的输入源。
+
+本课你将学到：
+
+- 如何让 Canvas 和 HTML 内容共存
+- 如何将滚动位置映射到 3D 场景的相机运动
+- 鼠标视差效果的原理和实现
+- 如何在滚动到特定区域时触发动画
+- 透明背景和 HTML 层叠技巧
+
+
+<LessonPreview lesson="19-scroll-based-animation" />
+
+## 什么是滚动驱动动画？
+
+滚动驱动动画是一种网页交互模式：**页面内容随用户滚动而展示，同时 3D 场景作为背景同步变化**。这种模式在创意网站、产品展示页和品牌宣传页中非常流行。
+
+它之所以流行，是因为：
+
+1. **沉浸感**：用户在浏览内容的同时，3D 场景在背后流动，营造出深度感
+2. **叙事性**：每个滚动区段可以对应 3D 场景中不同的"镜头"，像在讲故事
+3. **无需用户学习新交互**：滚动是每个上网用户都熟悉的基本操作
+4. **性能友好**：不需要复杂的手势识别或特殊输入设备
+
+:::tip
+你可以在 [Awwwards](https://www.awwwards.com/) 等网站上找到大量使用滚动驱动动画的获奖网站案例。这种技术是现代 Web 设计的标配之一。
+:::
+
+## HTML 结构 -- Canvas 与 Sections 共存
+
+基本思路是：
+
+- Canvas 使用 `position: fixed` 固定在视口后方（始终可见）
+- HTML 的 `<section>` 元素正常流式排列，拥有各自的高度
+- 用户滚动的是 HTML 内容，但 3D 场景根据滚动位置做相应的变化
+
+```html
+<!-- Canvas 固定在视口 -->
+<canvas class="webgl"></canvas>
+
+<!-- HTML 内容正常滚动 -->
+<section class="section"><h1>第一部分</h1></section>
+<section class="section"><h1>第二部分</h1></section>
+<section class="section"><h1>第三部分</h1></section>
+```
+
+CSS 中：
+
+```css
+html {
+    /* 不要阻止默认滚动行为！ */
+}
+
+.webgl {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.section {
+    position: relative;
+    z-index: 2;  /* 在 Canvas 之上 */
+    /* 每个 section 的高度等于一个视口高度 */
+}
+```
+
+:::warning
+在之前的课程中，我们添加了 CSS 代码来**阻止页面滚动**（因为纯 WebGL 页面不需要滚动）。在本课中，必须**移除**那些阻止滚动的代码，否则页面将无法滚动。
+:::
+
+## 透明背景
+
+默认情况下，Three.js 的 Canvas 背景是不透明的（通常是黑色）。当 Canvas 使用 `position: fixed` 时，滚动到页面底部会看到黑色区域暴露出来（因为 HTML 内容滚走了，但 Canvas 还在）。
+
+解决方案是让 Canvas 背景**透明**：
+
+```js
+const renderer = new THREE.WebGLRenderer({
+    canvas: canvas,
+    alpha: true  // 启用透明背景
+})
+```
+
+设置 `alpha: true` 后，Canvas 中没有 3D 内容的区域会变为透明，用户可以看到后面的 HTML 页面背景色。
+
+你还可以用 CSS 控制 Canvas 后面的背景色：
+
+```css
+html {
+    background-color: #1e1a20;  /* 深色背景 */
+}
+```
+
+这样无论用户怎么滚动，都不会看到刺眼的白色边缘。
+
+### 关于透明度的更多控制
+
+默认情况下，透明度 `alpha` 为 0（完全透明）。你可以通过 `setClearColor` 或 `setClearAlpha` 手动调整：
+
+```js
+// 同时设置颜色和透明度
+renderer.setClearColor('#000000', 0)
+
+// 只设置透明度
+renderer.setClearAlpha(0.5)
+```
+
+## 恢复滚动 -- 移除滚动锁定
+
+之前课程中为了防止纯 WebGL 页面被意外滚动，我们可能在 CSS 中添加了类似这样的代码：
+
+```css
+html, body {
+    overflow: hidden;
+    height: 100%;
+}
+```
+
+在本课中，必须**移除**这些限制，让页面可以正常滚动。
+
+## 3D 物体的布局
+
+我们在 3D 场景中放置多个几何体，每个对应一个 HTML section。物体需要沿 Y 轴向下排列：
+
+```js
+// 每个物体之间的 3D 空间距离
+const objectsDistance = 4
+
+// 创建三个物体
+const mesh1 = new THREE.Mesh(new THREE.TorusGeometry(1, 0.4, 16, 60), material)
+const mesh2 = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 32), material)
+const mesh3 = new THREE.Mesh(new THREE.TorusKnotGeometry(0.8, 0.35, 100, 16), material)
+
+// 垂直排列：每个物体向下间隔 objectsDistance
+mesh1.position.y = - objectsDistance * 0  // y = 0
+mesh2.position.y = - objectsDistance * 1  // y = -4
+mesh3.position.y = - objectsDistance * 2  // y = -8
+
+// 水平交错放置，避免都叠在中间
+mesh1.position.x = 2
+mesh2.position.x = -2
+mesh3.position.x = 2
+```
+
+### 为什么物体间距等于 `objectsDistance`？
+
+这是为了与 HTML 的 section 对齐。每个 HTML section 的高度等于一个视口高度。当用户滚动一个 section 的距离时，相机在 3D 场景中应该恰好移动 `objectsDistance` 的距离。
+
+### FOV 是垂直的
+
+Three.js 中 `PerspectiveCamera` 的 `fov`（视场角）参数指的是**垂直**视场角，而非水平的。这是一个非常重要的特性，因为：
+
+- 当用户调整浏览器窗口大小（变窄或变宽）时，**垂直方向看到的内容不变**
+- 这意味着 3D 物体的垂直位置不受窗口宽度影响
+- 我们可以放心地把物体放在固定的 Y 坐标上
+
+```js
+const camera = new THREE.PerspectiveCamera(35, sizes.width / sizes.height, 0.1, 100)
+//                                     ^^
+//                          这是垂直视场角 35 度
+```
+
+## 材质选择 -- MeshToonMaterial
+
+为了让物体看起来有风格化效果，我们使用 `MeshToonMaterial`（卡通材质）：
+
+```js
+const material = new THREE.MeshToonMaterial({
+    color: parameters.materialColor
+})
+```
+
+### 添加渐变纹理实现更多色阶
+
+默认的 `MeshToonMaterial` 只有两种明暗状态（亮面和暗面）。要实现三段或更多色阶，需要提供一个**渐变纹理**：
+
+```js
+const textureLoader = new THREE.TextureLoader()
+const gradientTexture = textureLoader.load('textures/gradients/3.jpg')
+
+// 关键：使用 NearestFilter 避免 WebGL 自动插值
+gradientTexture.magFilter = THREE.NearestFilter
+
+material = new THREE.MeshToonMaterial({
+    color: parameters.materialColor,
+    gradientMap: gradientTexture
+})
+```
+
+:::info
+**为什么需要 NearestFilter？**
+
+默认情况下，WebGL 在读取纹理时会进行双线性插值，导致 3 个像素的渐变纹理变成平滑过渡，卡通效果消失。`NearestFilter` 让 WebGL 直接取最近的像素颜色，不做插值，从而保留了明显的色阶分界。
+
+关于滤镜的更多内容，将在后续纹理课程中详细讲解。
+:::
+
+### 添加光源
+
+`MeshToonMaterial` 是基于光照的材质，场景中没有光的话什么都看不到：
+
+```js
+const directionalLight = new THREE.DirectionalLight('#ffffff', 3)
+directionalLight.position.set(1, 1, 0)
+scene.add(directionalLight)
+```
+
+## 追踪滚动位置
+
+### scrollY
+
+`window.scrollY` 返回页面已经滚动的像素数：
+
+```js
+let scrollY = window.scrollY  // 例如：1080 表示滚动了 1080 像素
+
+window.addEventListener('scroll', () => {
+    scrollY = window.scrollY
+})
+```
+
+:::info
+`scrollY` 是一个**像素值**，会随视口大小和分辨率变化。直接用它来控制 3D 场景会导致不同设备上体验不一致。我们需要将其**归一化**。
+:::
+
+### 将像素滚动值归一化为 0~1
+
+归一化的核心公式：
+
+```js
+// scrollY / sizes.height 得到 0~N 的值（N = 滚过了几个视口高度）
+// 再乘以 objectsDistance，转换为 3D 空间距离
+const scrollProgress = scrollY / sizes.height * objectsDistance
+```
+
+展开来看：
+
+- 没有滚动时：`0 / 900 * 4 = 0`
+- 滚过 1 个视口：`900 / 900 * 4 = 4`
+- 滚过 2 个视口：`1800 / 900 * 4 = 8`
+
+这样，相机 Y 位置从 0 变化到 -8，正好对应三个物体（分别位于 y=0, y=-4, y=-8）。
+
+### scrollY vs getBoundingClientRect
+
+除了 `window.scrollY`，还有另一种方法追踪滚动位置：
+
+```js
+// 方法二：使用 getBoundingClientRect 追踪特定元素
+const sectionRect = section.getBoundingClientRect()
+const elementTop = sectionRect.top
+// elementTop 为负数表示元素滚到了视口上方
+```
+
+`getBoundingClientRect()` 返回元素相对于视口的位置。当元素滚过视口一半时，`top` 约为 `-window.innerHeight / 2`。
+
+两种方法的对比：
+
+| 方法 | 优点 | 缺点 |
+|------|------|------|
+| `window.scrollY` | 简单直接，性能好 | 只能获取全局滚动量 |
+| `getBoundingClientRect()` | 可以追踪特定元素的位置 | 触发回流（layout recalculation），频繁调用有性能影响 |
+
+对于大多数滚动动画场景，`window.scrollY` 就足够了。
+
+## 用滚动驱动相机
+
+在动画循环（tick）中，根据滚动值移动相机：
+
+```js
+const tick = () => {
+    const elapsedTime = clock.getElapsedTime()
+    const deltaTime = elapsedTime - previousTime
+    previousTime = elapsedTime
+
+    // 相机 Y 位置跟随滚动
+    camera.position.y = - scrollY / sizes.height * objectsDistance
+
+    renderer.render(scene, camera)
+    window.requestAnimationFrame(tick)
+}
+```
+
+注意负号 `-` 的含义：
+
+- `scrollY` 是正值，越大表示滚得越多
+- 在 3D 场景中，Y 轴向下为负值
+- 所以我们需要取负值，让相机"向下"移动
+
+## 区段检测 -- 滚动到特定区域时触发动画
+
+我们经常需要在用户滚动到某个 section 时触发特定动画。方法是计算当前处于第几个 section：
+
+```js
+let currentSection = 0
+
+window.addEventListener('scroll', () => {
+    scrollY = window.scrollY
+
+    // 计算当前处于第几个 section
+    const newSection = Math.round(scrollY / sizes.height)
+
+    // 只有当 section 发生变化时才触发动画
+    if (newSection !== currentSection) {
+        currentSection = newSection
+
+        // 使用 GSAP 对当前 section 对应的物体做旋转动画
+        gsap.to(
+            sectionMeshes[currentSection].rotation,
+            {
+                duration: 1.5,
+                ease: 'power2.inOut',
+                x: '+=6',   // 在当前基础上增加 6 弧度
+                y: '+=3',
+                z: '+=1.5'
+            }
+        )
+    }
+})
+```
+
+`Math.round(scrollY / sizes.height)` 的含义：
+
+- `scrollY / sizes.height` = 滚过了几个视口高度
+- `Math.round()` 四舍五入到最近的整数
+- 结果 0、1、2 分别对应第一、二、三个 section
+
+:::tip
+使用 `+=` 语法意味着每次进入 section 时，在物体**当前旋转角度的基础上**再旋转。这样如果用户反复上下滚动，物体每次都会旋转不同的角度，看起来更有趣。
+:::
+
+## 鼠标视差效果
+
+### 什么是视差？
+
+**视差（Parallax）** 是指从不同视角观察同一物体时，近处和远处的物体产生相对位移的现象。
+
+想象你把一只手伸在面前，另一只手伸在远处。当你左右摇头时：
+- 近处的手移动很多
+- 远处的手几乎不动
+
+你的大脑通过这种差异来感知深度。在网页中，我们可以利用鼠标位置模拟这种效果。
+
+### 实现原理
+
+核心思想是：**创建一个 Group 来包裹相机，移动 Group 来产生视差效果**。
+
+为什么不直接移动相机？因为相机已经在用 `position.y` 跟随滚动了。如果同时用 `position.x` 跟随鼠标，两个运动就会互相冲突。
+
+解决方案：
+
+```js
+// 创建一个 Group 来包裹相机
+const cameraGroup = new THREE.Group()
+scene.add(cameraGroup)
+cameraGroup.add(camera)
+
+// 相机的 Y 位置跟随滚动（在 Group 内部）
+// camera.position.y = - scrollY / sizes.height * objectsDistance
+
+// Group 的 X 和 Y 位置跟随鼠标（视差效果）
+cameraGroup.position.x = parallaxX
+cameraGroup.position.y = parallaxY
+```
+
+这样，滚动和视差互不干扰。
+
+### 归一化鼠标位置
+
+和滚动一样，鼠标位置也需要归一化：
+
+```js
+const cursor = { x: 0, y: 0 }
+
+window.addEventListener('mousemove', (event) => {
+    // event.clientX 范围是 0 ~ window.innerWidth
+    // event.clientY 范围是 0 ~ window.innerHeight
+
+    // 归一化为 -0.5 ~ 0.5
+    cursor.x = event.clientX / sizes.width - 0.5
+    cursor.y = event.clientY / sizes.height - 0.5
+})
+```
+
+减去 `0.5` 是为了让值变为**正负对称**的 `-0.5` 到 `0.5`：
+- 鼠标在左侧 → `cursor.x` 为负值 → 相机向左移动
+- 鼠标在右侧 → `cursor.x` 为正值 → 相机向右移动
+- 鼠标在中间 → `cursor.x` 接近 0 → 相机不动
+
+### 平滑跟随 -- 使用 deltaTime
+
+直接把鼠标位置赋给相机 Group 会让运动很生硬。我们需要**平滑过渡（easing / lerp）**：
+
+```js
+const tick = () => {
+    const elapsedTime = clock.getElapsedTime()
+    const deltaTime = elapsedTime - previousTime
+    previousTime = elapsedTime
+
+    // 计算目标视差位置
+    const parallaxX = cursor.x * 0.5
+    const parallaxY = - cursor.y * 0.5  // 注意 Y 轴取反
+
+    // 平滑跟随：每帧只移动"差值的一小部分"
+    cameraGroup.position.x += (parallaxX - cameraGroup.position.x) * 5 * deltaTime
+    cameraGroup.position.y += (parallaxY - cameraGroup.position.y) * 5 * deltaTime
+
+    renderer.render(scene, camera)
+    window.requestAnimationFrame(tick)
+}
+```
+
+这里的关键是 `* 5 * deltaTime`：
+
+- `parallaxX - cameraGroup.position.x` 是当前值和目标值的差距
+- `* 5` 是跟随速度（值越大越快）
+- `* deltaTime` 让动画与帧率无关
+
+:::info
+**为什么需要 deltaTime？**
+
+不同设备的帧率不同（60fps、120fps、144fps）。如果不使用 `deltaTime`：
+- 60fps 的设备上，每秒移动 60 步
+- 120fps 的设备上，每秒移动 120 步（速度快了一倍）
+
+乘以 `deltaTime`（每帧的时间间隔）后，无论帧率是多少，每秒的总移动量都是一样的。
+:::
+
+`* 0.5` 是视差强度系数。值越大，相机移动幅度越大，视差效果越强。
+
+## 背景粒子增强氛围
+
+为了让场景更有氛围感，我们可以在整个滚动范围内添加背景粒子：
+
+```js
+const particlesCount = 200
+const positions = new Float32Array(particlesCount * 3)
+
+for (let i = 0; i < particlesCount; i++) {
+    // X 和 Z：在相机视野范围内随机分布
+    positions[i * 3 + 0] = (Math.random() - 0.5) * 10
+    positions[i * 3 + 1] = objectsDistance * 0.5
+        - Math.random() * objectsDistance * sectionMeshes.length
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 10
+}
+
+const particlesGeometry = new THREE.BufferGeometry()
+particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+
+const particlesMaterial = new THREE.PointsMaterial({
+    color: parameters.materialColor,
+    sizeAttenuation: true,
+    size: 0.03
+})
+
+const particles = new THREE.Points(particlesGeometry, particlesMaterial)
+scene.add(particles)
+```
+
+粒子的 Y 坐标从 `objectsDistance * 0.5`（第一个物体之上）延伸到 `objectsDistance * sectionMeshes.length` 之下，这样粒子分布在用户能滚动的整个范围内。
+
+## 物体自转动画
+
+即使没有滚动，物体也应该有缓慢的旋转动画，让页面看起来"活"的：
+
+```js
+// 在 tick 函数中
+for (const mesh of sectionMeshes) {
+    mesh.rotation.x += deltaTime * 0.1
+    mesh.rotation.y += deltaTime * 0.12
+}
+```
+
+注意旋转速度很慢（`0.1` 和 `0.12`），因为这是一个内容型网站，不是游戏。用户需要阅读文字、点击按钮，3D 动画不应该太抢眼。
+
+## DOM 滚动与 3D 场景状态的映射关系
+
+这是本课最核心的概念。把所有映射关系整理如下：
+
+```
+HTML 世界                          3D 世界
+────────                          ──────
+section 0 在视口中     ←→    camera.position.y = 0
+section 1 在视口中     ←→    camera.position.y = -4
+section 2 在视口中     ←→    camera.position.y = -8
+鼠标在屏幕中心          ←→    cameraGroup.position.x ≈ 0
+鼠标在屏幕左侧          ←→    cameraGroup.position.x < 0
+鼠标在屏幕右侧          ←→    cameraGroup.position.x > 0
+```
+
+这个映射关系的核心是**归一化**：无论屏幕大小、分辨率如何变化，映射比例保持一致。
+
+## 性能优化 -- 节流滚动事件
+
+`scroll` 事件在用户滚动时会**极其频繁地**触发（每秒可达数十甚至上百次）。如果每次都执行复杂计算，会影响性能。
+
+### 方案一：使用 requestAnimationFrame
+
+我们的代码实际上已经使用了这个方案 -- 在 `scroll` 事件中只更新 `scrollY` 变量，真正的相机移动在 `tick()` 的 `requestAnimationFrame` 中执行。这意味着渲染频率最多等于屏幕刷新率，避免了过度渲染。
+
+```js
+// 滚动事件中只保存值（非常轻量）
+window.addEventListener('scroll', () => {
+    scrollY = window.scrollY
+    const newSection = Math.round(scrollY / sizes.height)
+    if (newSection !== currentSection) {
+        currentSection = newSection
+        gsap.to(sectionMeshes[currentSection].rotation, { ... })
+    }
+})
+
+// 实际的视觉更新在动画循环中（受帧率限制）
+const tick = () => {
+    camera.position.y = - scrollY / sizes.height * objectsDistance
+    // ...
+    window.requestAnimationFrame(tick)
+}
+```
+
+### 方案二：使用 throttle / debounce
+
+如果确实需要在滚动事件中执行较重的计算，可以使用节流（throttle）：
+
+```js
+// 简单的节流函数
+function throttle(fn, delay) {
+    let lastCall = 0
+    return function(...args) {
+        const now = Date.now()
+        if (now - lastCall >= delay) {
+            lastCall = now
+            fn.apply(this, args)
+        }
+    }
+}
+
+window.addEventListener('scroll', throttle(() => {
+    // 这里最多每 16ms 执行一次
+    scrollY = window.scrollY
+}, 16))
+```
+
+### 方案三：使用 CSS scroll-driven animations（现代浏览器）
+
+```css
+/* 纯 CSS 的滚动驱动动画（无需 JavaScript） */
+@keyframes moveCamera {
+    from { transform: translateY(0); }
+    to { transform: translateY(-100px); }
+}
+
+.section {
+    animation: moveCamera linear;
+    animation-timeline: scroll();
+}
+```
+
+这种方法性能最好，但目前在某些浏览器中支持度有限。
+
+## 完整代码结构总结
+
+```js
+// 1. 场景、渲染器（alpha: true）
+// 2. 材质（MeshToonMaterial + 渐变纹理 + NearestFilter）
+// 3. 光源（DirectionalLight）
+// 4. 物体创建和垂直排列
+// 5. 背景粒子
+// 6. 相机（放入 cameraGroup）
+// 7. 滚动监听（更新 scrollY 和 currentSection）
+// 8. 鼠标监听（归一化 cursor.x, cursor.y）
+// 9. 动画循环：
+//    - 相机 Y 跟随滚动
+//    - cameraGroup 平滑跟随鼠标（视差）
+//    - 物体自转
+```
+
+## 扩展思路
+
+学完本课后，你可以尝试：
+
+- 添加更多 section，使用 GSAP ScrollTrigger 实现更复杂的滚动动画
+- 让物体的材质颜色或缩放随滚动变化
+- 根据滚动进度实现物体的"出场"动画（从小变大、从透明变为不透明）
+- 添加 prefers-reduced-motion 媒体查询，为不喜欢动画的用户禁用滚动动画
+- 使用 IntersectionObserver 替代 scroll 事件来检测 section 是否可见
+
+## 参考链接
+
+- [Three.js WebGLRenderer 文档](https://threejs.org/docs/#api/en/renderers/WebGLRenderer)
+- [Three.js MeshToonMaterial 文档](https://threejs.org/docs/#api/en/materials/MeshToonMaterial)
+- [Three.js Group 文档](https://threejs.org/docs/#api/en/core/Group)
+- [MDN: scrollY](https://developer.mozilla.org/zh-CN/docs/Web/API/Window/scrollY)
+- [MDN: getBoundingClientRect](https://developer.mozilla.org/zh-CN/docs/Web/API/Element/getBoundingClientRect)
+- [MDN: mousemove 事件](https://developer.mozilla.org/zh-CN/docs/Web/API/Element/mousemove_event)
+- [MDN: requestAnimationFrame](https://developer.mozilla.org/zh-CN/docs/Web/API/Window/requestAnimationFrame)
+- [GSAP 文档](https://greensock.com/docs/)
+- [GSAP ScrollTrigger](https://greensock.com/scrolltrigger/)
+- [CSS scroll-driven animations](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_scroll-driven_animations)

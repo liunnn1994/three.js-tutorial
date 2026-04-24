@@ -1,0 +1,340 @@
+---
+title: 46 性能优化
+description: Three.js 项目系统性性能优化——测量瓶颈、减少绘制调用、优化几何体、纹理与材质
+---
+
+## 性能优化
+
+良好的性能是 3D Web 应用的生命线。你的目标是**至少 60 FPS**（每秒 60 帧）。性能瓶颈可能来自 **CPU**（JavaScript 逻辑、绘制调用过多、碰撞检测）或 **GPU**（复杂着色器、庞大纹理、过多的三角形渲染）。二者需要分别关注——你可能优化了所有模型和纹理（GPU 没问题），但绘制调用过多（CPU 瓶颈）依然导致帧率下降。
+
+:::tip
+性能优化的第一步是**测量**，而不是猜测。使用 Stats.js 监控 FPS，用 `renderer.info` 了解绘制调用数和内存占用，然后有针对性地优化瓶颈。同时，务必在**多个设备**上测试——你的开发机可能很强，但用户的手机可能很弱。
+:::
+
+## 测量工具
+
+### Stats.js
+
+```bash
+npm install stats.js
+```
+
+```js
+import Stats from 'stats.js'
+
+const stats = new Stats()
+stats.showPanel(0) // 0 = FPS 面板
+document.body.appendChild(stats.dom)
+
+const tick = () =>
+{
+    stats.begin()
+    // 渲染代码
+    stats.end()
+    window.requestAnimationFrame(tick)
+}
+```
+
+点击面板可以在 FPS、MS（每帧耗时）、MB（内存占用）等不同监控面板之间切换。
+
+### 在好电脑上模拟低性能设备
+
+如果你的开发机太强，FPS 始终是 60（因为浏览器帧率限制），你无法感知性能问题。一个有效的做法是**解除 Chrome 帧率限制**，让它尽可能快地渲染：
+
+- **macOS / Linux**: 关闭 Chrome 后在终端执行 `open -a "Google Chrome" --args --disable-frame-rate-limit`
+- **Windows**: 关闭 Chrome 后执行 `chrome.exe --disable-frame-rate-limit`
+
+解除限制后，如果 FPS 只跑到 70~80 而不是几百，说明你的场景已经存在性能瓶颈——在弱设备上会更糟。
+
+:::caution
+解除帧率限制会让 GPU 满负荷运转，风扇会高速运转。仅在需要时使用，测试完记得关闭并重新打开浏览器恢复限制。
+:::
+
+### renderer.info — 渲染统计
+
+Three.js 的 `renderer.info` 提供详细的渲染统计数据：
+
+```js
+console.log(renderer.info.render.triangles)  // 当前帧绘制的三角形数
+console.log(renderer.info.render.calls)      // 当前帧的绘制调用数（draw calls）
+console.log(renderer.info.memory.geometries) // 当前内存中的几何体数量
+console.log(renderer.info.memory.textures)   // 当前内存中的纹理数量
+```
+
+### Spectre.js — 绘制调用监控
+
+`Spectre.js` 是一个 Chrome 扩展，可以记录一帧的 WebGL 调用并可视化显示所有绘制调用（draw calls）。它让你直观地看到场景是如何被 GPU 绘制的——每个 draw call 绘制了哪个网格、使用了什么材质。
+
+## 绘制调用（Draw Calls）
+
+绘制调用是 CPU 向 GPU 发出"绘制这个网格"的指令。**每次切换材质或切换几何体时，都会产生一个新的绘制调用**。大量绘制调用是性能的头号杀手，因为每次 draw call 都需要 CPU 准备数据并通知 GPU。
+
+**关键原则：减少绘制调用。**
+
+### 策略一：合并静态几何体
+
+如果多个网格使用相同材质且永远不会单独移动，可以合并为一个几何体：
+
+```js
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js'
+
+// 将多个几何体合并为一个
+const mergedGeometry = BufferGeometryUtils.mergeGeometries([geo1, geo2, geo3])
+const mergedMesh = new THREE.Mesh(mergedGeometry, sharedMaterial)
+```
+
+:::caution
+合并后的几何体无法再单独移动或旋转。只适合永远保持相对位置不变的静态物体组。如果需要单独控制某个部分，不要使用此方法。
+:::
+
+### 策略二：实例化渲染（InstancedMesh）
+
+当你需要渲染大量相同几何体、相同材质但不同位置/旋转/缩放的物体时，`InstancedMesh` 是最佳选择。它只产生**一个绘制调用**，无论你渲染多少实例：
+
+```js
+const instanceCount = 1000
+const instancedMesh = new THREE.InstancedMesh(geometry, material, instanceCount)
+
+const dummy = new THREE.Object3D()
+for (let i = 0; i < instanceCount; i++)
+{
+    dummy.position.set(
+        (Math.random() - 0.5) * 10,
+        (Math.random() - 0.5) * 10,
+        (Math.random() - 0.5) * 10
+    )
+    dummy.rotation.set(
+        Math.random() * Math.PI,
+        Math.random() * Math.PI,
+        0
+    )
+    dummy.updateMatrix()
+    instancedMesh.setMatrixAt(i, dummy.matrix)
+}
+instancedMesh.instanceMatrix.needsUpdate = true
+```
+
+**实例化 vs 普通网格的性能差异：** 1000 个独立 Mesh 会产生约 1000 次 draw calls，而 `InstancedMesh` 只产生 1 次 draw call。性能差距可以几十倍。
+
+### 策略三：材质共享
+
+如果多个网格看起来一样，确保它们使用**同一个材质实例**，而不是各自创建新的材质。每次切换材质都会产生新的绘制调用：
+
+```js
+// 错误 — 每个网格各自创建新材质，产生多个 draw calls
+const mesh1 = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xff0000 }))
+const mesh2 = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xff0000 }))
+
+// 正确 — 共享同一个材质实例
+const sharedMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 })
+const mesh1 = new THREE.Mesh(geo, sharedMaterial)
+const mesh2 = new THREE.Mesh(geo, sharedMaterial)
+```
+
+## 几何体优化
+
+### 减少顶点数
+
+- 在 3D 建模软件中合理控制多边形数量
+- 远处的物体使用更低面数的模型（LOD，Level of Detail）
+- 移除用户看不到的内部面和背面
+
+### 合并几何体
+
+如上所述，对静态且不移动的物体组使用 `BufferGeometryUtils.mergeGeometries()` 进行合并。
+
+### 实例化
+
+如上所述，对大量重复物体使用 `InstancedMesh`。
+
+## 纹理优化
+
+### 尺寸控制
+
+不要在大物体上使用过小的纹理（会模糊），也不要在小物体上使用 4K 纹理（浪费显存）。根据物体在屏幕上的实际可见尺寸选择合适的纹理分辨率。
+
+### 纹理压缩
+
+使用 Basis Universal / KTX2 格式压缩纹理，可以显著减少文件大小和 GPU 内存占用，同时保持视觉质量。Three.js 通过 `KTX2Loader` 加载此类纹理。
+
+### Mipmap
+
+确保 `generateMipmaps` 开启（默认开启），并使用正确的过滤方式。Mipmap 可以在远距离查看纹理时避免摩尔纹闪烁，并提升采样性能。
+
+```js
+texture.generateMipmaps = true
+texture.minFilter = THREE.LinearMipmapLinearFilter
+texture.magFilter = THREE.LinearFilter
+```
+
+### 纹理复用
+
+多个物体如果使用相同的纹理，确保引用同一个 `Texture` 对象。
+
+## 材质优化
+
+### 选择合适的材质
+
+不同材质的 GPU 开销差异很大：
+
+| 材质 | GPU 开销 | 适用场景 |
+|------|---------|---------|
+| `MeshBasicMaterial` | 极低 | 不需要光照的物体、UI 元素 |
+| `MeshLambertMaterial` | 低 | 简单光照效果，性能优先 |
+| `MeshPhongMaterial` | 中等 | 需要高光反射，但不需要 PBR |
+| `MeshStandardMaterial` | 高 | 需要物理真实感的 PBR 渲染 |
+| `MeshPhysicalMaterial` | 很高 | 需要透明、清漆、各向异性等高级效果 |
+
+:::tip
+如果一个物体在阴影中或不重要，使用 `MeshBasicMaterial` 或 `MeshLambertMaterial` 代替 `MeshStandardMaterial`，可以显著降低 GPU 负载。
+:::
+
+### 减少贴图数量
+
+`MeshStandardMaterial` 的每张贴图（map、normalMap、roughnessMap、metalnessMap、aoMap 等）都需要额外的纹理采样。只在视觉上有显著提升时才添加贴图。
+
+## 渲染优化
+
+### 限制像素比
+
+高 DPI 屏幕（如 Retina 显示器）的 `devicePixelRatio` 可能为 2 或 3，这意味着 GPU 需要渲染 4 倍或 9 倍的像素：
+
+```js
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+```
+
+将像素比限制为 2 是一个良好的平衡点——在高 DPI 设备上保持清晰度，同时避免像素量爆炸。
+
+### 关闭抗锯齿（按需）
+
+```js
+const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: false // 如果使用后处理抗锯齿（SMAA/FXAA），可以关闭此选项
+})
+```
+
+如果使用了 `EffectComposer` + `SMAAPass` 做后处理抗锯齿，可以在创建 `WebGLRenderer` 时将 `antialias` 设为 `false`，避免双重抗锯齿的性能浪费。
+
+### 按需渲染
+
+如果场景没有动画（没有持续的动画或控制器交互），不需要每帧都渲染：
+
+```js
+let needsRender = true
+
+const tick = () =>
+{
+    if (needsRender)
+    {
+        renderer.render(scene, camera)
+        needsRender = false
+    }
+    requestAnimationFrame(tick)
+}
+
+// 当有变化时标记需要渲染
+controls.addEventListener('change', () => { needsRender = true })
+```
+
+:::tip
+按需渲染非常适合产品展示页面或静态场景配置器。但如果有持续的 CSS 动画与 3D 场景联动，则需要保持持续渲染。
+:::
+
+## 阴影贴图优化
+
+阴影是性能消耗较大的功能。以下措施可以显著降低阴影开销：
+
+```js
+// 使用较小的阴影贴图尺寸
+directionalLight.shadow.mapSize.width = 1024
+directionalLight.shadow.mapSize.height = 1024
+
+// 限制阴影摄像机的范围，只渲染需要的区域
+directionalLight.shadow.camera.left = -5
+directionalLight.shadow.camera.right = 5
+directionalLight.shadow.camera.top = 5
+directionalLight.shadow.camera.bottom = -5
+directionalLight.shadow.camera.near = 0.1
+directionalLight.shadow.camera.far = 50
+
+// 使用 PCFSoftShadowMap 获得柔和阴影，或使用 BasicShadowMap 获得最佳性能
+renderer.shadowMap.type = THREE.PCFSoftShadowMap
+// renderer.shadowMap.type = THREE.BasicShadowMap // 性能最好，但边缘锯齿明显
+```
+
+## 场景管理
+
+### 视锥体剔除（Frustum Culling）
+
+Three.js 默认启用视锥体剔除——摄像机视野外的物体不会被渲染。这是自动的，不需要你手动管理。
+
+```js
+// 默认开启，通常不需要修改
+mesh.frustumCulled = true
+```
+
+:::caution
+如果你手动修改了物体的 `boundingBox` 或 `boundingSphere`（例如使用了自定义着色器变形了顶点位置），需要手动更新包围盒，否则剔除计算可能出错：
+```js
+mesh.geometry.computeBoundingBox()
+mesh.geometry.computeBoundingSphere()
+```
+:::
+
+### LOD（Level of Detail）
+
+对远处的物体使用低精度模型，近处使用高精度模型：
+
+```js
+const lod = new THREE.LOD()
+
+lod.addLevel(highDetailMesh, 0)   // 距离 0~10 使用高精度
+lod.addLevel(mediumDetailMesh, 10) // 距离 10~30 使用中精度
+lod.addLevel(lowDetailMesh, 30)    // 距离 30+ 使用低精度
+
+scene.add(lod)
+```
+
+### 资源清理
+
+及时释放不再使用的资源，避免内存泄漏：
+
+```js
+// 从场景中移除
+scene.remove(mesh)
+
+// 释放几何体
+mesh.geometry.dispose()
+
+// 释放材质（如果材质不再被其他物体使用）
+mesh.material.dispose()
+
+// 如果材质有贴图，也要释放贴图
+if (mesh.material.map) mesh.material.map.dispose()
+```
+
+### 对象池（Object Pool）
+
+如果需要频繁创建和销毁同类对象（如粒子、子弹），使用对象池模式来复用对象，避免反复创建/销毁导致的 GC 压力。
+
+## 网站加载性能
+
+除了运行时性能，还要关注加载性能——如果网站要加载几分钟，用户根本不会等到你的场景渲染出来：
+
+- 压缩模型文件（使用 Draco 或 Meshopt 压缩 GLB/GLTF）
+- 压缩纹理（KTX2 格式）
+- 使用 `LoadingManager` 提供加载进度反馈
+- 考虑按需加载——先加载关键资源让用户看到内容，再逐步加载其余资源
+
+## 总结清单
+
+| 优化方向 | 关键措施 |
+|---------|---------|
+| 测量 | Stats.js、renderer.info、Spectre.js |
+| 绘制调用 | 合并几何体、InstancedMesh、材质共享 |
+| 几何体 | 减少面数、LOD |
+| 纹理 | 合适尺寸、KTX2 压缩、Mipmap、复用 |
+| 材质 | 选择合适的材质、减少贴图数量 |
+| 渲染器 | 限制像素比、按需渲染、合理阴影配置 |
+| 场景 | 视锥体剔除、LOD、资源清理、对象池 |

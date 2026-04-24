@@ -1,0 +1,243 @@
+---
+title: 26 大型项目代码结构
+description: 学习如何组织大型 Three.js 项目的代码结构，使用模块化架构和事件驱动模式
+---
+
+## 为什么需要代码结构
+
+在前面的课程中，所有代码都写在一个 `script.js` 文件里。对于小型实验这没问题，但当项目变得复杂时（比如导入多个模型、管理多种资源、处理用户交互），单文件会变得难以维护。
+
+良好的代码结构能带来：
+- **可维护性** — 每个文件只负责一个功能
+- **可复用性** — 相机的配置可以在不同项目中复用
+- **可协作性** — 团队成员可以同时编辑不同模块
+- **可调试性** — 问题更容易定位
+
+## 推荐目录结构
+
+```
+src/
+├── script.js              # 入口文件（精简，只做初始化）
+├── Experience/
+│   ├── Experience.js      # 主控制器（单例模式）
+│   ├── Camera.js          # 相机管理和控制
+│   ├── Renderer.js        # 渲染器配置
+│   ├── Debug.js           # 调试 UI（lil-gui）
+│   ├── Time.js            # 时间/时钟管理
+│   ├── World/
+│   │   ├── World.js       # 3D 世界容器
+│   │   ├── Floor.js       # 地面
+│   │   ├── Fox.js         # 狐狸模型（或其他模型）
+│   │   └── Environment.js # 环境光照/环境贴图
+│   └── Resources/
+│       ├── Resources.js   # 资源加载管理
+│       └── Loader.js      # 加载进度管理
+```
+
+## 单例模式
+
+主控制器使用单例模式，确保整个应用只有一个实例。其他模块通过 `new Experience()` 获取同一个实例：
+
+```js
+// Experience.js
+import * as THREE from 'three'
+import Camera from './Camera.js'
+import Renderer from './Renderer.js'
+import World from './World/World.js'
+
+export default class Experience {
+    constructor(canvas) {
+        // 单例模式：如果实例已存在，直接返回
+        if (Experience.instance) {
+            return Experience.instance
+        }
+        Experience.instance = this
+
+        // 保存 canvas 引用
+        this.canvas = canvas
+
+        // 初始化各个子系统
+        this.scene = new THREE.Scene()
+        this.resources = new Resources(assets)
+        this.camera = new Camera()
+        this.renderer = new Renderer()
+        this.world = new World()
+
+        // 监听窗口大小变化
+        this.resize()
+        this.setResizeListener()
+
+        // 开始动画循环
+        this.tick()
+    }
+
+    resize() {
+        this.camera.resize()
+        this.renderer.resize()
+    }
+
+    setResizeListener() {
+        window.addEventListener('resize', () => {
+            this.resize()
+        })
+    }
+
+    tick() {
+        this.camera.update()
+        this.world.update()
+        this.renderer.update()
+        window.requestAnimationFrame(() => this.tick())
+    }
+}
+```
+
+### 入口文件变得非常简洁
+
+```js
+// script.js
+import Experience from './Experience/Experience.js'
+
+const experience = new Experience(document.querySelector('canvas.webgl'))
+```
+
+## 相机模块
+
+```js
+// Camera.js
+import * as THREE from 'three'
+import Experience from './Experience.js'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+
+export default class Camera {
+    constructor() {
+        this.experience = new Experience()
+        this.sizes = this.experience.sizes
+        this.scene = this.experience.scene
+        this.canvas = this.experience.canvas
+
+        this.setInstance()
+        this.setControls()
+    }
+
+    setInstance() {
+        this.instance = new THREE.PerspectiveCamera(
+            35,
+            this.sizes.width / this.sizes.height,
+            0.1,
+            100
+        )
+        this.instance.position.set(6, 4, 8)
+        this.scene.add(this.instance)
+    }
+
+    setControls() {
+        this.controls = new OrbitControls(this.instance, this.canvas)
+        this.controls.enableDamping = true
+    }
+
+    resize() {
+        this.instance.aspect = this.sizes.width / this.sizes.height
+        this.instance.updateProjectionMatrix()
+    }
+
+    update() {
+        this.controls.update()
+    }
+}
+```
+
+## 事件驱动模式
+
+资源加载是异步的，模块之间需要通信。使用自定义事件来通知加载完成：
+
+```js
+// 简单的事件发射器
+import EventEmitter from 'events'
+
+export default class Resources extends EventEmitter {
+    constructor(assets) {
+        super()
+        this.items = {}
+        this.toLoad = assets.length
+        this.loaded = 0
+
+        this.setLoaders()
+        this.startLoading(assets)
+    }
+
+    setLoaders() {
+        this.loaders = {
+            gltfLoader: new GLTFLoader(),
+            textureLoader: new THREE.TextureLoader(),
+            cubeTextureLoader: new THREE.CubeTextureLoader()
+        }
+    }
+
+    assetLoaded(asset, file) {
+        this.items[asset.name] = file
+        this.loaded++
+
+        if (this.loaded === this.toLoad) {
+            // 所有资源加载完成，触发事件
+            this.emit('ready')
+        }
+    }
+
+    startLoading(assets) {
+        for (const asset of assets) {
+            switch (asset.type) {
+                case 'gltfModel':
+                    this.loaders.gltfLoader.load(asset.path, (file) => {
+                        this.assetLoaded(asset, file)
+                    })
+                    break
+                case 'texture':
+                    this.loaders.textureLoader.load(asset.path, (file) => {
+                        this.assetLoaded(asset, file)
+                    })
+                    break
+            }
+        }
+    }
+}
+```
+
+### 在 World 中监听事件
+
+```js
+// World.js
+export default class World {
+    constructor() {
+        this.experience = new Experience()
+        this.resources = this.experience.resources
+
+        // 等待资源加载完成
+        this.resources.on('ready', () => {
+            this.floor = new Floor()
+            this.fox = new Fox()
+            this.environment = new Environment()
+        })
+    }
+
+    update() {
+        if (this.fox) this.fox.update()
+    }
+}
+```
+
+## 关键原则
+
+1. **单例** — Experience 类只创建一个实例，其他模块通过构造函数获取
+2. **事件驱动** — 用事件通知资源加载完成，避免回调地狱
+3. **模块化** — 每个类只负责一个功能（单一职责原则）
+4. **懒加载** — 资源按需加载，加载完成后通知相关模块
+5. **不要过度工程化** — 小型项目简单的模块拆分就够了
+
+:::tip
+Node.js 内置的 `events` 模块可以直接使用（因为我们在 Vite 环境中）。如果你不想依赖它，也可以自己实现一个简单的事件系统。
+:::
+
+## 参考链接
+
+- [Three.js 官方示例 — Miscellaneous / Animation / Characters](https://threejs.org/examples/#misc_animation_characters)
+- [JavaScript 模块化 — MDN](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Guide/Modules)

@@ -1,0 +1,219 @@
+---
+title: 32 咖啡烟雾着色器
+description: 使用粒子系统和噪声纹理创建逼真的咖啡烟雾效果
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 概述
+
+本课创建一个从咖啡杯中升起的烟雾效果。这是一个很好的着色器练习，综合运用了顶点着色器（粒子运动）和片元着色器（柔和外观），同时还引入了一个重要的性能优化技巧——用噪声纹理替代噪声函数。
+
+:::tip
+在片元着色器中直接调用 Perlin 噪声函数对性能非常不利——每个片元都要执行大量噪声计算代码。大多数游戏引擎（以及 Web 端）都使用预计算的噪声纹理来替代，性能远优于函数计算。
+:::
+
+
+<LessonPreview lesson="32-coffee-smoke-shader" />
+
+## 噪声纹理 vs 噪声函数
+
+| 方式 | 性能 | 灵活性 | 适用场景 |
+|------|------|--------|---------|
+| 噪声函数（GLSL 代码） | 差（每个片元大量计算） | 高（可以动态调整参数） | 顶点着色器中少量使用 |
+| 噪声纹理（预计算图片） | 好（GPU 硬件加速纹理采样） | 中（需要预生成纹理） | 片元着色器中大量使用 |
+
+课程使用了一张 128x128 的 Perlin 噪声纹理。你可以通过以下方式获取或创建噪声纹理：
+
+- [NoiseTextureGen](https://www.noisetexturegenerator.com/) — 在线生成器，可调分辨率和细节
+- [Poly Haven Textures](https://polyhaven.com/textures) — 提供各种预制作纹理
+- [SVG Noise Tool](https://www.svgbackgrounds.com/) — 基于 SVG 的噪声生成
+- Photoshop 滤镜 — 滤镜 > 渲染 > 云彩/分层云彩
+- Figma 插件 — 安装噪声生成插件直接在 Figma 中创建
+
+:::tip
+噪声纹理不需要太大。128x128 甚至 64x64 就足够了，因为在着色器中我们会对它进行采样和插值，GPU 的双线性过滤会让它看起来很平滑。
+:::
+
+## 粒子系统设置
+
+```js
+const count = 500
+const positions = new Float32Array(count * 3)
+const scales = new Float32Array(count)
+const randoms = new Float32Array(count)
+
+for (let i = 0; i < count; i++) {
+    positions[i * 3]     = (Math.random() - 0.5) * 0.5   // X：在杯口范围内随机分布
+    positions[i * 3 + 1] = Math.random() * 2              // Y：从 0 到 2 的高度
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 0.5   // Z：在杯口范围内随机分布
+
+    scales[i] = Math.random()     // 粒子大小随机
+    randoms[i] = Math.random()    // 生命周期随机偏移
+}
+
+geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+geometry.setAttribute('aScale', new THREE.BufferAttribute(scales, 1))
+geometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1))
+```
+
+每个粒子有两个自定义 attribute：
+- `aScale` — 控制粒子的大小（每个粒子大小不同）
+- `aRandom` — 控制生命周期的随机偏移（避免所有粒子同步运动）
+
+## 顶点着色器
+
+顶点着色器实现粒子的**上升、扩散和淡出**：
+
+```glsl
+uniform float uTime;
+uniform float uPixelRatio;
+attribute float aScale;
+attribute float aRandom;
+varying float vAlpha;
+
+void main() {
+    vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+
+    // === 上升运动（循环） ===
+    float progress = fract(uTime * 0.5 + aRandom * 2.0) / 2.0;
+    modelPosition.y += fract(uTime * 0.5 + aRandom * 2.0);
+
+    // === 水平扩散 ===
+    // 进度越大（粒子越高），扩散越明显
+    modelPosition.x += sin(uTime + aRandom * 6.28) * progress * 0.5;
+    modelPosition.z += cos(uTime + aRandom * 6.28) * progress * 0.5;
+
+    vec4 viewPosition = viewMatrix * modelPosition;
+    gl_Position = projectionMatrix * viewPosition;
+
+    // 粒子大小
+    gl_PointSize = uPixelRatio * 50.0 * aScale * (1.0 / -viewPosition.z);
+
+    // 淡出：越高的粒子越透明
+    vAlpha = 1.0 - progress;
+}
+```
+
+### 关键机制解析
+
+#### 循环运动
+
+```glsl
+modelPosition.y += fract(uTime * 0.5 + aRandom * 2.0);
+```
+
+- `fract(x)` 返回 `x - floor(x)`，即小数部分，范围 `[0.0, 1.0)`
+- `uTime * 0.5` 控制上升速度
+- `+ aRandom * 2.0` 让每个粒子有不同的起始时间偏移
+- 效果：粒子从底部（y=0）上升到顶部（y=1），然后重新从底部开始——形成连续不断的烟雾流
+
+#### 水平扩散
+
+```glsl
+float progress = fract(uTime * 0.5 + aRandom * 2.0) / 2.0;
+modelPosition.x += sin(uTime + aRandom * 6.28) * progress * 0.5;
+modelPosition.z += cos(uTime + aRandom * 6.28) * progress * 0.5;
+```
+
+- `progress` 表示粒子在生命周期中的位置（0 = 刚开始，0.5 = 中间）
+- `sin` 和 `cos` 用不同的相位让 X 和 Z 方向的运动不同步，产生自然的蛇形轨迹
+- `* progress` 让扩散随高度增大——越高的烟雾越分散
+
+#### 淡出
+
+```glsl
+vAlpha = 1.0 - progress;
+```
+
+粒子刚产生时完全不透明（`alpha = 1.0`），到达顶部时完全透明（`alpha = 0.0`）。
+
+## 片元着色器
+
+```glsl
+varying float vAlpha;
+
+void main() {
+    // 圆形裁剪
+    float dist = length(gl_PointCoord - vec2(0.5));
+    if (dist > 0.5) discard;
+
+    // 柔和边缘衰减
+    float strength = 1.0 - (dist * 2.0);
+    strength = pow(strength, 2.0);
+
+    // 烟雾颜色（浅灰色）+ 透明度
+    gl_FragColor = vec4(vec3(0.95), strength * vAlpha * 0.5);
+}
+```
+
+**与银河片元着色器的对比：**
+
+| 方面 | 银河（第 30 课） | 咖啡烟雾（本课） |
+|------|----------------|----------------|
+| 边缘衰减指数 | `pow(strength, 1.5)` | `pow(strength, 2.0)` |
+| 最终透明度 | `strength`（较亮） | `strength * vAlpha * 0.5`（更柔和） |
+| 颜色 | `vColor`（多色） | `vec3(0.95)`（单色灰白） |
+
+`pow(strength, 2.0)` 产生更柔和的衰减曲线（烟雾边缘比银河更模糊），最终乘以 `0.5` 让整体更加通透。
+
+## 渲染设置
+
+```js
+const material = new THREE.ShaderMaterial({
+    vertexShader,
+    fragmentShader,
+    uniforms: {
+        uTime: { value: 0 },
+        uPixelRatio: { value: renderer.getPixelRatio() }
+    },
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+})
+```
+
+**关键属性说明：**
+
+- `transparent: true` — 启用透明度支持，否则 `gl_FragColor` 的 alpha 值会被忽略
+- `depthWrite: false` — 禁用深度写入。如果开启，前面的烟雾粒子会阻挡后面的，导致透明效果不正确
+- `blending: THREE.AdditiveBlending` — 加法混合模式，粒子重叠时颜色值相加，看起来更亮。这模拟了烟雾透光的效果
+
+:::tip
+`AdditiveBlending` 的效果是 `最终颜色 = 源颜色 + 目标颜色`。对于烟雾来说，多个粒子重叠的区域会更亮，模拟了光线穿过更多烟雾时被散射的效果。这正是烟雾看起来"通透"的原因。
+:::
+
+## 进阶：使用噪声纹理
+
+要使用噪声纹理替代噪声函数，可以这样做：
+
+```glsl
+// 片元着色器
+uniform sampler2D uNoiseTexture;
+varying vec2 vUv;
+
+void main() {
+    // 从噪声纹理采样
+    float noise = texture2D(uNoiseTexture, vUv).r;
+    // 使用噪声值调整透明度
+    // ...
+}
+```
+
+```js
+// JavaScript 中加载噪声纹理
+const textureLoader = new THREE.TextureLoader()
+const noiseTexture = textureLoader.load('/textures/perlinNoise.png')
+material.uniforms.uNoiseTexture = { value: noiseTexture }
+```
+
+这种方法在片元着色器中只需要一次纹理采样（一条指令），远比执行完整的 Perlin 噪声函数高效。
+
+## 关键技术总结
+
+- **循环粒子** — `fract()` 让粒子到达顶部后自动重置到底部
+- **随机偏移** — `aRandom` attribute 避免所有粒子同步运动
+- **渐进扩散** — 扩散量与生命周期进度成正比
+- **柔和衰减** — `pow()` 指数控制边缘的柔化程度
+- **噪声纹理** — 用纹理采样替代噪声函数，大幅提升性能

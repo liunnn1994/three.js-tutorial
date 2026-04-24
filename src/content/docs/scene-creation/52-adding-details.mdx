@@ -1,0 +1,513 @@
+---
+title: 52 添加场景细节
+description: 通过背景色、萤火虫粒子和传送门着色器为场景注入生命力
+---
+
+## 概述
+
+前面两节课我们已经完成了 3D 场景的创建（Blender）和导入（Three.js）。场景虽然能正确显示，但看起来像一个冰冷的技术演示——黑色背景、没有动态元素、缺少氛围。这节课的目标是把场景从一个"能跑起来的模型"变成一个"有沉浸感的体验"。
+
+我们将依次完成三件事：
+
+1. 把黑色背景换成深褐色，营造夜间氛围
+2. 添加萤火虫粒子系统，让场景充满生命感
+3. 将传送门光源从纯色平面升级为动态着色器效果
+
+整个过程会反复用到 `lil-gui` 来实时调节参数，这也是真实项目中调试视觉效果的必备工作流。
+
+## 背景颜色
+
+### 问题
+
+Three.js 渲染器的默认清除色是纯黑色（`0x000000`）。在大多数场景中，纯黑背景会让物体看起来像"飘在虚空中"，缺乏沉浸感。对于夜间室内场景，我们需要一种更自然的暗色调。
+
+### 解决方案
+
+使用 `renderer.setClearColor()` 设置一个深褐色背景：
+
+```js
+renderer.setClearColor(new THREE.Color('#110e0b'), 1)
+```
+
+`setClearColor()` 接收两个参数：
+- **颜色**：一个 `THREE.Color` 对象（支持 hex 字符串如 `'#110e0b'`，也支持十六进制数值如 `0x110e0b`）
+- **透明度**：`1` 表示完全不透明（默认值）
+
+### 与 lil-gui 联动
+
+我们希望能在调试面板中实时改变背景色，而不是每次都改代码重新运行。lil-gui 提供了 `.addColor()` 方法来创建颜色选择器：
+
+```js
+const debugObject = {
+    clearColor: '#110e0b'
+}
+
+gui.addColor(debugObject, 'clearColor')
+    .onChange((value) => {
+        renderer.setClearColor(new THREE.Color(value), 1)
+    })
+```
+
+关键点在于 `.onChange()` 回调。lil-gui 本身不知道渲染器的存在，它只负责管理数据（`debugObject.clearColor`）。我们需要在回调中手动将新颜色同步到渲染器：
+
+- 当用户在 GUI 中拖动颜色选择器时，lil-gui 更新 `debugObject.clearColor`
+- `.onChange()` 触发，将新值传给 `renderer.setClearColor()`
+- 下一帧渲染时，新背景色就会生效
+
+:::tip
+始终将 GUI 的数据存储在一个普通对象（如 `debugObject`）中，而不是直接操作 Three.js 对象。这种间接层让你可以随时替换底层实现，而 GUI 代码不需要改动。
+:::
+
+## 萤火虫粒子系统
+
+粒子系统是 3D 场景中营造氛围最常用的手段之一。我们将创建一组随机分布的萤火虫粒子，让它们在场景中缓慢漂浮闪烁。
+
+### 为什么不用普通 Mesh
+
+你可能会想：为什么不创建几百个小球 Mesh 来模拟萤火虫？答案是**性能**。每个 Mesh 都是一次独立的绘制调用（draw call），几百个球意味着几百次绘制调用，会严重拖慢帧率。
+
+粒子系统使用 `THREE.Points`，它可以在**一次绘制调用**中渲染成千上万个点。这是 GPU 批量渲染的经典应用。
+
+### 创建自定义 BufferGeometry
+
+与内置几何体（`BoxGeometry`、`SphereGeometry` 等）不同，粒子需要完全自定义的顶点数据。我们使用 `THREE.BufferGeometry` 从零开始构建：
+
+```js
+// 1. 创建空的 BufferGeometry
+const firefliesGeometry = new THREE.BufferGeometry()
+
+// 2. 定义粒子数量
+const firefliesCount = 30
+
+// 3. 创建位置数组：每个粒子需要 3 个值（x, y, z）
+const positionsArray = new Float32Array(firefliesCount * 3)
+
+// 4. 创建缩放数组：每个粒子只需 1 个值
+const scalesArray = new Float32Array(firefliesCount)
+
+// 5. 用循环填充随机数据
+for (let i = 0; i < firefliesCount; i++) {
+    // 位置：在场景范围内随机分布
+    positionsArray[i * 3 + 0] = (Math.random() - 0.5) * 4  // x
+    positionsArray[i * 3 + 1] = Math.random() * 1.5        // y
+    positionsArray[i * 3 + 2] = (Math.random() - 0.5) * 4  // z
+
+    // 缩放：每个粒子一个随机大小因子
+    scalesArray[i] = Math.random()
+}
+```
+
+:::info
+**理解 Float32Array 的索引规则**
+
+`Float32Array` 是 JavaScript 的类型化数组，每个元素占 4 字节，存储一个 32 位浮点数。对于位置数据，每 3 个连续元素代表一个顶点的 `(x, y, z)`：
+
+```
+索引:   0    1    2    3    4    5    6    7    8   ...
+数据: [x0, y0, z0, x1, y1, z1, x2, y2, z2, ...]
+粒子:  #0            #1            #2
+```
+
+所以第 `i` 个粒子的 x 坐标在索引 `i * 3 + 0`，y 在 `i * 3 + 1`，z 在 `i * 3 + 2`。
+
+对于缩放数据，每个粒子只需要一个值，所以第 `i` 个粒子的缩放在索引 `i`：
+```
+索引:   0      1      2     ...
+数据: [s0,   s1,   s2,  ...]
+粒子:  #0    #1    #2
+```
+:::
+
+### 将数据绑定到几何体
+
+创建好数组后，需要用 `setAttribute()` 将它们关联为几何体的属性（attribute）：
+
+```js
+firefliesGeometry.setAttribute(
+    'position',
+    new THREE.BufferAttribute(positionsArray, 3)
+)
+
+firefliesGeometry.setAttribute(
+    'aScale',
+    new THREE.BufferAttribute(scalesArray, 1)
+)
+```
+
+- `'position'` 是 Three.js 内置的属性名，渲染器会自动读取它来决定每个点的位置
+- `'aScale'` 是自定义属性名。按照惯例，自定义属性使用 `a` 前缀以避免与内置名称冲突（Three.js 有 `position`、`normal`、`uv` 等内置属性）
+
+:::caution
+**不要重用 Three.js 内置属性名作为自定义属性。** 如果你在 `ShaderMaterial` 中创建名为 `color`、`uv` 或 `normal` 的 attribute，可能会与 Three.js 内部逻辑冲突，导致难以排查的 bug。始终使用 `a` 前缀命名自定义属性，如 `aScale`、`aColor`、`aUv`。
+:::
+
+### PointsMaterial 基础版本
+
+在编写自定义着色器之前，先用内置的 `PointsMaterial` 验证粒子是否正确显示：
+
+```js
+const firefliesMaterial = new THREE.PointsMaterial({
+    size: 0.1,
+    sizeAttenuation: true,
+    transparent: true,
+    opacity: 0.8,
+    depthWrite: false
+})
+
+const fireflies = new THREE.Points(firefliesGeometry, firefliesMaterial)
+scene.add(fireflies)
+```
+
+参数说明：
+- **size**：每个点的基础大小（单位与场景一致）
+- **sizeAttenuation**：为 `true` 时，远处的点会变小，近处的会变大，符合透视规律
+- **transparent + opacity**：让粒子半透明，看起来更像发光体
+- **depthWrite: false**：禁用深度写入，避免半透明粒子之间互相遮挡产生黑色碎片
+
+:::info
+**为什么透明物体要禁用 depthWrite？**
+
+深度缓冲区（depth buffer）记录每个像素的深度值。当半透明物体写入深度后，它后面的物体即使应该透过它可见，也会被深度测试丢弃。设置为 `false` 可以让后续物体正常渲染到半透明粒子的"后面"。这个技巧适用于所有半透明材质，不仅是粒子。
+:::
+
+## 萤火虫着色器
+
+`PointsMaterial` 渲染出的粒子是**正方形**的。要做出柔和的发光效果，我们需要自定义着色器。这就是 `ShaderMaterial` 发挥作用的地方。
+
+### ShaderMaterial 基础
+
+Three.js 的 `ShaderMaterial` 让你直接编写 GLSL（OpenGL Shading Language）代码来控制顶点和像素的渲染方式。它需要两个核心部分：
+
+- **顶点着色器（vertex shader）**：处理每个顶点的位置和大小
+- **片段着色器（fragment shader）**：处理每个像素的颜色
+
+### 着色器中的坐标系：gl_PointCoord
+
+在粒子着色器中，`gl_PointCoord` 是一个特殊的内置变量，它的值范围是 `[0, 1]`，代表当前像素在粒子点内部的位置：
+
+```
+(0,1) -------- (1,1)
+  |              |
+  |    (0.5,0.5) |   <-- 粒子中心
+  |              |
+(0,0) -------- (1,0)
+```
+
+利用这个坐标，我们可以计算每个像素到粒子中心的距离，从而实现圆形、发光等效果。
+
+### 完整着色器代码
+
+```js
+const firefliesMaterial = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    uniforms: {
+        uTime: { value: 0 },
+        uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+        uSize: { value: 100.0 },
+        uSpeed: { value: 1.0 }
+    },
+    vertexShader: `
+        uniform float uTime;
+        uniform float uPixelRatio;
+        uniform float uSize;
+        uniform float uSpeed;
+
+        attribute float aScale;
+
+        varying float vScale;
+
+        void main() {
+            vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+
+            // 添加微弱的上下浮动
+            modelPosition.y += sin(uTime * uSpeed + modelPosition.x * 2.0) * 0.2;
+
+            vec4 viewPosition = viewMatrix * modelPosition;
+            vec4 projectedPosition = projectionMatrix * viewPosition;
+            gl_Position = projectedPosition;
+
+            // 根据距离计算粒子大小（模拟透视）
+            gl_PointSize = uSize * aScale * uPixelRatio;
+            gl_PointSize *= (1.0 / -viewPosition.z);
+
+            // 传递缩放值给片段着色器
+            vScale = aScale;
+        }
+    `,
+    fragmentShader: `
+        varying float vScale;
+
+        uniform float uTime;
+
+        void main() {
+            // 计算像素到粒子中心的距离
+            float distanceToCenter = distance(gl_PointCoord, vec2(0.5));
+
+            // 用平滑的指数衰减创建发光效果
+            float strength = 0.05 / distanceToCenter - 0.1;
+
+            // 添加闪烁效果
+            float flicker = sin(uTime * 2.0 + vScale * 10.0) * 0.5 + 0.5;
+            strength *= flicker;
+
+            // 颜色
+            vec3 color = vec3(1.0, 0.7, 0.3); // 暖黄色
+
+            gl_FragColor = vec4(color, strength);
+        }
+    `
+})
+```
+
+### 逐行解析顶点着色器
+
+```glsl
+uniform float uTime;          // 从 JS 传入的累计时间
+uniform float uPixelRatio;    // 设备像素比
+uniform float uSize;          // 粒子基础大小
+uniform float uSpeed;         // 动画速度
+
+attribute float aScale;       // 每个粒子的随机缩放值（来自 BufferGeometry）
+```
+
+`uniform` 是对所有顶点/像素都相同的值（由 JavaScript 设置），`attribute` 是每个顶点不同的值（来自几何体数据）。
+
+```glsl
+vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+```
+
+将顶点从**模型空间**（局部坐标）转换到**世界空间**。`modelMatrix` 由 Three.js 自动提供，包含了物体的位移、旋转和缩放信息。
+
+```glsl
+modelPosition.y += sin(uTime * uSpeed + modelPosition.x * 2.0) * 0.2;
+```
+
+用正弦函数为每个粒子添加上下浮动。`modelPosition.x * 2.0` 让相邻的粒子有不同的相位，避免所有粒子同步移动——这看起来更自然。
+
+```glsl
+vec4 viewPosition = viewMatrix * modelPosition;
+vec4 projectedPosition = projectionMatrix * viewPosition;
+gl_Position = projectedPosition;
+```
+
+标准的 MVP（Model-View-Projection）变换链：世界空间 -> 视图空间（相机空间） -> 裁剪空间（屏幕空间）。`gl_Position` 是顶点着色器的输出，决定了顶点在屏幕上的最终位置。
+
+```glsl
+gl_PointSize = uSize * aScale * uPixelRatio;
+gl_PointSize *= (1.0 / -viewPosition.z);
+```
+
+`gl_PointSize` 设置粒子的屏幕像素大小。公式分解：
+- `uSize`：基础大小
+- `aScale`：每个粒子的随机大小变化
+- `uPixelRatio`：确保在高 DPI 屏幕（如 Retina）上粒子不会太小
+- `1.0 / -viewPosition.z`：手动实现透视缩放——z 值越小（越远），粒子越小
+
+:::info
+**viewPosition.z 为什么是负值？**
+
+在 Three.js 的视图空间中，相机朝向 -Z 方向看。所以物体在相机前方时 `viewPosition.z` 是负数，距离越远负值越小（如 -1, -2, -5...）。取倒数 `1.0 / -viewPosition.z` 就能把"远"映射为"小"。
+:::
+
+### 逐行解析片段着色器
+
+```glsl
+float distanceToCenter = distance(gl_PointCoord, vec2(0.5));
+```
+
+`gl_PointCoord` 的 `(0.5, 0.5)` 就是粒子的中心。`distance()` 函数计算当前像素到中心的距离，结果范围约 `[0, 0.5]`（从中心到角落最远约 0.707，到边中点最远 0.5）。
+
+```glsl
+float strength = 0.05 / distanceToCenter - 0.1;
+```
+
+这是创建发光效果的核心公式。用反比例函数 `1/x` 让中心最亮、边缘迅速衰减。减去 `0.1` 让外圈完全透明，形成圆形发光点。
+
+```glsl
+float flicker = sin(uTime * 2.0 + vScale * 10.0) * 0.5 + 0.5;
+strength *= flicker;
+```
+
+用正弦波叠加每个粒子独有的 `vScale` 偏移，让每只萤火虫以不同节奏闪烁。`* 0.5 + 0.5` 将 `[-1, 1]` 的正弦输出映射到 `[0, 1]`。
+
+### Additive Blending
+
+注意材质中设置了 `blending: THREE.AdditiveBlending`。加法混合（Additive Blending）将粒子的颜色**叠加**到背景上，而不是**覆盖**它。效果是：
+
+- 粒子重叠处会变得更亮（颜色相加）
+- 粒子边缘会自然融入背景
+
+这对发光效果至关重要。如果你用默认的 Normal Blending，粒子就是一块一块的圆形色块，不会有发光感。
+
+### 在动画循环中更新 uniform
+
+着色器中的 `uTime` 需要在每帧更新：
+
+```js
+const clock = new THREE.Clock()
+
+const tick = () => {
+    const elapsedTime = clock.getElapsedTime()
+
+    // 更新萤火虫着色器的时间
+    firefliesMaterial.uniforms.uTime.value = elapsedTime
+
+    renderer.render(scene, camera)
+    requestAnimationFrame(tick)
+}
+
+tick()
+```
+
+:::caution
+**uniform 的 value 类型必须匹配。** 如果 GLSL 中声明为 `float`，JavaScript 中也要用数字类型。如果声明为 `vec3`，要使用 `THREE.Color` 或 `THREE.Vector3`。类型不匹配会导致着色器静默失败，只显示黑屏，且不会有任何错误提示。
+:::
+
+## 传送门着色器
+
+### 从 MeshBasicMaterial 升级
+
+在之前的课程中，传送门光源使用的是 `MeshBasicMaterial`——一个纯色的平面。这看起来就像一块发光的纸板贴在墙上。我们要把它升级为带有动态扭曲效果的着色器。
+
+```js
+// 之前
+const portalLightMaterial = new THREE.MeshBasicMaterial({
+    color: '#f9d784'
+})
+
+// 之后
+const portalLightMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+        uTime: { value: 0 },
+        uColor: { value: new THREE.Color('#f9d784') }
+    },
+    vertexShader: `
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        uniform float uTime;
+        uniform vec3 uColor;
+        varying vec2 vUv;
+
+        void main() {
+            vec2 center = vec2(0.5);
+            float dist = distance(vUv, center);
+
+            // 创建同心圆波纹
+            float wave = sin(dist * 20.0 - uTime * 3.0) * 0.5 + 0.5;
+            wave = pow(wave, 2.0);
+
+            // 中心更亮，边缘更暗
+            float strength = 1.0 - smoothstep(0.0, 0.5, dist);
+            strength *= wave;
+
+            gl_FragColor = vec4(uColor * strength, strength);
+        }
+    `,
+    side: THREE.DoubleSide
+})
+```
+
+### 解析传送门着色器
+
+顶点着色器很简单——传递 UV 坐标并完成标准变换。核心逻辑在片段着色器中：
+
+1. **计算到中心的距离**：`distance(vUv, center)` — UV 坐标范围是 `[0, 1]`，所以中心在 `(0.5, 0.5)`
+2. **波纹效果**：`sin(dist * 20.0 - uTime * 3.0)` — 在距离上叠加正弦波，减去 `uTime` 让波纹向外扩散
+3. **平滑衰减**：`smoothstep(0.0, 0.5, dist)` — 让亮度从中心到边缘平滑过渡到 0
+4. **`pow(wave, 2.0)`**：让波纹的亮区更集中，暗区更暗，增强对比
+
+传送门着色器使用的是 `vUv`（UV 坐标）而非 `gl_PointCoord`，因为传送门是一个 Mesh（面片），不是粒子点。UV 坐标描述的是纹理在模型表面的映射位置。
+
+:::tip
+**gl_PointCoord vs UV 的区别**
+
+- `gl_PointCoord`：仅在粒子着色器（`Points`）中可用。描述像素在单个**点**内部的位置，范围 `[0, 1]`
+- `uv`（通过 varying 传递的 `vUv`）：在普通 Mesh 着色器中使用。描述像素在**几何体表面**的纹理坐标，范围取决于模型的 UV 展开
+
+两者数值范围可能相同，但含义完全不同。
+:::
+
+## GUI 调试控制
+
+将所有可调参数集中到 GUI 中，方便实时调试：
+
+```js
+const gui = new lil.GUI({ title: '场景调试', width: 300 })
+
+// 背景色
+gui.addColor(debugObject, 'clearColor')
+    .onChange((value) => {
+        renderer.setClearColor(new THREE.Color(value), 1)
+    })
+
+// 萤火虫参数
+const firefliesFolder = gui.addFolder('萤火虫')
+firefliesFolder.add(firefliesMaterial.uniforms.uSize, 'value')
+    .min(10).max(300).step(1).name('大小')
+firefliesFolder.add(firefliesMaterial.uniforms.uSpeed, 'value')
+    .min(0.1).max(5).step(0.1).name('速度')
+firefliesFolder.close()
+
+// 传送门参数
+const portalFolder = gui.addFolder('传送门')
+portalFolder.add(portalLightMaterial.uniforms.uTime, 'value')
+    .min(0).max(10).step(0.01).name('时间')
+portalFolder.close()
+```
+
+### 直接绑定 uniform 的 value
+
+注意这段写法：
+
+```js
+firefliesFolder.add(firefliesMaterial.uniforms.uSize, 'value')
+```
+
+我们没有使用中间变量，而是直接把 GUI 绑定到 `uniforms.uSize.value` 上。因为 lil-gui 的 `.add()` 会直接修改对象属性，而着色器每帧读取的正是这个 `.value`，所以改变会自动反映到渲染中，不需要额外的 `.onChange()` 回调。
+
+:::warning
+**GUI 中不要绑定传送门的 `uTime`**
+
+上面的代码中，传送门的 `uTime` 也被加入了 GUI，但这仅用于调试。在实际的 `tick` 循环中，`uTime` 应该由 `clock.getElapsedTime()` 自动更新，而不是手动拖动。调试完毕后记得从 GUI 中移除手动时间控制。
+:::
+
+## 性能注意事项
+
+### 粒子数量选择
+
+萤火虫场景中我们只用了 30 个粒子，因为每只萤火虫都有独立的着色器计算。对于简单发光点，30-50 个已经足够。如果需要成千上万的粒子（如星空、尘埃），建议：
+
+- 使用 `PointsMaterial`（无需逐粒子自定义着色器时更快）
+- 考虑使用纹理贴图代替着色器计算（CPU/GPU 开销更小）
+- 对于超大规模（100,000+），考虑使用 `InstancedMesh` 或 GPU 粒子系统
+
+### 着色器性能
+
+片段着色器中的 `distance()`、`sin()`、`pow()` 都是逐像素执行的。在一个全屏的传送门面片上，这意味着每帧要执行数十万次这些计算。如果发现帧率下降，可以：
+
+- 减少传送门面片的面数（使用更少的三角形）
+- 简化着色器中的数学运算
+- 在片段着色器中使用 `discard` 提前退出不需要的像素
+
+### depthWrite 与半透明
+
+所有使用 `transparent: true` 的材质都应考虑设置 `depthWrite: false`。这节课中的两种材质（萤火虫和传送门）都做了这个设置。如果你发现半透明物体之间出现奇怪的遮挡关系，第一步就是检查这个属性。
+
+## 完整流程总结
+
+1. **设置背景色**：用 `renderer.setClearColor()` 替换黑色背景，通过 GUI 颜色选择器实时调节
+2. **创建萤火虫粒子**：手动构建 `BufferGeometry`，用 `Float32Array` 填充位置和缩放数据
+3. **编写萤火虫着色器**：利用 `gl_PointCoord` 创建发光圆形，用正弦波驱动闪烁和浮动
+4. **编写传送门着色器**：用 UV 坐标和正弦波创建扩散的同心圆波纹效果
+5. **GUI 调试**：将所有参数暴露到 lil-gui，实时微调直到满意
+
+:::tip
+在开发着色器时，先从最简单的效果开始（比如纯色输出），确认管线没有问题后，再逐步添加复杂度。着色器调试困难，因为没有 `console.log`——如果黑屏了，先简化到最简版本，再一步步加回逻辑。
+:::

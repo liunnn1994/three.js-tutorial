@@ -1,0 +1,577 @@
+---
+title: 12 3D 文字
+description: 从零开始学习如何使用 FontLoader 加载字体和 TextGeometry 创建 3D 立体文字，包含完整的参数详解、性能优化和甜甜圈装饰实例
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 为什么 3D 文字和 HTML 文字不同？
+
+如果你之前做过网页开发，可能觉得"显示一段文字"很简单——一个 `<h1>` 标签就搞定了。但在 3D 世界中，文字是完全不同的东西：
+
+| | HTML 文字 | 3D 文字 |
+|--|----------|---------|
+| 本质 | 浏览器渲染的 2D 文本 | 由三角形面片组成的 3D 几何体 |
+| 光照 | 不受光 | 受光照影响（如果材质需要） |
+| 交互 | 可以选中、复制 | 只是几何体，不能选中 |
+| 旋转 | 只能 2D 变换 | 可以 360 度旋转查看 |
+| 性能 | 极快 | 有一定开销（取决于复杂度） |
+
+简单来说，3D 文字**不是真正的"文字"**，而是根据字体的轮廓**挤出的 3D 几何体**。正因为如此，创建 3D 文字比 HTML 文字复杂得多——你需要加载特定的字体文件、创建几何体、设置材质，然后才能看到效果。
+
+本课的最终目标：在场景中央创建一个大的 3D 文字，并在周围散布许多甜甜圈作为装饰，效果类似 [Elithia 的作品集](https://elythia.me/)。
+
+---
+
+
+<LessonPreview lesson="12-3d-text" />
+
+## 字体文件和 Three.js 兼容格式
+
+Three.js 不能直接使用你电脑上的 `.ttf` 或 `.otf` 字体文件。它需要一种特殊的格式叫 **Typeface JSON**（文件扩展名为 `.typeface.json`）。
+
+### 如何获得 Typeface JSON 字体？
+
+有三种方式：
+
+**方式一：从 Three.js 自带字体中获取**
+
+Three.js 的 npm 包中包含了一些开源字体：
+
+```
+node_modules/three/examples/fonts/
+├── helvetiker_bold.typeface.json
+├── helvetiker_regular.typeface.json
+├── optimer_bold.typeface.json
+├── optimer_regular.typeface.json
+├── gentilis_bold.typeface.json
+└── gentilis_regular.typeface.json
+```
+
+你可以直接复制到项目的 `static/fonts/` 文件夹中使用。
+
+**方式二：使用 facetype.js 在线转换**
+
+访问 [facetype.js](https://gero3.github.io/facetype.js/)，上传你自己的 `.ttf` 或 `.otf` 字体文件，它会自动转换成 Three.js 兼容的 `.typeface.json` 格式。
+
+:::warning 版权提醒
+你不能随便使用别人的字体。确保你有使用该字体的合法权利。个人项目可能没什么问题，但商业项目一定要确认字体许可证。
+:::
+
+**方式三：直接 import 内联使用**
+
+如果你使用 Vite 或 webpack 等打包工具，可以直接 import 字体文件，不需要通过 HTTP 加载：
+
+```js
+import typefaceFont from 'three/examples/fonts/helvetiker_regular.typeface.json'
+const font = fontLoader.parse(typefaceFont)
+```
+
+### 本课的做法
+
+我们将字体文件放在 `static/fonts/` 目录下，然后使用 `FontLoader` 通过 HTTP 加载。这样做虽然比直接 import 多一步，但可以练习异步加载资源的流程。
+
+---
+
+## FontLoader 详解
+
+`FontLoader` 是 Three.js 专门用来加载字体文件的类。它的工作方式和 `TextureLoader` 有一个**关键区别**：
+
+```js
+import { FontLoader } from 'three/addons/loaders/FontLoader.js'
+
+const fontLoader = new FontLoader()
+
+// TextureLoader 是同步返回的：
+// const texture = textureLoader.load('/textures/xxx.jpg')  // texture 立即可用
+
+// FontLoader 是异步回调的：
+fontLoader.load(
+    '/fonts/helvetiker_regular.typeface.json',  // 字体文件的路径
+    (font) => {
+        // 字体加载完成后，在这个回调中才能拿到 font 对象
+        console.log('字体加载完成:', font)
+    },
+    // (undefined) => { /* onProgress 回调 */ },  // 加载进度（可选）
+    // (error) => { /* onError 回调 */ }          // 加载失败（可选）
+)
+```
+
+:::danger FontLoader vs TextureLoader 的区别
+`TextureLoader.load()` 会**同步返回**一个 texture 对象，你可以立即使用。但 `FontLoader.load()` **不会返回 font 对象**，你必须使用**回调函数**来接收加载完成的字体。这意味着所有依赖字体的代码（创建文字几何体、材质、网格等）都必须写在回调函数**内部**。
+:::
+
+:::tip 一个 FontLoader 可以加载多个字体
+你只需要创建一个 `fontLoader` 实例，就可以多次调用 `.load()` 来加载不同的字体。不需要为每个字体都 new 一个 FontLoader。
+:::
+
+### 常见错误排查
+
+如果字体没有加载出来，请检查以下几点：
+
+1. **路径是否正确**：路径从 `static/` 文件夹内部开始算，确保拼写无误
+2. **文件名是否正确**：注意 `helvetiker_regular` 和 `helvetiker_bold` 是不同的文件
+3. **查看浏览器控制台**：如果有 404 错误，说明路径或文件名有误
+4. **检查回调是否触发**：在回调函数里加一个 `console.log('font loaded')` 来确认
+
+---
+
+## TextGeometry 参数详解
+
+:::info 官方文档
+[TextGeometry](https://threejs.org/docs/#api/en/geometries/TextGeometry) | [ExtrudeGeometry](https://threejs.org/docs/#api/en/geometries/ExtrudeGeometry)（TextGeometry 继承自它）
+:::
+
+```js
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js'
+
+const textGeometry = new TextGeometry('Hello Three.js', {
+    font: font,           // 字体对象（FontLoader 加载后得到的）
+    size: 0.5,            // 文字大小（单位与场景一致）
+    depth: 0.2,           // 挤出深度（文字的"厚度"）
+    curveSegments: 12,    // 曲线细分数（影响圆弧的平滑度）
+    bevelEnabled: true,   // 是否启用倒角（圆滑边缘）
+    bevelThickness: 0.03, // 倒角的厚度（从文字表面向外延伸的深度）
+    bevelSize: 0.02,      // 倒角的大小（从文字边缘向外扩展的宽度）
+    bevelOffset: 0,       // 倒角的偏移量
+    bevelSegments: 5      // 倒角的细分数（影响倒角的平滑度）
+})
+```
+
+### 参数逐一解释
+
+#### `font`（必需）
+由 `FontLoader` 加载得到的字体对象。
+
+#### `size`（默认 100）
+文字的**高度**（字号大小）。这个值是场景中的世界单位。注意：Three.js 文档中的默认值是 100，这在我们的场景中太大了（因为相机距离只有约 3 个单位），所以通常设置为 0.5 左右。
+
+#### `depth`（默认 50）
+文字的**挤出深度**，即文字从前到后的"厚度"。默认值 50 同样太大了，通常设置为 0.1 ~ 0.3。
+
+#### `curveSegments`（默认 12）
+**曲线细分数**。字母中有很多圆弧（如 O、C、S、G），这个参数决定了用多少个直线段来近似这些圆弧。
+- 值越大 → 越平滑 → 三角形越多 → 性能越差
+- 值越小 → 越粗糙（能看到多边形棱角）→ 性能越好
+- **建议值：5 ~ 12**（在默认相机距离下看不出区别就好）
+
+#### `bevelEnabled`（默认 false）
+是否启用**倒角**。倒角会在文字边缘创建一个斜面，让文字看起来更加圆润精致，不会是锐利的 90 度直角。
+
+#### `bevelThickness`（默认 10）
+倒角的**厚度**——从文字正/背面表面向外延伸的深度。
+
+#### `bevelSize`（默认 8）
+倒角的**大小**——从文字边缘轮廓向外扩展的宽度。
+
+#### `bevelOffset`（默认 0）
+倒角的**偏移量**——控制倒角起始位置与轮廓的距离。通常保持为 0。
+
+#### `bevelSegments`（默认 3）
+倒角的**细分数**。影响倒角斜面的平滑度。
+- 值越大 → 倒角越光滑 → 面数越多
+- **建议值：3 ~ 5**（在正常视角下 3 到 5 就够了）
+
+:::warning 官方文档中的默认参数太大了
+Three.js 官方文档示例中 `size` 默认是 100，`depth` 默认是 50，这些数值在你的场景中会创建一个极其巨大的文字。你需要根据相机的距离调整这些值。如果相机距离中心约 3 个单位，`size: 0.5` 和 `depth: 0.2` 是比较合理的起始值。
+:::
+
+---
+
+## 居中文本：为什么需要 `textGeometry.center()`
+
+TextGeometry 创建后，文字的几何中心并不在原点 (0, 0, 0)。文字从左下角开始生成，这意味着大部分文字在正 X 方向，而原点附近可能是空的。
+
+这在实际使用中很麻烦：
+- 如果你想让文字旋转动画，它会绕着左下角的轴旋转，而不是绕中心旋转
+- 如果你想把文字放在场景正中央，你需要手动计算偏移量
+
+下面有**两种居中方法**：
+
+### 方法一：手动使用 BoundingBox（理解原理）
+
+```js
+// 1. 计算边界框
+textGeometry.computeBoundingBox()
+
+// 2. 获取边界框信息
+const box3 = textGeometry.boundingBox
+console.log(box3.min, box3.max) // Box3 不是可见物体，只是数学数据
+
+// 3. 移动几何体的所有顶点使其居中
+textGeometry.translate(
+    -(box3.max.x - box3.min.x) / 2 - (bevelSize * 2) / 2,
+    -(box3.max.y - box3.min.y) / 2 - (bevelSize * 2) / 2,
+    -(box3.max.z - box3.min.z) / 2 - (depth * 2) / 2
+)
+```
+
+这个过程很繁琐，而且需要考虑倒角和深度对边界框的影响。展示这个方法是为了让你理解：
+- **边界框（BoundingBox）**是什么——一个不可见的盒子，代表几何体占据的空间
+- **为什么我们需要它**——Three.js 用它来做**视锥体剔除（Frustum Culling）**（自动跳过摄像机看不到的物体以提升性能）
+- `geometry.translate()` 会移动几何体中**所有顶点**，而不是移动 Mesh
+
+### 方法二：使用 `.center()` 方法（推荐）
+
+```js
+textGeometry.center()
+```
+
+**一行代码搞定。**它会自动计算边界框，然后将所有顶点平移使几何体居中。效果与方法一完全一样，但简单得多。
+
+:::tip 移动几何体 vs 移动 Mesh
+我们选择移动**几何体**（`textGeometry.translate(...)` 或 `textGeometry.center()`）而不是移动 **Mesh**（`text.position.set(...)`），是因为这样 Mesh 的原点就在几何体的中心。当你旋转 Mesh 时，它会绕着自己的中心旋转，而不是绕着某个角落旋转。
+:::
+
+:::info 关于边界框和视锥体剔除
+边界框分为两种：`BoundingBox`（盒形）和 `BoundingSphere`（球形）。Three.js 默认使用球形边界来做**视锥体剔除**——即自动判断哪些物体在摄像机的可视范围内，只渲染可见的物体。如果你的场景有成千上万个物体，这个机制能显著提升性能。
+:::
+
+---
+
+## 完整工作流程
+
+将以上所有知识组合起来，创建 3D 文字的完整步骤是：
+
+```js
+import * as THREE from 'three'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { FontLoader } from 'three/addons/loaders/FontLoader.js'
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js'
+
+// 1. 加载 matcap 纹理
+const textureLoader = new THREE.TextureLoader()
+const matcapTexture = textureLoader.load('textures/matcaps/8.png')
+matcapTexture.colorSpace = THREE.SRGBColorSpace
+
+// 2. 创建 FontLoader（只需要一个实例）
+const fontLoader = new FontLoader()
+
+// 3. 加载字体，在回调中创建所有内容
+fontLoader.load('/fonts/helvetiker_regular.typeface.json', (font) => {
+    // 4. 创建材质
+    const material = new THREE.MeshMatcapMaterial({ matcap: matcapTexture })
+
+    // 5. 创建文字几何体
+    const textGeometry = new TextGeometry('Hello Three.js', {
+        font: font,
+        size: 0.5,
+        depth: 0.2,
+        curveSegments: 5,
+        bevelEnabled: true,
+        bevelThickness: 0.03,
+        bevelSize: 0.02,
+        bevelOffset: 0,
+        bevelSegments: 4
+    })
+
+    // 6. 居中文字
+    textGeometry.center()
+
+    // 7. 创建 Mesh 并添加到场景
+    const text = new THREE.Mesh(textGeometry, material)
+    scene.add(text)
+
+    // 8. 创建装饰物体（见下一节）
+    // ...
+})
+```
+
+:::tip 为什么选择 MeshMatcapMaterial？
+使用 Matcap 材质有三大好处：
+1. **不需要灯光**——场景更简单
+2. **性能极好**——比 PBR 材质快得多
+3. **效果漂亮**——看起来像有真实光照和反射
+
+对于这种文字+装饰物的场景，Matcap 是最佳选择。
+:::
+
+---
+
+## Matcap 纹理详解
+
+Matcap（Material Capture）是一种特殊的球体参考图片，在上一课中我们已经详细介绍过。在这里补充一些实际使用的建议。
+
+### Matcap 资源
+
+- **在线 Matcap 库**：搜索 "matcap library" 或 "matcap generator"，有数百个免费资源
+- **项目自带**：在 `static/textures/matcaps/` 目录下提供了 8 个 matcap 纹理（1.png ~ 8.png），可以直接切换尝试
+
+### 使用注意
+
+```js
+const matcapTexture = textureLoader.load('textures/matcaps/8.png')
+matcapTexture.colorSpace = THREE.SRGBColorSpace  // 务必设置！
+```
+
+Matcap 的光照是固定的——始终跟随相机。旋转相机时阴影和反射会跟着移动。如果你需要真正的动态光照，应该使用 `MeshStandardMaterial` 而不是 `MeshMatcapMaterial`。
+
+---
+
+## 甜甜圈练习：生成随机位置和旋转
+
+在文字创建完成后，我们在周围添加许多小的甜甜圈作为装饰。这是一个非常好的练习，涉及几何体复用、随机位置、旋转和缩放。
+
+### 基础版本（未优化）
+
+```js
+for (let i = 0; i < 100; i++) {
+    // 每次循环都创建新的几何体和材质（性能差！）
+    const donutGeometry = new THREE.TorusGeometry(0.3, 0.2, 32, 64)
+    const donutMaterial = new THREE.MeshMatcapMaterial({ matcap: matcapTexture })
+
+    const donut = new THREE.Mesh(donutGeometry, donutMaterial)
+
+    // 随机位置
+    donut.position.set(
+        (Math.random() - 0.5) * 10,
+        (Math.random() - 0.5) * 10,
+        (Math.random() - 0.5) * 10
+    )
+
+    // 随机旋转（只需要旋转两个轴就能覆盖所有方向）
+    donut.rotation.set(
+        Math.random() * Math.PI,
+        Math.random() * Math.PI,
+        0
+    )
+
+    // 随机缩放
+    const scale = Math.random()
+    donut.scale.set(scale, scale, scale)
+
+    scene.add(donut)
+}
+```
+
+### 优化版本（推荐）
+
+```js
+fontLoader.load('/fonts/helvetiker_regular.typeface.json', (font) => {
+    const material = new THREE.MeshMatcapMaterial({ matcap: matcapTexture })
+
+    // ... 文字创建代码 ...
+
+    // 关键优化：把几何体和材质放在循环外部！
+    const donutGeometry = new THREE.TorusGeometry(0.3, 0.2, 32, 64)
+
+    for (let i = 0; i < 100; i++) {
+        const donut = new THREE.Mesh(donutGeometry, material) // 复用同一个几何体和材质
+
+        donut.position.set(
+            (Math.random() - 0.5) * 10,
+            (Math.random() - 0.5) * 10,
+            (Math.random() - 0.5) * 10
+        )
+
+        donut.rotation.set(
+            Math.random() * Math.PI,
+            Math.random() * Math.PI,
+            0
+        )
+
+        const scale = Math.random()
+        donut.scale.set(scale, scale, scale)
+
+        scene.add(donut)
+    }
+})
+```
+
+### 性能对比
+
+用 `console.time()` 测试两种方式的性能差异：
+
+| 方式 | 1000 个甜甜圈耗时 |
+|------|-------------------|
+| 每次循环创建新几何体和材质 | ~250ms |
+| 复用同一个几何体和材质 | ~15ms |
+
+**差距高达 16 倍！** 在实际项目中，你可能有成千上万个物体，这种优化是必不可少的。
+
+:::danger 牢记：复用几何体和材质
+**永远不要在循环内部创建几何体和材质。** 将它们放在循环外部，创建一次，然后在循环中只创建 Mesh（`new THREE.Mesh(geometry, material)`）。Mesh 对象本身是很轻量的，创建 1000 个 Mesh 没问题。但 Geometry 和 Material 包含 GPU 缓冲区数据，创建开销很大。
+:::
+
+### 进一步优化：文字和甜甜圈共享材质
+
+在优化版本中，文字和甜甜圈使用的是**同一个材质实例**：
+
+```js
+const material = new THREE.MeshMatcapMaterial({ matcap: matcapTexture })
+
+// 文字使用这个材质
+const text = new THREE.Mesh(textGeometry, material)
+
+// 甜甜圈也使用同一个材质
+const donut = new THREE.Mesh(donutGeometry, material)
+```
+
+这是完全可以的——多个 Mesh 共享同一个材质不会产生任何问题，还能进一步节省内存。
+
+---
+
+## 关键代码知识点详解
+
+### `(Math.random() - 0.5) * 10` 是什么意思？
+
+这是一个生成**对称随机值**的常用技巧：
+
+```js
+Math.random()       // 生成 0 ~ 1 之间的随机数
+Math.random() - 0.5 // 生成 -0.5 ~ 0.5 之间的随机数（以 0 为中心对称）
+(Math.random() - 0.5) * 10  // 生成 -5 ~ 5 之间的随机数
+```
+
+用 `(Math.random() - 0.5) * range` 而不是 `Math.random() * range - range / 2`，因为前者更直观——你先得到一个 [-0.5, 0.5] 的归一化值，然后乘以你想要的范围。
+
+### 旋转为什么只需要两个轴？
+
+```js
+donut.rotation.set(
+    Math.random() * Math.PI,  // X 轴旋转
+    Math.random() * Math.PI,  // Y 轴旋转
+    0                         // Z 轴设为 0
+)
+```
+
+理论上旋转有 3 个自由度（X、Y、Z），但只旋转两个轴（比如 X 和 Y）就已经能覆盖足够多的方向了。而且甜甜圈上下看起来是一样的，所以不需要完整的 360 度 X 轴旋转——`Math.PI`（半圈）就够了。
+
+### 缩放为什么用同一个值？
+
+```js
+const scale = Math.random()  // 只生成一个随机值
+donut.scale.set(scale, scale, scale)  // 三个轴都用同一个值
+```
+
+:::danger 常见错误
+如果你分别设置 X、Y、Z 的缩放值，甜甜圈会被拉伸变形：
+```js
+// 错误做法！甜甜圈会被压扁或拉长
+donut.scale.set(Math.random(), Math.random(), Math.random())
+```
+
+**正确做法**是先生成一个随机值，然后在三个轴上使用相同的值，或者使用 `set()` 方法：
+```js
+const scale = Math.random()
+donut.scale.set(scale, scale, scale)
+// 等价于：
+donut.scale.setScalar(scale)  // 更简洁的写法
+```
+:::
+
+---
+
+## 性能优化总结
+
+| 优化项 | 说明 | 影响 |
+|-------|------|------|
+| 复用几何体 | 把 `TorusGeometry` 放在循环外部 | 减少 GPU 缓冲区创建 |
+| 复用材质 | 文字和甜甜圈共享同一个材质 | 减少着色器编译 |
+| 降低 curveSegments | 从 12 降到 5 | 减少曲线部分的三角形数量 |
+| 降低 bevelSegments | 从 5 降到 4 | 减少倒角部分的三角形数量 |
+| 使用 MeshMatcapMaterial | 不需要计算光照 | 比 PBR 材质快很多 |
+
+:::tip 调试面数的方法
+你可以在浏览器中通过 WebGL 调试工具查看渲染的三角形数量。一个好经验是：在默认相机角度下，如果降低细分参数后看不出视觉区别，就用更低的值。
+:::
+
+---
+
+## 完整代码
+
+```js
+import * as THREE from 'three'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { FontLoader } from 'three/addons/loaders/FontLoader.js'
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js'
+
+// === 场景基础设置 ===
+const canvas = document.querySelector('canvas.webgl')
+const scene = new THREE.Scene()
+
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100)
+camera.position.z = 3
+
+const renderer = new THREE.WebGLRenderer({ canvas })
+renderer.setSize(window.innerWidth, window.innerHeight)
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+const controls = new OrbitControls(camera, canvas)
+controls.enableDamping = true
+
+// === 加载纹理 ===
+const textureLoader = new THREE.TextureLoader()
+const matcapTexture = textureLoader.load('textures/matcaps/8.png')
+matcapTexture.colorSpace = THREE.SRGBColorSpace
+
+// === 加载字体并创建场景内容 ===
+const fontLoader = new FontLoader()
+
+fontLoader.load('/fonts/helvetiker_regular.typeface.json', (font) => {
+    // 创建材质（文字和甜甜圈共用）
+    const material = new THREE.MeshMatcapMaterial({ matcap: matcapTexture })
+
+    // 创建 3D 文字
+    const textGeometry = new TextGeometry('Hello Three.js', {
+        font: font,
+        size: 0.5,
+        depth: 0.2,
+        curveSegments: 5,
+        bevelEnabled: true,
+        bevelThickness: 0.03,
+        bevelSize: 0.02,
+        bevelOffset: 0,
+        bevelSegments: 4
+    })
+    textGeometry.center()
+
+    const text = new THREE.Mesh(textGeometry, material)
+    scene.add(text)
+
+    // 创建装饰甜甜圈（复用几何体和材质）
+    const donutGeometry = new THREE.TorusGeometry(0.3, 0.2, 32, 64)
+
+    for (let i = 0; i < 100; i++) {
+        const donut = new THREE.Mesh(donutGeometry, material)
+
+        donut.position.set(
+            (Math.random() - 0.5) * 10,
+            (Math.random() - 0.5) * 10,
+            (Math.random() - 0.5) * 10
+        )
+
+        donut.rotation.set(
+            Math.random() * Math.PI,
+            Math.random() * Math.PI,
+            0
+        )
+
+        const scale = Math.random()
+        donut.scale.set(scale, scale, scale)
+
+        scene.add(donut)
+    }
+})
+
+// === 动画循环 ===
+const clock = new THREE.Clock()
+
+const tick = () => {
+    const elapsedTime = clock.getElapsedTime()
+
+    controls.update()
+    renderer.render(scene, camera)
+    window.requestAnimationFrame(tick)
+}
+
+tick()
+
+// === 窗口大小适配 ===
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight
+    camera.updateProjectionMatrix()
+    renderer.setSize(window.innerWidth, window.innerHeight)
+})
+```

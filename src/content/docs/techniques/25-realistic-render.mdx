@@ -1,0 +1,238 @@
+---
+title: 25 真实感渲染
+description: 通过色调映射、阴影优化和环境光照等技巧实现照片级渲染效果
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 什么是真实感渲染
+
+真实感渲染（Photorealistic Rendering）的目标是让 3D 场景看起来尽可能接近真实照片。这不是一个单一设置就能实现的效果，而是多种技术的综合运用。
+
+要达到真实感，需要关注以下几个方面：
+
+- PBR 材质（第 10、11 课）
+- HDR 环境贴图（第 24 课）
+- 正确的色调映射
+- 阴影
+- 抗锯齿
+- 物理正确的光照
+- 模型本身的质量
+
+:::caution
+本课中的某些技术可能会影响性能。在实际项目中需要根据目标设备进行权衡。
+:::
+
+
+<LessonPreview lesson="25-realistic-render" />
+
+## 色调映射（Tone Mapping）
+
+### 什么是色调映射
+
+HDR（High Dynamic Range）图像的亮度范围远超普通显示器能显示的范围。色调映射的作用就是将 HDR 值压缩到 LDR（Low Dynamic Range）范围内，使画面看起来更自然。
+
+即使你的纹理和环境贴图不是 HDR 格式，色调映射仍然会对画面产生显著影响 — 它会改变整体的颜色映射曲线，让高光和阴影的过渡更加自然。
+
+### 启用色调映射
+
+```js
+renderer.toneMapping = THREE.ACESFilmicToneMapping
+renderer.toneMappingExposure = 3
+```
+
+### 可用的色调映射算法
+
+| 类型 | 效果 | 推荐场景 |
+|------|------|----------|
+| `NoToneMapping` | 无映射，默认 | 不推荐 |
+| `LinearToneMapping` | 线性压缩 | 简单场景 |
+| `ReinhardToneMapping` | 自然过渡 | 通用场景 |
+| `CineonToneMapping` | 电影感 | 影视风格 |
+| `ACESFilmicToneMapping` | 电影级效果 | **真实感渲染推荐** |
+
+`ACESFilmicToneMapping` 是目前最受推荐的选择，它最初由美国电影艺术与科学学院开发，能产生电影级的色彩效果，高光不会过曝，阴影细节保留好。
+
+### 曝光度
+
+```js
+renderer.toneMappingExposure = 2.5
+```
+
+曝光度控制整体亮度：
+- `1.0` — 默认值
+- `< 1.0` — 更暗
+- `> 1.0` — 更亮
+
+具体数值取决于你的场景和灯光设置，需要通过调试 UI 反复调整。
+
+## 抗锯齿
+
+锯齿是 3D 渲染中常见的视觉问题，尤其在物体边缘处。
+
+```js
+const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: true
+})
+```
+
+启用 `antialias: true` 会使用 MSAA（多重采样抗锯齿），效果明显且性能开销可接受。在大多数项目中都应该开启。
+
+## 物理正确的光照
+
+Three.js 从 r155 开始默认使用物理正确的光照计算。确保使用以下设置：
+
+### 使用 PBR 材质
+
+```js
+// 推荐 — 标准 PBR
+const material = new THREE.MeshStandardMaterial({
+    map: colorTexture,
+    normalMap: normalTexture,
+    roughnessMap: roughnessTexture,
+    metalnessMap: metalnessTexture,
+    aoMap: aoTexture,
+    envMapIntensity: 1.0
+})
+
+// 或更高级的 PBR
+const physicalMaterial = new THREE.MeshPhysicalMaterial({
+    map: colorTexture,
+    roughness: 0.3,
+    metalness: 0.5,
+    clearcoat: 0.5,        // 清漆层
+    clearcoatRoughness: 0.1
+})
+```
+
+不要使用 `MeshBasicMaterial`、`MeshLambertMaterial` 等非 PBR 材质 — 它们不会对光照做出真实的反应。
+
+### 环境贴图提供间接光照
+
+```js
+scene.environment = environmentMap
+```
+
+环境贴图不仅影响反射，还影响整体光照。它是真实感渲染中最关键的因素之一。
+
+## 阴影优化
+
+阴影是真实感的重要组成部分：
+
+```js
+// 渲染器开启阴影
+renderer.shadowMap.enabled = true
+renderer.shadowMap.type = THREE.PCFSoftShadowMap
+
+// 光源设置
+directionalLight.castShadow = true
+directionalLight.shadow.normalBias = 0.027
+directionalLight.shadow.bias = -0.004
+directionalLight.shadow.mapSize.set(512, 512)
+
+// 确保所有物体投射和接收阴影
+scene.traverse((child) => {
+    if (child.isMesh) {
+        child.castShadow = true
+        child.receiveShadow = true
+    }
+})
+```
+
+### 阴影参数说明
+
+- `normalBias` — 沿法线方向偏移，消除阴影瑕疵（shadow acne）
+- `bias` — 深度偏移，解决自阴影问题
+- `PCFSoftShadowMap` — 柔和阴影，更自然
+
+这两个值需要根据场景反复调整，没有万能的最佳值。
+
+## 批量更新材质
+
+当需要统一调整场景中所有材质的某个属性时：
+
+```js
+const updateAllMaterials = () => {
+    scene.traverse((child) => {
+        if (child.isMesh && child.material.isMeshStandardMaterial) {
+            // 调整环境贴图强度
+            child.material.envMapIntensity = debugObject.envMapIntensity
+
+            // 确保投射和接收阴影
+            child.castShadow = true
+            child.receiveShadow = true
+        }
+    })
+}
+```
+
+`scene.traverse` 会递归遍历场景图中的所有对象。通过 `isMesh` 和 `isMeshStandardMaterial` 过滤出需要修改的对象。
+
+## 完整 PBR 纹理组合
+
+一个完整的 PBR 纹理集：
+
+```js
+const material = new THREE.MeshStandardMaterial({
+    map: colorTexture,               // 颜色贴图 — 表面颜色
+    normalMap: normalTexture,         // 法线贴图 — 表面细节
+    aoMap: aoTexture,                 // 环境遮蔽 — 接触阴影
+    roughnessMap: roughnessTexture,   // 粗糙度 — 光泽度
+    metalnessMap: metalnessTexture,   // 金属度 — 金属质感
+    displacementMap: heightTexture,   // 高度贴图 — 表面位移
+    displacementScale: 0.1
+})
+```
+
+### 纹理注意事项
+
+- **颜色贴图**必须设置 `colorSpace = THREE.SRGBColorSpace`
+- **法线、粗糙度、金属度、AO 贴图**不需要设置 sRGB（它们是数据贴图）
+- 确保所有纹理的分辨率和 UV 坐标匹配
+
+## 推荐渲染器设置汇总
+
+```js
+// 1. 色调映射
+renderer.toneMapping = THREE.ACESFilmicToneMapping
+renderer.toneMappingExposure = 2.5
+
+// 2. 阴影
+renderer.shadowMap.enabled = true
+renderer.shadowMap.type = THREE.PCFSoftShadowMap
+
+// 3. 像素比（限制为 2 防止性能问题）
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+// 4. 输出色彩空间
+renderer.outputColorSpace = THREE.SRGBColorSpace
+
+// 5. 环境贴图
+scene.environment = environmentMap
+
+// 6. 材质
+material.roughness = 0.3
+material.metalness = 0.5
+material.envMapIntensity = 1.0
+```
+
+## 常见导致"不真实"的原因
+
+| 问题 | 解决方法 |
+|------|----------|
+| 模型看起来像塑料 | 调整粗糙度和金属度纹理 |
+| 颜色太亮或太暗 | 调整 toneMappingExposure |
+| 没有反射/高光 | 添加 HDR 环境贴图 |
+| 阴影有条纹瑕疵 | 调整 shadow.bias 和 normalBias |
+| 物体边缘锯齿 | 启用 antialias |
+| 颜色看起来"洗掉" | 确保颜色贴图使用 SRGBColorSpace |
+| 整体画面太平 | 添加更强的方向光或调整环境贴图 |
+
+## 参考链接
+
+- [Three.js WebGLRenderer 色调映射](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.toneMapping)
+- [Three.js MeshStandardMaterial](https://threejs.org/docs/#api/en/materials/MeshStandardMaterial)
+- [ACES 色调映射论文](https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/)
+- [PBR 理论 - LearnOpenGL](https://learnopengl.com/PBR/Theory)

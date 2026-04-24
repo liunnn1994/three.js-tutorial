@@ -1,0 +1,516 @@
+---
+title: 04 变换物体
+description: 学习 Three.js 中的平移、旋转和缩放变换——理解 3D 坐标系、向量、欧拉角和对象分组
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 为什么要学习变换？
+
+在上一课中，我们创建了一个 3D 场景，包含一个红色的立方体和一个相机。当时我们通过 `camera.position.z = 3` 把相机往后移了一下——这其实就是在做"变换"。在下一课中，我们将学习如何**为物体制作动画**，而动画的本质就是**随着时间不断改变物体的变换属性**。因此，熟练掌握变换是学习动画的前提。
+
+本节课我们将深入讲解 Three.js 中变换物体的所有核心知识。
+
+
+<LessonPreview lesson="04-transform-objects" />
+
+## Object3D —— 所有 3D 对象的基类
+
+在 Three.js 中，所有能放入场景的 3D 对象（Mesh 网格、Camera 相机、Light 灯光、Group 组等）都继承自一个叫做 **`Object3D`** 的基类。这意味着它们**全部**拥有以下四个变换属性：
+
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| `position` | `Vector3` | 物体在空间中的位置（平移） |
+| `scale` | `Vector3` | 物体的大小（缩放） |
+| `rotation` | `Euler` | 物体的旋转角度（欧拉角） |
+| `quaternion` | `Quaternion` | 物体的旋转（四元数，另一种表示旋转的方式） |
+
+你可以在 [Object3D 文档](https://threejs.org/docs/#api/en/core/Object3D) 中查看完整的 API。
+
+:::info 底层原理：矩阵
+这些属性在底层会以**矩阵（Matrix）**的形式传递给 GPU 进行计算和渲染。不过，你现在**完全不需要理解矩阵**的数学原理——Three.js 已经帮你处理好了所有复杂的计算。你只需要修改 `position`、`rotation`、`scale` 等属性，Three.js 会在渲染时自动将它们转换为矩阵并发送给 GPU。
+:::
+
+## 3D 坐标系
+
+在 2D 中，我们只需要两个值（x, y）就能确定一个点的位置——比如屏幕上的一个像素坐标。但在 3D 空间中，我们需要**三个值（x, y, z）**来确定一个点的位置。
+
+### 什么是轴？
+
+你可以把 3D 空间想象成一个房间的角落。从这个角落出发：
+
+- 一面墙向左右延伸
+- 一面墙向前方延伸
+- 地面向天花板延伸
+
+这三个方向就是三个"轴"。每个轴都有正方向和负方向。
+
+### Three.js 使用右手坐标系
+
+Three.js 默认采用**右手坐标系**，这是 3D 图形学中最常见的约定之一：
+
+```
+                      Y (向上 / 上方)
+                      |
+                      |
+                      |
+                      |
+                      +------- X (向右 / 右方)
+                     /
+                    /
+                   /
+                  Z (朝向观察者 / 前方)
+```
+
+**各轴方向说明：**
+
+- **X 轴（红色）**：水平方向，正方向朝右，负方向朝左
+- **Y 轴（绿色）**：垂直方向，正方向朝上，负方向朝下
+- **Z 轴（蓝色）**：深度方向，正方向朝向观察者（从屏幕里"出来"），负方向远离观察者（向屏幕里"进去"）
+
+> **"右手坐标系"是什么意思？** 伸出你的右手，拇指朝上（Y 轴），食指朝前（Z 轴），中指向右（X 轴）。三根手指互相垂直，这就是右手坐标系。不同的 3D 软件可能有不同的约定——例如 Blender 默认 Z 轴朝上，而 Three.js 是 Y 轴朝上。在不同工具之间切换时需要注意这个差异。
+
+### 单位制
+
+Three.js 中 `1` 可以代表任何你想要的单位：1 米、1 厘米、1 千米，完全由你决定。**建议你在项目开始时统一一个单位标准并保持一致**，这样后续的工作会轻松很多。例如：
+
+- 建造房屋场景时，可以约定 `1` = 1 米（一扇门高约 2 米，屋顶离地面约 3 米）
+- 建造包含山脉的大型景观时，可以约定 `1` = 1 千米
+
+## 向量（Vector3）是什么？
+
+`position` 和 `scale` 的类型都是 `Vector3`。"向量"这个词可能听起来很数学化，但它的本质很简单：
+
+> **一个 Vector3 就是三个数字的有序组合 `(x, y, z)`，用来描述 3D 空间中的某个量。**
+
+你可以把 Vector3 想象成一个"带方向的箭头"：
+- 它从**原点** `(0, 0, 0)` 出发
+- 指向 `(x, y, z)` 这个位置
+
+`Vector3` 不仅仅存储了 x、y、z 三个值，它还自带许多有用的方法。[Vector3 文档](https://threejs.org/docs/#api/en/math/Vector3) 列出了所有可用的方法，以下是最常用的几个：
+
+| 方法 | 说明 | 示例 |
+|------|------|------|
+| `set(x, y, z)` | 同时设置 x、y、z 三个分量 | `mesh.position.set(1, 0.5, -1)` |
+| `length()` | 返回向量的长度（即从原点到该点的距离） | `mesh.position.length()` |
+| `distanceTo(v)` | 计算到另一个 Vector3 的距离 | `mesh.position.distanceTo(camera.position)` |
+| `normalize()` | 将向量长度缩放到 1（方向不变） | `mesh.position.normalize()` |
+
+:::tip
+`length()` 和 `distanceTo(v)` 在实际开发中非常实用。例如，你可以用 `distanceTo` 来判断物体是否接近相机，从而触发某些效果。
+:::
+
+## 位置（Position）
+
+`position` 是一个 `Vector3` 对象，用来控制物体在 3D 空间中的位置。
+
+### 设置位置
+
+```js
+// 方式一：分别设置每个轴
+mesh.position.x = 1     // 向右移动 1 个单位
+mesh.position.y = 0.5   // 向上移动 0.5 个单位
+mesh.position.z = -1    // 向屏幕内部移动 1 个单位（远离观察者）
+
+// 方式二：使用 set() 方法一次性设置
+mesh.position.set(1, 0.5, -1)
+```
+
+两种方式的效果完全一样。`set()` 方法更简洁，适合你需要同时设置三个轴的时候；分开写更直观，适合你只想改某一个轴的时候。性能上几乎没有任何差异。
+
+### 代码放置位置
+
+你可以在创建物体后的**任何位置**设置属性，只要在 `renderer.render()` **之前**即可：
+
+```js
+const mesh = new THREE.Mesh(geometry, material)
+
+// 这里可以设置 —— 物体已创建
+mesh.position.set(1, 0.5, -1)
+
+scene.add(mesh)
+
+// 这里也可以设置 —— 物体已添加到场景
+mesh.position.x = 2
+
+// 这里也是可以的
+camera.position.z = 3
+
+// 渲染必须在所有变换设置之后
+renderer.render(scene, camera)
+```
+
+:::warning 常见错误
+如果你把 `mesh.position.x = 1` 写在 `renderer.render()` **之后**，物体的位置不会改变。这就像你**先拍了一张照片**，然后才告诉朋友"换个姿势"——照片里朋友的姿势当然不会改变。渲染器在 `render()` 调用的那一刻"拍下快照"，之后再修改位置就来不及了。
+:::
+
+### 获取向量信息
+
+```js
+// 获取物体到场景原点 (0,0,0) 的距离
+console.log(mesh.position.length())  // 例如输出 1.3601...
+
+// 获取物体到相机的距离
+console.log(mesh.position.distanceTo(camera.position))
+
+// 注意：使用 camera.position 前必须确保 camera 已经被创建！
+// 否则会报错：Cannot access 'camera' before initialization
+```
+
+`normalize()` 方法会将向量的长度缩短为 1，同时保持方向不变。这在某些算法中很有用：
+
+```js
+mesh.position.normalize()  // 向量长度变为 1，但方向保持不变
+```
+
+## 缩放（Scale）
+
+`scale` 也是一个 `Vector3`，默认值为 `(1, 1, 1)`，表示物体保持原始大小。三个分量分别对应三个轴的缩放比例：
+
+```js
+// 放大 X 方向为原来的 2 倍
+mesh.scale.x = 2
+
+// 缩小 Y 方向为原来的一半
+mesh.scale.y = 0.5
+
+// Z 方向保持不变
+mesh.scale.z = 1
+
+// 或者用 set() 一次性设置
+mesh.scale.set(2, 0.5, 1)
+```
+
+**缩放的值含义：**
+
+| 值 | 效果 |
+|----|------|
+| `1` | 保持原始大小（默认） |
+| `> 1`（如 `2`） | 放大到原来的该倍数 |
+| `0 ~ 1`（如 `0.5`） | 缩小 |
+| `< 0`（如 `-1`） | 翻转（镜像），同时保持大小 |
+
+## 旋转（Rotation）
+
+旋转比平移和缩放更复杂一些。Three.js 提供了**两种**方式来表示旋转：**欧拉角（Euler）** 和 **四元数（Quaternion）**。
+
+### 理解旋转：想象一根"棍子"
+
+要旋转一个物体，首先要想清楚**绕哪根轴旋转**。想象一根棍子穿过你的物体，你抓住棍子的两端然后旋转——物体就会绕着这根棍子转动：
+
+- **绕 Y 轴旋转**：棍子从上往下穿过物体，物体像**旋转木马**一样转动
+- **绕 X 轴旋转**：棍子从左到右穿过物体，物体像**车轮**一样前后翻转
+- **绕 Z 轴旋转**：棍子从前到后穿过物体，物体像**钟表的指针**一样在平面上转动
+
+### 欧拉角（Euler）
+
+`rotation` 属性的类型是 `Euler`（不是 `Vector3`！），但它的用法几乎一样：
+
+```js
+mesh.rotation.x = Math.PI * 0.25   // 绕 X 轴旋转 45 度
+mesh.rotation.y = Math.PI * 0.5    // 绕 Y 轴旋转 90 度
+mesh.rotation.z = Math.PI           // 绕 Z 轴旋转 180 度
+```
+
+> [Euler 文档](https://threejs.org/docs/#api/en/math/Euler)
+
+:::important 角度与弧度
+Three.js 中的旋转值使用的是**弧度（radian）**，不是我们日常使用的**角度（degree）**。你不需要手写弧度值——使用 `Math.PI` 即可：
+
+| 旋转量 | 角度 | 弧度值 |
+|--------|------|--------|
+| 四分之一圈 | 90 度 | `Math.PI * 0.5` 或 `Math.PI / 2` |
+| 半圈 | 180 度 | `Math.PI` |
+| 四分之三圈 | 270 度 | `Math.PI * 1.5` |
+| 一整圈 | 360 度 | `Math.PI * 2` |
+
+`Math.PI` 是 JavaScript 内置常量，约等于 `3.14159...`。记住：**半圈就是 PI，一圈就是 2*PI**。
+:::
+
+### 旋转顺序（Order）很重要
+
+当你同时设置多个轴的旋转时，旋转是按照特定顺序依次应用的。默认顺序是 **`'XYZ'`**，即先绕 X 轴旋转，再绕 Y 轴旋转，最后绕 Z 轴旋转。
+
+**顺序不同，结果可能完全不同。** 考虑一个 FPS（第一人称射击）游戏的例子：
+
+- 如果你先旋转 Y 轴（左右转头），再旋转 X 轴（上下看），结果很自然——就像人转头一样
+- 但如果你先旋转 X 轴再旋转 Y 轴，结果会很不自然——你的脑袋看起来像是歪着转
+
+你可以通过 `reorder()` 方法更改旋转顺序：
+
+```js
+// 先应用 Y 旋转，再应用 X 旋转（适合 FPS 相机）
+mesh.rotation.reorder('YXZ')
+
+// 然后再设置旋转值
+mesh.rotation.y = Math.PI * 0.25
+mesh.rotation.x = Math.PI * 0.25
+```
+
+:::warning 必须先 reorder，再设置旋转值
+`reorder()` 方法会重新计算当前的旋转以匹配新顺序。因此你必须**先调用 `reorder()`**，**然后再修改旋转值**。如果先设了值再 reorder，结果可能和你预期的不一样。
+:::
+
+### 万向节锁（Gimbal Lock）
+
+当你使用欧拉角旋转时，可能会遇到一个经典问题：**万向节锁**。当你把某一根轴旋转到特定角度（比如正负 90 度）时，另外两根轴可能会"粘在一起"，导致你无法再沿着预期的方向旋转。
+
+这是因为欧拉角使用三个嵌套的旋转环来表示旋转，当两个环对齐时，就丢失了一个自由度。
+
+**解决办法有两个：**
+
+1. 更改旋转顺序（`reorder()`），避免触发万向节锁
+2. 使用**四元数**代替欧拉角
+
+### 四元数（Quaternion）
+
+四元数是另一种表示旋转的数学方式。它的优点是**永远不会出现万向节锁**，但缺点是**非常不直观**——你很难通过看四元数的四个数字（x, y, z, w）来判断物体朝向了哪里。
+
+> [Quaternion 文档](https://threejs.org/docs/#api/en/math/Quaternion)
+
+好消息是：在 Three.js 中，**更新 `rotation` 会自动同步更新 `quaternion`，反之亦然**。所以你可以这样使用：
+
+```js
+// 方式一：用欧拉角（日常开发中最常用，直观）
+mesh.rotation.y = Math.PI * 0.5
+// mesh.quaternion 会自动更新
+
+// 方式二：直接设置四元数（当外部数据提供的是四元数时）
+mesh.quaternion.copy(someOtherQuaternion)
+// mesh.rotation 会自动更新
+```
+
+**经验法则：** 大多数情况下直接使用 `rotation`（欧拉角）就够了。当你遇到万向节锁问题，或者当你从外部数据源（如某些动画库或设备传感器）获得了四元数数据时，再使用 `quaternion`。
+
+## lookAt —— 让物体"看向"某个方向
+
+`lookAt` 是一个非常有用的方法，它可以让任何 3D 物体自动旋转以"看向"指定的位置。你不需要手动计算任何角度或三角函数。
+
+```js
+// 让相机看向立方体
+camera.lookAt(mesh.position)
+
+// 让立方体看向场景中某个具体位置
+mesh.lookAt(new THREE.Vector3(0, -1, 1))
+```
+
+`lookAt` 定义在 `Object3D` 上，因此**所有 3D 对象**都可以使用，包括相机、网格、灯光等。
+
+**它的工作原理：** `lookAt` 会将物体的 `-Z` 轴旋转到指向目标位置的方向。对于相机来说，`-Z` 轴就是相机"看到"的方向，这恰好和我们的直觉一致。
+
+```js
+// 创建相机后让相机看向某个物体
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height)
+camera.position.z = 3
+camera.lookAt(mesh.position)  // 相机会自动旋转，对准 mesh 的位置
+scene.add(camera)
+```
+
+:::tip 实用技巧
+你不仅可以传入手动创建的 `new THREE.Vector3(x, y, z)`，还可以直接传入其他物体的 `position` 属性（因为它本身就是一个 Vector3）。这样当你移动物体时，相机（或其他物体）会自动追踪它——不过要注意，`lookAt` 只在调用时计算一次方向，之后物体移动了不会自动更新。如果你需要持续追踪，需要在每帧都调用 `lookAt`（我们会在动画课程中学到）。
+:::
+
+## 对象层级与 Group（场景图）
+
+### 为什么需要 Group？
+
+想象你在 3D 场景中建造一栋房子：它有墙壁、门、窗户、灌木丛、花园等许多部件。如果有一天你发现整栋房子太小了或者位置不对，你需要**一个一个地移动每个部件**——这会非常繁琐。
+
+**`Group` 就是解决这个问题的。** 你可以把多个对象添加到一个 Group 中，然后对 Group 进行变换——所有子对象都会跟着一起变换。
+
+> [Group 文档](https://threejs.org/docs/#api/en/objects/Group)
+
+### 创建和使用 Group
+
+```js
+// 创建一个组
+const group = new THREE.Group()
+scene.add(group)  // 别忘了把组添加到场景中！
+
+// 创建三个立方体并添加到组中（不是添加到场景）
+const cube1 = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.MeshBasicMaterial({ color: 0xff0000 })
+)
+cube1.position.x = -1.5
+group.add(cube1)  // 添加到组中
+
+const cube2 = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+)
+cube2.position.x = 0
+group.add(cube2)
+
+const cube3 = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.MeshBasicMaterial({ color: 0x0000ff })
+)
+cube3.position.x = 1.5
+group.add(cube3)
+
+// 对整个组进行变换 —— 三个立方体会一起变化
+group.position.y = 1      // 整组向上移动
+group.scale.y = 2          // 整组在 Y 方向拉伸 2 倍
+group.rotation.y = 0.2     // 整组绕 Y 轴旋转
+```
+
+### 场景图（Scene Graph）的概念
+
+在 Three.js 中，对象之间存在**父子层级关系**，形成一棵树，叫做**场景图（Scene Graph）**：
+
+```
+Scene (场景根节点)
+├── AxesHelper (坐标轴辅助)
+├── Camera (相机)
+└── Group (组)
+    ├── cube1 (立方体 1)
+    ├── cube2 (立方体 2)
+    └── cube3 (立方体 3)
+```
+
+- 当你对父对象进行变换时，**所有子对象都会跟着一起变换**
+- 子对象的位置是**相对于父对象**的（局部坐标），而不是相对于场景原点的
+- `Group` 继承自 `Object3D`，所以它拥有 `position`、`rotation`、`scale` 等所有变换属性
+
+:::tip 好习惯
+在开发较复杂的 3D 场景时，**养成使用 Group 来组织对象的习惯**。例如，为一辆车创建一个 Group，把车身、轮子、车灯都放进去；为一个角色创建一个 Group，把身体、四肢、头部放进去。这样当你需要移动、旋转或缩放整个物体时，只需要操作 Group 就行，而不需要逐个修改子对象。
+:::
+
+## 组合变换的顺序
+
+在 Three.js 中修改变换属性时，你可以**以任意顺序**设置 `position`、`rotation`、`scale`——最终的渲染结果是一样的。这是因为这些属性只是存储了物体的"状态"，Three.js 在渲染时会自动按照 **缩放 -> 旋转 -> 平移** 的内部顺序应用这些变换：
+
+```js
+// 以下两种写法效果完全一样
+
+// 写法一
+mesh.position.set(1, 0, 0)
+mesh.rotation.y = Math.PI * 0.25
+mesh.scale.set(2, 2, 2)
+
+// 写法二（顺序不同，但结果一样）
+mesh.scale.set(2, 2, 2)
+mesh.position.set(1, 0, 0)
+mesh.rotation.y = Math.PI * 0.25
+```
+
+:::warning 不要和"旋转顺序"混淆
+这里说的是**设置属性的代码顺序**，它不影响结果。但上一节讲的**旋转顺序**（Euler 的 order，如 `'XYZ'` vs `'YXZ'`）是会影响结果的——它决定的是三个轴旋转的**应用顺序**。两者是完全不同的概念。
+:::
+
+## AxesHelper —— 坐标轴辅助工具
+
+3D 空间中的物体定位一开始可能会让人困惑。Three.js 提供了 `AxesHelper` 这个辅助工具，可以在场景原点绘制三条彩色的轴线，帮你直观地理解空间方向：
+
+```js
+const axesHelper = new THREE.AxesHelper(2)  // 参数是轴线的长度（单位数）
+scene.add(axesHelper)
+```
+
+三条轴线的颜色对应关系：
+
+```
+红色 (Red)   = X 轴
+绿色 (Green)  = Y 轴
+蓝色 (Blue)   = Z 轴
+```
+
+> 记忆口诀：**RGB = XYZ**（Red 对应 X，Green 对应 Y，Blue 对应 Z）
+
+默认的相机位置 `camera.position.z = 3` 是正对 Z 轴，所以蓝色的 Z 轴看起来像一个点（因为它正对着你）。你可以调整相机位置（例如 `camera.position.set(1, 1, 1)`）来从斜上方观察场景，这样三条轴线都能看清楚。
+
+:::tip 调试利器
+当你不确定物体在空间中的位置或朝向时，添加一个 `AxesHelper` 是最简单的调试方法。虽然在正式项目中通常不会保留它，但在开发和调试阶段它非常有用。
+:::
+
+## 完整示例代码
+
+以下代码综合了本课所学的所有内容：坐标轴辅助、对象分组、位置/缩放/旋转变换。
+
+```js
+import * as THREE from 'three'
+
+// Canvas
+const canvas = document.querySelector('canvas.webgl')
+
+// Scene
+const scene = new THREE.Scene()
+
+/**
+ * 坐标轴辅助工具
+ * 红色 = X, 绿色 = Y, 蓝色 = Z
+ */
+const axesHelper = new THREE.AxesHelper(2)
+scene.add(axesHelper)
+
+/**
+ * 对象层级 —— 使用 Group 组织多个立方体
+ */
+const group = new THREE.Group()
+group.scale.y = 2
+group.rotation.y = 0.2
+scene.add(group)
+
+const cube1 = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.MeshBasicMaterial({ color: 0xff0000 })
+)
+cube1.position.x = -1.5
+group.add(cube1)
+
+const cube2 = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.MeshBasicMaterial({ color: 0xff0000 })
+)
+cube2.position.x = 0
+group.add(cube2)
+
+const cube3 = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.MeshBasicMaterial({ color: 0xff0000 })
+)
+cube3.position.x = 1.5
+group.add(cube3)
+
+/**
+ * 相机
+ */
+const camera = new THREE.PerspectiveCamera(75, 800 / 600)
+camera.position.z = 3
+scene.add(camera)
+
+/**
+ * 渲染器
+ */
+const renderer = new THREE.WebGLRenderer({ canvas })
+renderer.setSize(800, 600)
+renderer.render(scene, camera)
+```
+
+## 本课总结
+
+| 概念 | 关键点 |
+|------|--------|
+| **Object3D** | 所有 3D 对象的基类，拥有 position / scale / rotation / quaternion |
+| **Vector3** | 存储三个数值 (x, y, z)，自带 `set()`、`length()`、`distanceTo()` 等方法 |
+| **坐标系** | Three.js 使用右手坐标系，Y 轴朝上，X 轴朝右，Z 轴朝向观察者 |
+| **位置** | `mesh.position.set(x, y, z)` 或分别设置每个轴 |
+| **缩放** | `mesh.scale.set(sx, sy, sz)`，默认值 `(1, 1, 1)` |
+| **旋转** | 使用**弧度**，半圈 = `Math.PI`，一圈 = `Math.PI * 2` |
+| **Euler vs Quaternion** | Euler 直观但可能万向节锁，Quaternion 无万向节锁但不直观，两者自动同步 |
+| **旋转顺序** | 默认 `XYZ`，可通过 `reorder()` 修改 |
+| **lookAt** | 让物体的 `-Z` 轴指向目标，非常实用 |
+| **Group** | 继承自 Object3D，用于组织多个子对象并统一变换 |
+| **AxesHelper** | 调试工具，在原点绘制 RGB = XYZ 三条轴线 |
+| **变换顺序** | 设置属性的代码顺序不影响结果，Three.js 内部按 缩放->旋转->平移 执行 |
+
+## 参考链接
+
+- [Object3D 文档](https://threejs.org/docs/#api/en/core/Object3D) — 所有 3D 对象的基类
+- [Vector3 文档](https://threejs.org/docs/#api/en/math/Vector3) — 三维向量类，position 和 scale 的类型
+- [Euler 文档](https://threejs.org/docs/#api/en/math/Euler) — 欧拉角类，rotation 的类型
+- [Quaternion 文档](https://threejs.org/docs/#api/en/math/Quaternion) — 四元数类，另一种旋转表示
+- [Group 文档](https://threejs.org/docs/#api/en/objects/Group) — 对象分组容器
+- [AxesHelper 文档](https://threejs.org/docs/#api/en/helpers/AxesHelper) — 坐标轴辅助工具

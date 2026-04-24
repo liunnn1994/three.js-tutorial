@@ -1,50 +1,50 @@
 ---
-title: Welcome to Starlight
-description: Get started building your docs site with Starlight.
-template: splash # Remove or comment out this line to display the site sidebar on this page.
+title: Three.js 中文教程
+description: 从零开始学习 Three.js — 适合前端开发者的完整 3D Web 开发课程，涵盖基础知识、技术技巧、着色器编程和实战项目。
+template: splash
 hero:
   title: |
-    Welcome to Starlight with
+    Three.js
     <span
       class="font-black text-transparent
         bg-clip-text bg-gradient-to-b
         from-accent-700 to-accent-400
         dark:from-accent-500 dark:to-accent-200"
     >
-      Tailwind
-    </span>
-  tagline: Congrats on setting up a new Starlight project!
-  image:
-    file: ../../assets/houston.webp
+      中文教程
+  tagline: 从基础到高级着色器，53节完整课程带你掌握 3D Web 开发
   actions:
-    - text: Example Guide
-      link: /guides/example/
+    - text: 开始学习
+      link: /basics/01-introduction/
       icon: right-arrow
-    - text: Read the Starlight docs
-      link: https://starlight.astro.build
+    - text: Three.js 官方文档
+      link: https://threejs.org/docs/
       icon: external
       variant: minimal
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-## Next steps
+## 课程概览
 
 <CardGrid stagger>
-	<Card title="Update content" icon="pencil">
-		Edit `src/content/docs/index.mdx` to see this page change.
+	<Card title="基础入门 (01-13)" icon="pencil">
+		学习 Three.js 核心概念：场景、相机、渲染器、几何体、纹理、材质、动画等基础知识。
 	</Card>
-	<Card title="Change page layout" icon="document">
-		Delete `template: splash` in `src/content/docs/index.mdx` to display a
-		sidebar on this page.
+	<Card title="技术技巧 (14-25)" icon="document">
+		掌握光照、阴影、粒子系统、物理引擎、模型导入、射线检测、环境贴图等实用技术。
 	</Card>
-	<Card title="Add new content" icon="add-document">
-		Add Markdown or MDX files to `src/content/docs` to create new pages.
+	<Card title="着色器 (26-44)" icon="add-document">
+		深入 GLSL 着色器编程：从基础概念到高级效果，包括海浪、烟雾、全息、烟花等。
 	</Card>
-	<Card title="Configure your site" icon="setting">
-		Edit your `sidebar` and other config in `astro.config.mjs`.
+	<Card title="高级主题 (45-48)" icon="setting">
+		学习后处理效果、性能优化技巧、加载进度管理以及 HTML 与 WebGL 的混合使用。
 	</Card>
-	<Card title="Read the docs" icon="open-book">
-		Learn more in [the Starlight Docs](https://starlight.astro.build/).
+	<Card title="场景创建 (49-53)" icon="open-book">
+		通过 Blender 完整工作流，从建模、烘焙、导出到最终场景优化的实战项目。
 	</Card>
 </CardGrid>
+
+## 关于本教程
+
+本教程是适合前端开发者的完整 3D Web 开发课程，所有代码示例使用最新的(2026) Three.js API，并提供可交互的在线演示。

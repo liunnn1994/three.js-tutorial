@@ -1,0 +1,201 @@
+---
+title: 37 半调着色器
+description: 使用点阵图案创建漫画风格的半调渲染效果
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 半调效果简介
+
+半调（Halftone）是一种非常经典的印刷技术，起源于很久以前的报纸和杂志印刷。在没有现代数码印刷的时代，印刷机只能印出纯色墨点，无法实现真正的渐变。为了模拟连续的灰度变化，印刷工人发明了半调技术：用**同一颜色但大小不同**的圆点排列成网格，当观察距离足够远时，这些大小不一的点在视觉上融合成了类似渐变的效果。点越大，该区域看起来越亮（或颜色越浓）；点越小，看起来越暗（或颜色越淡）。
+
+在数字艺术领域，半调效果如今主要被用来营造**复古氛围**。你可以在许多现代作品中看到这种风格的运用，其中最著名的例子莫过于动画电影《蜘蛛侠：平行宇宙》（Spider-Verse），片中大量使用了半调点阵来渲染角色和场景，完美地融合了老派漫画风格与现代 3D 技术。艺术家 Yann Sculpt 也曾用同样效果创作了令人惊艳的格温·斯泰西（Gwen Stacy）角色，展示了半调在当代插画中的无限可能。
+
+在本课中，我们将使用自定义着色器在 WebGL 中重新实现这种经典的半调效果，并将其应用于 3D 几何体上。
+
+
+<LessonPreview lesson="37-halftone-shading-shaders" />
+
+## 核心原理
+
+在着色器中实现半调效果的核心逻辑分为三个步骤：
+
+1. **计算光照强度** — 利用朗伯特漫反射（Lambertian diffuse）模型，通过法线与光线方向的点积得出每个片段的光照亮度值。光照越强，该区域越"亮"；光照越弱，越"暗"。
+2. **将光照强度映射为点半径** — 亮度高的区域，点半径大；亮度低的区域，点半径小甚至消失。这样，点的大小就编码了明暗信息。
+3. **用网格 + 圆形遮罩生成点阵图案** — 将整个 UV 空间划分为均匀的网格，在每个网格单元内判断当前片段是否落在以光照强度为半径的圆内。
+
+这种方法的巧妙之处在于：虽然每个点的颜色是完全相同的（纯色），但通过改变点的大小，我们**欺骗了人眼**，让它以为看到了渐变和明暗变化。
+
+## 项目设置
+
+我们准备了三个经典的测试几何体：球体（Sphere）、苏珊娜（Suzanne，Blender 的吉祥物猴头）和环面结（Torus Knot）。这三个几何体提供了不同曲率和复杂度的表面，非常适合测试半调效果在各种形状上的表现。
+
+着色器文件放置在 `src/shaders/halftone/` 文件夹中，包含顶点着色器（vertex.glsl）和片元着色器（fragment.glsl）。同时我们准备了环境光（ambient）、方向光（directional light）和点光源（point light）的 include 文件，可以按需引入使用。
+
+顶点着色器中已经发送了 `vNormal` 和 `vPosition` 两个 varying 变量，它们是计算光照所必需的：
+
+- `vNormal` — 经过模型矩阵变换后的法线向量（注意法线是方向向量，齐次分量设为 0，这样只应用旋转而不应用平移）。
+- `vPosition` — 经过模型矩阵变换后的顶点位置，用于计算片段到光源的距离。
+
+由于法线在光栅化插值过程中可能会失去单位长度，所以在片元着色器中需要重新进行 `normalize()`。
+
+## 基础光照计算
+
+我们先使用之前课程中编写的光照代码来为场景添加微妙的光照效果。这虽然不是传统半调的工作方式（传统半调只用纯色组合），但这种**现代化的方式**会让最终效果更加美观。
+
+环境光提供一个最低亮度保障，方向光或点光源则提供主要的明暗变化。光照强度的计算结果将在后续步骤中被用来控制半调点的大小。
+
+## 片元着色器 — 单色半调
+
+下面是完整的单色半调片元着色器实现：
+
+```glsl
+uniform float uTime;
+uniform vec3 uLightPosition;
+uniform vec3 uColor;
+uniform float uDotFrequency;
+varying vec3 vNormal;
+varying vec3 vPosition;
+varying vec2 vUv;
+
+void main() {
+    // 1. 光照计算 — 朗伯特漫反射
+    vec3 normal = normalize(vNormal);
+    vec3 lightDir = normalize(uLightPosition - vPosition);
+    float lightIntensity = max(dot(normal, lightDir), 0.0);
+
+    // 添加环境光，防止完全黑暗的区域没有点
+    lightIntensity = lightIntensity * 0.8 + 0.2;
+
+    // 2. 将 UV 空间划分为网格
+    vec2 gridUv = vUv * uDotFrequency;
+    vec2 gridId = floor(gridUv);       // 当前网格的整数坐标
+    vec2 gridUvFract = fract(gridUv) - 0.5;  // 网格内的局部坐标，以中心为原点
+
+    // 3. 点的大小取决于光照强度
+    float dotRadius = lightIntensity * 0.45;
+
+    // 4. 圆形遮罩 — 判断片段是否在圆内
+    float dist = length(gridUvFract);
+    float dot = smoothstep(dotRadius, dotRadius - 0.02, dist);
+
+    // 5. 混合背景色和点色
+    vec3 bgColor = uColor * 0.1;
+    vec3 dotColor = uColor;
+
+    vec3 finalColor = mix(bgColor, dotColor, dot);
+
+    gl_FragColor = vec4(finalColor, 1.0);
+}
+```
+
+让我们逐步解析这段代码的关键部分：
+
+**网格坐标计算**：`fract(gridUv) - 0.5` 将每个网格单元映射到 `[-0.5, 0.5]` 范围，使得 (0, 0) 对应网格中心。这样做的好处是后续计算到中心的距离时更加直观 — 距离为 0 就是在正中心，距离为 0.5 就是在网格边缘。
+
+**`smoothstep` 边缘抗锯齿**：`smoothstep(dotRadius, dotRadius - 0.02, dist)` 在点的边缘创建了一个 0.02 宽度的过渡带，避免了硬边锯齿。当 `dist` 等于 `dotRadius` 时返回 0（完全在圆外），等于 `dotRadius - 0.02` 时返回 1（完全在圆内），中间线性插值。
+
+**背景色 vs 点色**：背景色使用 `uColor * 0.1`，即主色调的 10% 亮度，模拟纸张的底色；点色使用完整的 `uColor`。两色之间的差异越大，半调效果的对比度越明显。
+
+## JavaScript 侧配置
+
+```js
+const material = new THREE.ShaderMaterial({
+    vertexShader: halftoneVertexShader,
+    fragmentShader: halftoneFragmentShader,
+    uniforms: {
+        uColor: { value: new THREE.Color('#ff4444') },
+        uLightPosition: { value: new THREE.Vector3(2, 2, 2) },
+        uDotFrequency: { value: 30.0 }
+    }
+})
+```
+
+各 uniform 参数的含义：
+
+- **`uColor`** — 半调点的颜色。背景色自动为该颜色的 10%。选择与背景形成良好对比的颜色效果最佳。
+- **`uLightPosition`** — 点光源在 3D 空间中的位置。移动光源会实时改变半调点的分布模式，就像漫画中的阴影方向变化一样。
+- **`uDotFrequency`** — 控制网格的密度（点数）。值越大，网格越细密，点越多越小；值越小，网格越粗糙，点越少越大。通常 20-50 的范围效果较好。
+
+:::tip
+通过 dat.gui 添加调试界面来实时调整这些参数。半调效果对参数非常敏感，没有调试界面很难找到最佳数值。可以在 GUI 中添加颜色、光照位置、点频率等控制项，方便反复试验。
+:::
+
+## 多色半调 — CMYK 风格
+
+真正经典的半调印刷使用 CMYK 四色叠加。在着色器中，我们可以通过**旋转 UV** 来创建不同角度的网格层，模拟印刷中各色版以不同角度排列（如青色 15 度、品红 75 度、黄色 0 度、黑色 45 度）的技术。
+
+首先定义一个 UV 旋转工具函数：
+
+```glsl
+// 将 UV 绕原点旋转指定角度
+vec2 rotateUv(vec2 uv, float angle) {
+    float c = cos(angle);
+    float s = sin(angle);
+    return vec2(uv.x * c - uv.y * s, uv.x * s + uv.y * c);
+}
+```
+
+然后定义可复用的半调计算函数：
+
+```glsl
+// 计算单通道的半调值
+// uv — 纹理坐标
+// frequency — 网格密度
+// angle — 网格旋转角度（弧度）
+// intensity — 控制点半径的光照强度
+float halftone(vec2 uv, float frequency, float angle, float intensity) {
+    // 旋转 UV
+    vec2 rotatedUv = rotateUv(uv, angle);
+
+    // 网格化
+    vec2 grid = fract(rotatedUv * frequency) - 0.5;
+
+    // 到网格中心的距离
+    float dist = length(grid);
+
+    // 根据光照强度计算点半径
+    float radius = intensity * 0.4;
+
+    // 圆形遮罩
+    return smoothstep(radius, radius - 0.02, dist);
+}
+```
+
+使用多色半调时，可以分别计算不同颜色通道的点阵：
+
+```glsl
+// 示例：三色半调（红、绿、蓝）
+float redDot   = halftone(vUv, uDotFrequency, 0.0, redIntensity);
+float greenDot = halftone(vUv, uDotFrequency, 2.094, greenIntensity);  // 120 度
+float blueDot  = halftone(vUv, uDotFrequency, 4.189, blueIntensity);  // 240 度
+
+vec3 finalColor = vec3(redDot, greenDot, blueDot);
+```
+
+当多层不同角度的点阵叠加在一起时，会产生视觉上的**莫尔纹（Moire pattern）**效果。这种现象在印刷中通常是令人头疼的问题（需要精确控制各色版的角度来避免），但在艺术创作中，它反而能增添独特的视觉趣味。
+
+## 不同角度的视觉效果
+
+旋转角度的选择直接影响半调的视觉效果：
+
+- **所有层使用相同角度** — 点完全重叠，无法区分各色，失去叠加效果。
+- **角度差过小** — 产生明显的莫尔纹干涉图案。
+- **经典印刷角度（约 15-75 度差）** — 干涉最小化，各色点清晰可辨。
+- **特殊角度组合** — 可以故意产生特定的莫尔纹效果，用于艺术表达。
+
+## 效果优化建议
+
+1. **添加微弱底色光照**：在半调之上叠加一层传统的漫反射光照，可以让暗部细节更加丰富，而不是完全黑暗。
+2. **点形状变化**：除了圆形，还可以尝试菱形、方形等点形状，通过改变距离计算方式来实现。
+3. **动画效果**：让 `uDotFrequency` 随时间缓慢变化，或在 `uLightPosition` 上添加轻微的摇摆动画，可以使静态场景更加生动。
+4. **边缘处理**：在网格边界处（即 `gridId` 的整数坐标处），点会被裁剪为半个。如果希望所有点都是完整的圆形，可以在每个网格单元内重新居中计算。
+
+:::caution
+半调效果的 `uDotFrequency` 值不宜设置得过大（如超过 100），否则每个网格单元对应的屏幕像素过少，点阵细节会丢失甚至产生闪烁的莫尔纹。在移动设备上尤其需要注意性能。
+:::
+
+:::tip
+将半调与卡通着色（Toon Shading）结合使用，可以创建非常有趣的漫画风格效果。先用阶梯函数（`step()` 或 `smoothstep()`）将光照强度离散化为几个等级，再用半调点来表示每个等级，就能得到经典的漫画阴影分层效果。
+:::

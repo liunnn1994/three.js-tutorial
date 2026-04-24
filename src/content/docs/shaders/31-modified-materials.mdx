@@ -1,0 +1,227 @@
+---
+title: 31 修改材质
+description: 通过 onBeforeCompile 钩子注入自定义着色器代码，在不重写整个着色器的情况下修改内置材质行为
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 概述
+
+在前几课中，我们使用 `ShaderMaterial` 从零编写着色器。但这种方式意味着我们必须自己实现光照、阴影、纹理贴图等所有功能——工作量巨大。如果只需要在 `MeshStandardMaterial` 等内置材质的基础上做少量修改（比如给模型加个波浪动画），有没有更高效的方法？
+
+Three.js 提供了两种方式来修改内置材质：
+
+1. **`onBeforeCompile` 钩子** — 在材质编译前注入代码到内置着色器中（本课重点）
+2. **复现材质** — 创建自己的 `ShaderMaterial`，但复制大量 Three.js 内置着色器代码（工作量大，不推荐）
+
+:::tip
+`onBeforeCompile` 的核心优势：保留内置材质的所有功能（光照、阴影、法线贴图、纹理等），只需要注入少量自定义代码就能实现效果。这比从零复现材质要简单得多。
+:::
+
+
+<LessonPreview lesson="31-modified-materials" />
+
+## ShaderMaterial vs RawShaderMaterial vs onBeforeCompile
+
+| 方式 | 自动注入 uniforms/attributes | 需要手写 | 适用场景 |
+|------|----------------------------|---------|---------|
+| `ShaderMaterial` | 是（`modelMatrix`、`projectionMatrix` 等） | 顶点/片元着色器主体 | 完全自定义的效果 |
+| `RawShaderMaterial` | 否（一切手动） | 所有 uniforms、attributes 和着色器 | 需要完全控制 |
+| `onBeforeCompile` | 是（内置材质的全部功能） | 只需注入的部分代码 | 在内置材质基础上微调 |
+
+## onBeforeCompile 基本用法
+
+`onBeforeCompile` 是材质的一个属性，接受一个回调函数。该函数在材质**首次编译之前**被调用，参数中包含着色器的完整信息：
+
+```js
+const material = new THREE.MeshStandardMaterial({
+    color: '#aaaaaa',
+    metalness: 0.5,
+    roughness: 0.5
+})
+
+material.onBeforeCompile = (shader) => {
+    // shader.vertexShader — 顶点着色器完整源码（字符串）
+    // shader.fragmentShader — 片元着色器完整源码（字符串）
+    // shader.uniforms — 所有 uniform 变量
+    console.log('vertexShader:', shader.vertexShader)
+    console.log('fragmentShader:', shader.fragmentShader)
+}
+```
+
+:::caution
+`onBeforeCompile` 在材质**首次编译时调用一次**。如果材质因为某些原因需要重新编译（如克隆材质），之前的修改可能不会自动生效。需要保存 shader 引用以便后续更新 uniform。
+:::
+
+## 注入自定义 Uniform
+
+要在着色器中使用自定义变量（如时间 `uTime`），需要：
+
+1. 在回调中添加 uniform 到 `shader.uniforms`
+2. 在着色器源码中声明该 uniform
+
+```js
+// 保存 shader 引用，用于在动画循环中更新 uniform
+let materialShader = null
+
+material.onBeforeCompile = (shader) => {
+    // 添加自定义 uniform
+    shader.uniforms.uTime = { value: 0 }
+
+    materialShader = shader
+}
+```
+
+然后在动画循环中更新：
+
+```js
+const animate = () => {
+    const elapsedTime = clock.getElapsedTime()
+    if (materialShader) {
+        materialShader.uniforms.uTime.value = elapsedTime
+    }
+    // ...
+}
+```
+
+## 着色器块（Chunk）替换
+
+Three.js 的内置着色器使用 `#include` 指令将代码组织成多个可替换的"块"（chunk）。查看 `shader.vertexShader` 的源码，你会看到很多类似这样的代码：
+
+```glsl
+#include <common>
+#include <uv_vertex>
+#include <begin_vertex>
+#include <project_vertex>
+// ...
+```
+
+我们可以用 JavaScript 的 `String.replace()` 方法替换这些块来注入代码：
+
+### 示例：给模型添加波浪动画
+
+```js
+material.onBeforeCompile = (shader) => {
+    shader.uniforms.uTime = { value: 0 }
+
+    // 在 common 块之后声明 uniform
+    shader.vertexShader = shader.vertexShader.replace(
+        '#include <common>',
+        `
+        #include <common>
+        uniform float uTime;
+        `
+    )
+
+    // 在 begin_vertex 块之后修改顶点位置
+    shader.vertexShader = shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        `
+        #include <begin_vertex>
+        transformed.y += sin(transformed.x * 3.0 + uTime) * 0.2;
+        transformed.z += sin(transformed.z * 2.0 + uTime * 0.7) * 0.1;
+        `
+    )
+
+    materialShader = shader
+}
+```
+
+**逐步解析：**
+
+1. `#include <common>` 替换 — 在通用定义之后声明我们的 `uTime` uniform。注意保留 `#include <common>` 本身，在其后面追加内容
+2. `#include <begin_vertex>` 替换 — `begin_vertex` 块中有一个名为 `transformed` 的变量，代表经过模型变换后的顶点位置。我们在这个变量之后修改 Y 和 Z 坐标
+
+:::tip
+`transformed` 变量是 Three.js 内部着色器中的关键变量。`#include <begin_vertex>` 通常将 `transformed` 设置为 `vec3 transformed = vec3(position);`。在此之后修改 `transformed` 就是在修改最终输出到屏幕的顶点位置。
+:::
+
+## 常用的着色器块
+
+以下是一些常用的可替换块：
+
+### 顶点着色器块
+
+| 块名 | 作用 | 典型用法 |
+|------|------|---------|
+| `#include <common>` | 通用变量和函数定义 | 声明自定义 uniform |
+| `#include <begin_vertex>` | 初始化 `transformed = position` | 顶点位移、波浪、扭曲 |
+| `#include <morphtarget_vertex>` | MorphTarget 混合 | 在形变之后修改顶点 |
+| `#include <skinning_vertex>` | 骨骼动画变换 | 在蒙皮之后修改顶点 |
+| `#include <project_vertex>` | MVP 变换和 `gl_Position` 赋值 | 修改最终投影位置 |
+
+### 片元着色器块
+
+| 块名 | 作用 | 典型用法 |
+|------|------|---------|
+| `#include <common>` | 通用定义 | 声明自定义 uniform/函数 |
+| `#include <color_fragment>` | 颜色计算 | 修改最终颜色 |
+| `#include <output_fragment>` | 最终输出（含色调映射） | 在最终输出前修改颜色 |
+| `#include <emissivemap_fragment>` | 自发光贴图 | 添加自定义自发光效果 |
+
+## 实战技巧
+
+### 查看内置着色器源码
+
+要了解有哪些块可以替换，可以直接查看 Three.js 源码中的着色器文件：
+
+```
+node_modules/three/src/renderers/shaders/ShaderChunk/
+```
+
+或者访问 [Three.js GitHub 仓库](https://github.com/mrdoob/three.js/tree/dev/src/renderers/shaders) 中的 `ShaderChunk` 目录。
+
+### 注入函数
+
+如果需要在着色器中使用自定义函数（如噪声函数），也可以通过块替换注入：
+
+```js
+shader.vertexShader = shader.vertexShader.replace(
+    '#include <common>',
+    `
+    #include <common>
+
+    // 注入噪声函数
+    float cnoise(vec3 p) {
+        // ... noise implementation ...
+    }
+    uniform float uTime;
+    `
+)
+```
+
+### 替换而非覆盖
+
+注意我们总是**保留**原始的 `#include` 行：
+
+```js
+// 正确：保留原始内容，在其后追加
+shader.vertexShader = shader.vertexShader.replace(
+    '#include <begin_vertex>',
+    `
+    #include <begin_vertex>
+    // 自定义代码
+    transformed.y += sin(uTime) * 0.1;
+    `
+)
+
+// 错误：删除了原始内容
+shader.vertexShader = shader.vertexShader.replace(
+    '#include <begin_vertex>',
+    `
+    // 缺少 #include <begin_vertex>，transformed 变量未定义
+    `
+)
+```
+
+## 注意事项
+
+- `onBeforeCompile` 在材质首次编译时调用，确保在材质创建时设置
+- 保存 `shader` 引用到外部变量，以便在动画循环中更新 uniform
+- 如果多个材质需要相同的效果，每个材质都需要单独设置 `onBeforeCompile`
+- 修改后的材质如果被克隆（`material.clone()`），`onBeforeCompile` 不会被自动复制
+
+:::caution
+尝试将 Three.js 内置光照注入到自定义 `ShaderMaterial` 中非常复杂——"简直是噩梦"。更好的做法是使用 `onBeforeCompile` 在内置材质上做微调，或者像第 35 课那样在自定义着色器中实现简化的光照模型。
+:::

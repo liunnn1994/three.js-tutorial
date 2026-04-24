@@ -1,0 +1,410 @@
+---
+title: 48 HTML 与 WebGL 混合
+description: 将 HTML/CSS 元素与 Three.js 场景无缝结合——兴趣点跟踪、射线遮挡检测与滚动驱动动画
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## HTML + WebGL 混合
+
+将 HTML 界面元素叠加在 3D 场景之上，或将 DOM 元素定位到 3D 空间中的特定位置，可以创造非常沉浸式的体验——比如产品展示页面中的兴趣点（Points of Interest）、模型部件标注、交互式信息卡片等。
+
+:::tip
+虽然 HTML + WebGL 混合非常强大，但它确实会带来一定的性能开销。尽量控制 DOM 元素的数量，将繁重的视觉效果交给 WebGL/着色器处理。
+:::
+
+
+<LessonPreview lesson="48-mixing-html-and-webgl" />
+
+## 透明背景画布
+
+让 WebGL 画布透明，HTML 内容可以显示在画布后面（或通过 z-index 叠加在画布上方）：
+
+```js
+const renderer = new THREE.WebGLRenderer({
+    canvas,
+    alpha: true,     // 启用透明背景
+    antialias: true
+})
+renderer.setClearColor(0x000000, 0) // 完全透明
+```
+
+```css
+canvas.webgl
+{
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.content
+{
+    position: relative;
+    z-index: 2;
+    pointer-events: none;       /* 让鼠标事件穿透到 canvas */
+}
+
+.content a, .content button
+{
+    pointer-events: auto;       /* 可交互元素恢复鼠标事件 */
+}
+```
+
+## 3D 空间坐标到屏幕坐标的投影
+
+将 DOM 元素跟踪到 3D 模型的某个位置，是 HTML + WebGL 混合的核心技术。基本思路是：
+
+1. 确定模型上某个点在 3D 空间中的位置（`THREE.Vector3`）
+2. 每帧将该 3D 位置**投影**到屏幕 2D 坐标
+3. 用 CSS `transform: translate()` 将 DOM 元素移动到对应位置
+
+### 投影原理
+
+Three.js 的 `Vector3.project(camera)` 方法可以将世界坐标转换为**归一化设备坐标（NDC）**：
+
+- NDC 的 x 范围是 [-1, 1]（左到右）
+- NDC 的 y 范围是 [-1, 1]（下到上）
+- 中心点 (0, 0) 对应屏幕中心
+
+### 完整实现
+
+```js
+// 定义兴趣点数据
+const points = [
+    {
+        position: new THREE.Vector3(-0.3, 0.5, -0.6), // 3D 位置
+        element: document.querySelector('.point-0')      // 对应的 DOM 元素
+    },
+    {
+        position: new THREE.Vector3(0.5, 0.8, -1.6),
+        element: document.querySelector('.point-1')
+    },
+    {
+        position: new THREE.Vector3(1.6, -1.3, -0.7),
+        element: document.querySelector('.point-2')
+    }
+]
+
+// 在 tick 函数中每帧更新
+const tick = () =>
+{
+    controls.update() // 先更新控制器（移动摄像机）
+
+    for (const point of points)
+    {
+        // 1. 克隆位置（避免修改原始数据）
+        const screenPosition = point.position.clone()
+
+        // 2. 投影到 NDC
+        screenPosition.project(camera)
+
+        // 3. 转换为屏幕像素坐标
+        //    NDC [-1, 1] → 像素 [0, width] / [0, height]
+        //    除以 2 是因为 NDC 以 0 为中心，范围是 2（从 -1 到 1）
+        const translateX = screenPosition.x * sizes.width * 0.5
+        const translateY = -screenPosition.y * sizes.height * 0.5 // y 轴取反
+
+        // 4. 更新 DOM 元素位置
+        point.element.style.transform = `translate(${translateX}px, ${translateY}px)`
+    }
+
+    renderer.render(scene, camera)
+    requestAnimationFrame(tick)
+}
+```
+
+:::caution
+**必须使用 `clone()` 克隆位置**。`project()` 方法会**就地修改**调用它的 Vector3。如果不克隆，你的原始位置数据会被破坏，兴趣点会逐渐漂移到错误位置。
+:::
+
+:::tip
+使用 CSS `transform` 而非修改 `top`/`left` 来移动 DOM 元素。`transform` 不会触发重排（reflow），只触发重绘（repaint），性能更好。这也是为什么推荐将兴趣点元素的 CSS 初始位置设为 `top: 50%; left: 50%`——这样 `transform` 的偏移量就是从屏幕中心开始的像素值。
+:::
+
+### 为什么要先更新 controls 再更新位置
+
+在 tick 函数中，`controls.update()` 必须在投影计算**之前**执行。否则会有**一帧的延迟**——摄像机的位置是上一帧的，导致兴趣点的位置和摄像机不同步，用户旋转时可以看到兴趣点在"追赶"模型。
+
+## 射线遮挡检测
+
+如果兴趣点在模型的背面，用户应该看不到它——否则会破坏沉浸感（透过模型看到标签）。检测方法是使用 `Raycaster` 从摄像机向兴趣点发射射线，比较射线与模型的交点距离和兴趣点本身的距离：
+
+```
+如果 交点距离 < 兴趣点距离 → 兴趣点被遮挡 → 隐藏
+如果 交点距离 > 兴趣点距离 → 兴趣点可见 → 显示
+如果没有交点 → 兴趣点可见 → 显示
+```
+
+```js
+const raycaster = new THREE.Raycaster()
+let sceneReady = false
+
+// 在 onLoad 中延迟启用兴趣点检测
+loadingManager.onLoad = () =>
+{
+    window.setTimeout(() =>
+    {
+        sceneReady = true
+    }, 3000) // 等待覆盖层完全消失后再显示兴趣点
+}
+
+const tick = () =>
+{
+    controls.update()
+
+    if (sceneReady)
+    {
+        for (const point of points)
+        {
+            const screenPosition = point.position.clone()
+            screenPosition.project(camera)
+
+            // 将 NDC 坐标转换为屏幕坐标（同上）
+            const translateX = screenPosition.x * sizes.width * 0.5
+            const translateY = -screenPosition.y * sizes.height * 0.5
+            point.element.style.transform = `translate(${translateX}px, ${translateY}px)`
+
+            // 射线遮挡检测
+            raycaster.setFromCamera(screenPosition, camera)
+            const intersects = raycaster.intersectObjects(scene.children, true)
+
+            if (intersects.length === 0)
+            {
+                // 没有任何物体遮挡
+                point.element.classList.add('visible')
+            }
+            else
+            {
+                const intersectionDistance = intersects[0].distance
+                const pointDistance = point.position.distanceTo(camera.position)
+
+                if (intersectionDistance < pointDistance)
+                {
+                    // 交点比兴趣点更近 → 被遮挡
+                    point.element.classList.remove('visible')
+                }
+                else
+                {
+                    // 兴趣点更近 → 可见
+                    point.element.classList.add('visible')
+                }
+            }
+        }
+    }
+
+    renderer.render(scene, camera)
+    requestAnimationFrame(tick)
+}
+```
+
+:::tip
+- 只创建**一个** `Raycaster` 实例并在循环中复用，不要每帧都 `new Raycaster()`，否则会产生不必要的 GC 压力。
+- `intersects[0]` 是距离摄像机最近的交点（Three.js 保证交点数组按距离排序），所以只需检查第一个。
+- `intersectObjects(scene.children, true)` 的第二个参数 `true` 表示**递归**检测子对象，确保 GLTF 模型内部的子网格也能被检测到。
+:::
+
+:::caution
+在模型加载完成之前，`scene.children` 中可能还没有模型。如果在模型未加载时执行射线检测，`intersects.length` 始终为 0，所有兴趣点都会显示。解决方案是使用 `sceneReady` 标志位，在模型加载并经过一段时间后再开始检测。
+:::
+
+## CSS 样式：兴趣点标签
+
+兴趣点的 HTML 结构和 CSS 样式需要精心设计，使其看起来像是 3D 场景的一部分：
+
+```html
+<div class="point point-0">
+    <div class="label">1</div>
+    <div class="text">
+        损坏头盔 - 轻量化复合材料外壳
+    </div>
+</div>
+```
+
+```css
+.point
+{
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    /* transform 由 JavaScript 控制 */
+}
+
+.point .label
+{
+    position: absolute;
+    top: -20px;
+    left: -20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 100;
+    text-align: center;
+    line-height: 40px;
+    cursor: help; /* 使用问号光标，增强沉浸感 */
+}
+
+/* 默认隐藏标签 */
+.point .label
+{
+    transform: scale(0);
+    transition: transform 0.3s ease;
+}
+
+/* 当兴趣点可见时，标签缩放出现 */
+.point.visible .label
+{
+    transform: scale(1);
+}
+
+/* 默认隐藏文本 */
+.point .text
+{
+    position: absolute;
+    top: 30px;
+    left: -120px;
+    width: 240px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    color: white;
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 0.3em;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* 悬停时显示文本 */
+.point:hover .text
+{
+    opacity: 1;
+}
+
+/* 阻止文本区域的鼠标事件，避免误触发悬停 */
+.point .text
+{
+    pointer-events: none;
+}
+```
+
+### 悬停文本显示/隐藏的 bug 修复
+
+一个常见的问题是：鼠标悬停在文本区域时（即使文本 opacity 为 0），文本仍然占据空间并触发 `:hover` 状态，导致文本突然显示。
+
+解决方法：给 `.text` 添加 `pointer-events: none`，让鼠标事件"穿过"文本区域，只响应 `.label` 和 `.point` 上的悬停。
+
+### CSS 过渡的正确位置
+
+淡入淡出的 `transition` 应该定义在**被动画的元素本身**上，而不是 `:hover` 伪类上：
+
+```css
+/* 正确 — transition 在元素本身上 */
+.point .text
+{
+    opacity: 0;
+    transition: opacity 0.3s ease; /* 淡入和淡出都有过渡 */
+}
+
+/* 错误 — transition 只在 hover 激活时生效，淡出时没有过渡 */
+.point:hover .text
+{
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+```
+
+:::tip
+使用 `cursor: help`（显示问号光标）而不是默认的文本光标或指针光标，可以增强沉浸感。用户悬停时看到问号，会自然地联想到"这里有信息可以查看"。
+:::
+
+## 滚动集成
+
+HTML 页面的滚动位置可以驱动 3D 场景变化：
+
+```js
+window.addEventListener('scroll', () =>
+{
+    const scrollProgress = window.scrollY / (document.body.scrollHeight - window.innerHeight)
+    camera.position.y = scrollProgress * 10
+    mesh.rotation.y = scrollProgress * Math.PI * 2
+})
+```
+
+### 滚动驱动 + CSS 3D 视差
+
+```css
+.scene
+{
+    perspective: 1000px;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.parallax-layer
+{
+    transform: translateZ(var(--depth)) scale(var(--scale));
+    /* 不同深度值创建视差效果 */
+}
+```
+
+```js
+window.addEventListener('mousemove', (e) =>
+{
+    const mouse = {
+        x: e.clientX / sizes.width,
+        y: e.clientY / sizes.height
+    }
+
+    // 更新 3D 视差
+    cameraGroup.position.x = (mouse.x - 0.5) * 2
+    cameraGroup.position.y = -(mouse.y - 0.5) * 2
+
+    // 更新 HTML 视差
+    document.querySelectorAll('[data-parallax]').forEach(el =>
+    {
+        const speed = el.dataset.parallax
+        el.style.transform = `translate(${mouse.x * speed}px, ${mouse.y * speed}px)`
+    })
+})
+```
+
+## 3D 对象跟踪 HTML 元素
+
+如果反过来，需要让 3D 对象跟随 HTML 元素的位置：
+
+```js
+function updateObjectPosition(htmlElement, mesh)
+{
+    const rect = htmlElement.getBoundingClientRect()
+
+    // 将屏幕坐标转换为 NDC
+    const x = (rect.left + rect.width / 2) / sizes.width * 2 - 1
+    const y = -(rect.top + rect.height / 2) / sizes.height * 2 + 1
+
+    // 从 NDC 反投影到 3D 空间
+    const vector = new THREE.Vector3(x, y, 0.5)
+    vector.unproject(camera)
+
+    const dir = vector.sub(camera.position).normalize()
+    const distance = -camera.position.z / dir.z
+    const pos = camera.position.clone().add(dir.multiplyScalar(distance))
+
+    mesh.position.copy(pos)
+}
+```
+
+## 性能注意事项
+
+- 透明画布 (`alpha: true`) 会有一定的 GPU 性能开销，因为浏览器需要将 WebGL 内容与底层 HTML 合成
+- 避免过多的 DOM 元素频繁更新——每个 `style.transform` 赋值虽然性能较好，但大量元素同时更新仍可能成为瓶颈
+- 使用 `will-change: transform` 提示浏览器对频繁变化的元素进行 GPU 加速
+- 射线遮挡检测（`raycaster.intersectObjects`）对场景中所有网格做碰撞检测，场景复杂时开销不小。如果兴趣点数量较多，可以考虑降低检测频率（每 3 帧检测一次）或只检测特定对象而非整个 `scene.children`
+
+:::tip
+HTML + WebGL 混合是创建沉浸式网站的关键技术。确保两者的视觉风格一致（颜色、字体、动画节奏），才能产生无缝的整体效果。用户不应该能分辨出哪些是 HTML、哪些是 WebGL——当用户产生"这个效果是怎么做到的？"的疑问时，你就成功了。
+:::

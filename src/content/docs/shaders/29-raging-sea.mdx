@@ -1,0 +1,233 @@
+---
+title: 29 汹涌大海
+description: 使用自定义着色器创建动态海浪效果，包含多层正弦波叠加和 Simplex 噪声细节
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 概述
+
+在本课中，我们将仅使用一个平面（PlaneGeometry）和自定义着色器，创建一片波涛汹涌的大海。这是对前几节课着色器知识的综合实践——从顶点位移到颜色混合，你将在一个完整项目中运用已学的所有技能。
+
+我们从一个高细分的平面开始（512x512），然后在顶点着色器中计算波浪位移，在片元着色器中根据高度混合颜色。整个过程不需要 JavaScript 每帧更新顶点，所有计算都在 GPU 上完成。
+
+:::tip
+512x512 的细分意味着平面有超过 26 万个顶点。即使如此，因为所有运算都在 GPU 上进行，性能依然很好。如果性能不足，可以适当降低到 256x256。
+:::
+
+
+<LessonPreview lesson="29-raging-sea" />
+
+## 项目结构
+
+建议将着色器代码组织到独立文件中：
+
+```
+src/
+  shaders/
+    water/
+      vertex.glsl
+      fragment.glsl
+```
+
+在较复杂的项目中，每个效果（水、天空、地面）都应有自己的着色器文件夹，便于管理。
+
+## JavaScript 设置
+
+首先创建平面和 ShaderMaterial：
+
+```js
+const waterGeometry = new THREE.PlaneGeometry(2, 2, 512, 512)
+
+const waterMaterial = new THREE.ShaderMaterial({
+    vertexShader: waterVertexShader,
+    fragmentShader: waterFragmentShader,
+    uniforms: {
+        uTime: { value: 0 },
+        uBigWavesElevation: { value: 0.2 },
+        uBigWavesFrequency: { value: new THREE.Vector2(4, 1.5) },
+        uBigWavesSpeed: { value: 0.75 },
+        uSmallWavesElevation: { value: 0.15 },
+        uSmallWavesFrequency: { value: 3 },
+        uSmallWavesSpeed: { value: 0.2 },
+        uSmallIterations: { value: 4 },
+        uDepthColor: { value: new THREE.Color('#186691') },
+        uSurfaceColor: { value: new THREE.Color('#9bd8ff') },
+        uColorOffset: { value: 0.08 },
+        uColorMultiplier: { value: 5 }
+    }
+})
+
+const water = new THREE.Mesh(waterGeometry, waterMaterial)
+water.rotation.x = -Math.PI * 0.5
+scene.add(water)
+```
+
+**关键参数说明：**
+
+| 参数 | 类型 | 作用 |
+|------|------|------|
+| `uBigWavesElevation` | `float` | 大波浪的高度（振幅） |
+| `uBigWavesFrequency` | `vec2` | 大波浪在 x 轴和 z 轴方向的频率 |
+| `uBigWavesSpeed` | `float` | 大波浪的移动速度 |
+| `uSmallWavesElevation` | `float` | 小波浪（噪声细节）的振幅 |
+| `uSmallWavesFrequency` | `float` | 小波浪的频率 |
+| `uSmallIterations` | `int` | 噪声叠加的层数（FBM 迭代次数） |
+
+:::caution
+平面默认朝向摄像机（XY 平面），需要绕 X 轴旋转 `-Math.PI / 2` 使其水平放置。注意要在应用模型矩阵之后、修改顶点位置之前考虑这一旋转。我们习惯先应用 `modelMatrix`，再在模型空间中修改顶点。
+:::
+
+## 顶点着色器 — 波浪位移
+
+### 大波浪：正弦波组合
+
+海面的大波浪由两个方向的正弦波交叉产生：
+
+```glsl
+uniform float uTime;
+uniform float uBigWavesElevation;
+uniform vec2 uBigWavesFrequency;
+uniform float uBigWavesSpeed;
+uniform float uSmallWavesElevation;
+uniform float uSmallWavesFrequency;
+uniform float uSmallWavesSpeed;
+uniform int uSmallIterations;
+
+varying float vElevation;
+
+void main() {
+    vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+
+    // 大波浪：两个方向的正弦波相乘
+    float elevation = sin(modelPosition.x * uBigWavesFrequency.x + uTime * uBigWavesSpeed)
+        * sin(modelPosition.z * uBigWavesFrequency.y + uTime * uBigWavesSpeed)
+        * uBigWavesElevation;
+
+    modelPosition.y += elevation;
+
+    vec4 viewPosition = viewMatrix * modelPosition;
+    gl_Position = projectionMatrix * viewPosition;
+
+    vElevation = elevation;
+}
+```
+
+**原理分析：**
+
+- `sin(x * freqX + time * speed)` — 沿 x 方向的正弦波，`freqX` 控制波长，`speed` 控制传播速度
+- `sin(z * freqY + time * speed)` — 沿 z 方向的正弦波
+- 两个正弦波**相乘**而不是相加，产生交叉网格状的波纹图案。这与之前旗帜课程中的做法类似
+- 最后乘以 `uBigWavesElevation` 控制整体振幅
+
+:::tip
+为什么两个 `sin` 相乘而不是相加？相加会产生平面波（沿一个方向传播），而相乘会在两个方向上形成类似网格的起伏图案，更像真实海面的交叉波浪。
+:::
+
+### 小波浪：Simplex 噪声叠加
+
+仅有大波浪看起来太规则了。我们用 Simplex 噪声（Perlin 噪声的一种改进版本）叠加细节：
+
+```glsl
+// Simplex 噪声辅助函数
+float permute(vec4 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
+vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+
+float snoise(vec3 v) {
+    // ... simplex noise 完整实现
+    // （这是一个标准实现，返回范围大约在 -1.0 到 1.0 之间）
+}
+
+void main() {
+    // ... 大波浪代码 ...
+
+    // 小波浪（分形布朗运动 FBM）
+    for (float i = 1.0; i <= 4.0; i++) {
+        elevation -= abs(snoise(vec3(
+            modelPosition.xz * uSmallWavesFrequency * i,
+            uTime * uSmallWavesSpeed
+        )) * uSmallWavesElevation / i);
+    }
+
+    modelPosition.y += elevation;
+    // ...
+}
+```
+
+**分形布朗运动（FBM）解析：**
+
+| 要素 | 说明 |
+|------|------|
+| `for (float i = 1.0; i <= 4.0; i++)` | 4 层噪声叠加，每层频率递增 |
+| `uSmallWavesFrequency * i` | 每层的频率更高（更小的波浪细节） |
+| `uSmallWavesElevation / i` | 每层的振幅递减（大细节影响大，小细节影响小） |
+| `abs(snoise(...))` | 取绝对值，让噪声产生尖锐的波峰而不是平滑起伏 |
+| `-=` | 从总高度中**减去**，产生向下凹陷的细节 |
+
+:::tip
+FBM 是计算机图形学中最常用的技术之一。它的核心思想是：将不同频率、不同振幅的噪声叠加在一起。低频的大起伏 + 高频的小细节 = 看起来自然的表面。你可以尝试修改迭代次数（`uSmallIterations`）来看效果变化。
+:::
+
+## 片元着色器 — 深度颜色混合
+
+根据顶点着色器传递的海拔高度，混合深海色和浅水色：
+
+```glsl
+uniform vec3 uDepthColor;
+uniform vec3 uSurfaceColor;
+uniform float uColorOffset;
+uniform float uColorMultiplier;
+
+varying float vElevation;
+
+void main() {
+    float mixStrength = (vElevation + uColorOffset) * uColorMultiplier;
+    mixStrength = clamp(mixStrength, 0.0, 1.0);
+    vec3 color = mix(uDepthColor, uSurfaceColor, mixStrength);
+    gl_FragColor = vec4(color, 1.0);
+}
+```
+
+**逐步解析：**
+
+1. `vElevation` 是顶点着色器计算出的海拔高度，通过 `varying` 传递过来
+2. `(vElevation + uColorOffset)` — 偏移量让颜色渐变的中心点上移或下移。正值意味着整体更亮（更多表面色）
+3. `* uColorMultiplier` — 乘数控制渐变的陡峭程度。值越大，颜色过渡越快
+4. `clamp(..., 0.0, 1.0)` — 将混合因子限制在 `mix()` 函数的有效范围内
+5. `mix(depthColor, surfaceColor, mixStrength)` — 根据 `mixStrength` 在两种颜色之间线性插值
+
+:::caution
+如果没有 `clamp()`，当 `mixStrength` 超出 `[0, 1]` 范围时，颜色会过度混合，可能产生不自然的亮斑或暗区。
+:::
+
+## 动画循环
+
+在 `animate` 函数中更新 `uTime`：
+
+```js
+const clock = new THREE.Clock()
+
+const animate = () => {
+    const elapsedTime = clock.getElapsedTime()
+    waterMaterial.uniforms.uTime.value = elapsedTime
+    controls.update()
+    renderer.render(scene, camera)
+    requestAnimationFrame(animate)
+}
+animate()
+```
+
+## 关键技术总结
+
+| 技术 | 实现方式 | 效果 |
+|------|----------|------|
+| 大波浪 | 双方向 `sin` 波相乘 | 主要的海面起伏 |
+| 小波浪 | Simplex 噪声 FBM 叠加 | 波浪表面的精细细节 |
+| `abs()` 取绝对值 | 让噪声只产生向下的凹陷 | 尖锐的波峰效果 |
+| 颜色混合 | `mix()` + `clamp()` | 根据高度混合深浅颜色 |
+| 深度偏移 | `uColorOffset` | 调整颜色渐变的基准线 |
+
+:::tip
+调试着色器时的好习惯：不要试图一次性写完整个着色器。先写一个基本的顶点着色器确保平面正常显示，然后逐步添加大波浪、小波浪，最后处理颜色。建议先在 JavaScript 内联写着色器代码，确认效果后再移到单独的 `.glsl` 文件中。
+:::

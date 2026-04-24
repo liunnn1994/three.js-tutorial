@@ -1,0 +1,868 @@
+---
+title: 20 物理引擎
+description: 使用 cannon-es 物理引擎为 3D 场景添加真实的碰撞、弹跳和重力模拟
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 什么是物理模拟？
+
+如果你玩过《愤怒的小鸟》，你一定体验过物理模拟的乐趣 -- 把小鸟弹射到建筑物上，看着碎片四处飞散、碰撞、弹跳、坠落。这种"真实感"是让 3D 网站变得令人兴奋的关键因素之一。
+
+在 3D 场景中，**物理模拟**就是让虚拟物体像现实世界中的物体一样运动：受到重力影响而下落、与其他物体碰撞时弹开或变形、在表面滑动时产生摩擦力。
+
+### 为什么需要物理引擎？
+
+你可以尝试自己用数学公式实现物理效果，比如用射线检测来判断墙壁距离、用简单的抛物线公式模拟弹跳。这在简单场景中是可行的，但一旦涉及到以下需求：
+
+- **真实的碰撞检测**（不是所有形状都能用简单的 AABB 盒子来检测）
+- **摩擦力和弹力**（不同材质之间有不同的物理属性）
+- **约束和关节**（比如门铰链、布娃娃效果）
+- **多种物体之间的复杂交互**
+
+手写物理代码会变得极其复杂。这就是我们需要**物理引擎**的原因 -- 它帮我们处理所有底层的数学计算。
+
+### 可用的 JavaScript 物理引擎
+
+| 引擎 | 类型 | 特点 |
+|------|------|------|
+| [cannon-es](https://github.com/pmndrs/cannon-es) | 3D | cannon.js 的现代 ES Module fork，本课使用 |
+| [Ammo.js](https://github.com/kripken/ammo.js) | 3D | Bullet 物理引擎的 WebAssembly 编译，最强大但复杂 |
+| [Oimo.js](https://github.com/lo-th/Oimo.js) | 3D | 轻量级，性能不错 |
+| [Matter.js](https://brm.io/matter-js/) | 2D | 最流行的 2D 物理引擎 |
+| [Planck.js](https://piemonte.github.io/planck.js/) | 2D | Box2D 的 JavaScript 移植 |
+| [Rapier](https://rapier.rs/) | 3D | 基于 Rust 的物理引擎，性能极佳 |
+
+:::tip 关于 2D vs 3D 物理库
+如果你的场景只需要在水平面上运动（比如台球游戏、俯视角策略游戏），使用 **2D 物理库**会有更好的性能。但对于大多数 3D 网页体验，我们还是需要 3D 物理库。
+:::
+
+本课选择 **cannon-es**，因为它最容易理解和实现，适合初学者入门。
+
+
+<LessonPreview lesson="20-physics" />
+
+## cannon-es 简介
+
+[cannon-es](https://github.com/pmndrs/cannon-es) 是经典物理库 [cannon.js](http://schteppe.github.io/cannon.js/) 的现代维护版本。原版 cannon.js 已经多年没有更新了，而 cannon-es 提供了：
+
+- ES Module 支持（可以直接 `import`）
+- TypeScript 类型支持
+- 性能改进
+- 活跃的社区维护
+
+### 安装
+
+```bash
+npm install cannon-es
+```
+
+安装完成后，你可以在代码中导入：
+
+```js
+import * as CANNON from 'cannon-es'
+console.log(CANNON) // 查看所有导出的类和函数
+```
+
+## 核心概念：双世界架构
+
+物理模拟的核心思想是 **"双世界并行"**：
+
+```
+┌─────────────────────┐    每帧同步坐标    ┌─────────────────────┐
+│   Three.js 世界      │ ◄────────────────► │   Cannon.js 世界     │
+│   (你能看到的)       │                    │   (你看不见的)       │
+│                     │                    │                     │
+│   Mesh (网格)       │  mesh.position     │   Body (刚体)        │
+│   可视化的 3D 物体   │  = body.position   │   纯数学的物理对象    │
+└─────────────────────┘                    └─────────────────────┘
+```
+
+1. 在 **Three.js 世界**中，我们创建可视化的 `Mesh`（网格）-- 这是你能在屏幕上看到的东西
+2. 在 **Cannon.js 世界**中，我们创建对应的 `Body`（刚体）-- 这是一堆数学公式，你看不见它
+3. 每一帧，物理引擎计算出每个物体的新位置和旋转
+4. 我们把这些计算结果**复制回 Three.js 的网格**，让画面跟着物理世界更新
+
+这就好比两个平行世界：一个是电影布景（Three.js），一个是演员的彩排空间（Cannon.js）。演员在彩排空间里走动、碰撞、摔倒，然后他们的位置信息被同步到电影布景上。
+
+## 创建物理世界
+
+第一步是创建物理世界并设置基本参数：
+
+```js
+import * as CANNON from 'cannon-es'
+
+// 创建物理世界
+const world = new CANNON.World()
+
+// 设置宽相位算法（优化碰撞检测性能）
+world.broadphase = new CANNON.SAPBroadphase(world)
+
+// 允许物体休眠（静止的物体不再计算，节省性能）
+world.allowSleep = true
+
+// 设置重力 -- 地球表面是 -9.82 m/s²
+world.gravity.set(0, -9.82, 0)
+```
+
+### 关键参数解释
+
+- **`gravity.set(x, y, z)`**：设置重力方向和大小。Y 轴负方向表示"向下"。如果你想模拟火星环境，可以改成更小的值（火星重力约为地球的 38%）
+- **`SAPBroadphase`**：宽相位碰撞检测算法，Sweep and Prune，比默认算法性能更好
+- **`allowSleep`**：当一个物体速度很小且不再与其他物体碰撞时，物理引擎会把它"冻结"，直到有外力作用才重新激活。这对性能非常重要
+
+:::tip
+默认情况下，物理世界是一个"真空" -- 没有重力，没有空气阻力，什么都不会发生。你必须显式设置重力才能让物体下落。
+:::
+
+## World、Body 和 Shape
+
+在 cannon-es 中有三个核心概念，它们的关系类似于 Three.js 中的 Scene、Mesh 和 Geometry：
+
+| Cannon-es | Three.js | 说明 |
+|-----------|----------|------|
+| `World` | `Scene` | 物理世界的容器 |
+| `Body` | `Mesh` | 物理对象（刚体） |
+| `Shape` | `Geometry` | 物理对象的形状 |
+
+**创建一个物理对象的步骤**：
+1. 先创建一个 `Shape`（形状）
+2. 再创建一个 `Body`（刚体）并把形状赋给它
+3. 把 Body 添加到 `World`（世界）中
+
+## Shape 类型
+
+cannon-es 提供了多种形状类型，每种适合不同的情况：
+
+### Sphere（球体）
+
+最简单的形状，只需一个半径参数：
+
+```js
+const sphereShape = new CANNON.Sphere(0.5) // 半径 0.5
+```
+
+### Box（长方体）
+
+Box 的参数是**半尺寸**（half extents），即从中心到边缘的距离：
+
+```js
+// 创建一个 1x1x1 的方块，参数是半宽、半高、半深
+const boxShape = new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5))
+```
+
+:::warning 注意
+Three.js 的 `BoxGeometry(1, 1, 1)` 参数是**全尺寸**，而 cannon-es 的 `CANNON.Box` 参数是**半尺寸**。这是初学者最容易犯的错误！
+:::
+
+### Plane（平面）
+
+平面是一个**无限大**的数学平面，非常适合做地面：
+
+```js
+const floorShape = new CANNON.Plane()
+```
+
+默认情况下平面朝向 Z 轴（面对摄像机），我们需要旋转它让它水平朝上。
+
+### Cylinder（圆柱体）
+
+```js
+// 参数：半径Top, 半径Bottom, 高度, 分段数
+const cylinderShape = new CANNON.Cylinder(0.5, 0.5, 1, 8)
+```
+
+### ConvexPolyhedron（凸多面体）
+
+用于不规则形状，可以传入自定义的顶点和面：
+
+```js
+const vertices = [
+    new CANNON.Vec3(0, 0, 0),
+    new CANNON.Vec3(1, 0, 0),
+    new CANNON.Vec3(0, 1, 0),
+    new CANNON.Vec3(0, 0, 1)
+]
+const faces = [
+    [0, 1, 2],
+    [0, 2, 3],
+    [0, 3, 1],
+    [1, 3, 2]
+]
+const polyhedronShape = new CANNON.ConvexPolyhedron({ vertices, faces })
+```
+
+:::tip
+也可以使用 `cannon-es` 提供的 `Trimesh`（三角网格）来匹配任意 3D 模型的形状，但 Trimesh 不支持动态物体（只能用于静态物体），且碰撞检测性能较差。
+:::
+
+## Body 类型
+
+通过设置 `mass`（质量）属性，可以控制物体的行为类型：
+
+### 动态物体（Dynamic Body）
+
+```js
+const body = new CANNON.Body({
+    mass: 1,  // 质量大于 0 = 动态物体
+    shape: new CANNON.Sphere(0.5)
+})
+```
+
+- `mass > 0`：物体会受到重力影响而下落
+- 物体会与其他物体碰撞、弹跳
+- 可以通过施加力或冲量来改变运动
+
+### 静态物体（Static Body）
+
+```js
+const floorBody = new CANNON.Body({
+    mass: 0,  // 质量为 0 = 静态物体
+    shape: new CANNON.Plane()
+})
+```
+
+- `mass = 0`：物体完全静止，不受重力影响
+- 其他物体可以碰到它并弹开，但它纹丝不动
+- 适合做地面、墙壁、障碍物等
+- **设置 mass 为 0 并不意味着物体是"空气"**，它仍然具有坚实的碰撞表面
+
+### 运动学物体（Kinematic Body）
+
+```js
+const kinematicBody = new CANNON.Body({
+    mass: 0,
+    type: CANNON.Body.KINEMATIC
+})
+```
+
+- 类似静态物体，不受重力影响
+- 但可以通过代码手动控制其位置和速度
+- 会影响动态物体（比如移动的平台可以推动上面的物体）
+- 适合做电梯、旋转门、移动平台等
+
+## 创建第一个物理场景
+
+### 创建球体并让其下落
+
+```js
+// 1. 创建物理形状
+const sphereShape = new CANNON.Sphere(0.5)
+
+// 2. 创建物理刚体
+const sphereBody = new CANNON.Body({
+    mass: 1,
+    shape: sphereShape,
+    position: new CANNON.Vec3(0, 3, 0) // 初始高度 3
+})
+
+// 3. 添加到物理世界
+world.addBody(sphereBody)
+```
+
+### 创建地面
+
+```js
+// 创建平面形状
+const floorShape = new CANNON.Plane()
+
+// 创建地面刚体（质量为 0 = 静态）
+const floorBody = new CANNON.Body()
+floorBody.mass = 0
+floorBody.addShape(floorShape)
+
+// 旋转平面使其水平（默认朝向摄像机）
+floorBody.quaternion.setFromAxisAngle(
+    new CANNON.Vec3(-1, 0, 0),
+    Math.PI * 0.5
+)
+
+// 添加到物理世界
+world.addBody(floorBody)
+```
+
+### 关于四元数旋转
+
+cannon-es **只支持四元数旋转**，不支持 Three.js 中常用的 Euler 角度（`rotation.x`、`rotation.y`、`rotation.z`）。
+
+`setFromAxisAngle(axis, angle)` 的含义是：
+
+- **axis**：一根穿过物体的"棍子"（旋转轴）
+- **angle**：围绕这根棍子旋转多少角度
+
+```js
+// 围绕 X 轴旋转 90 度（让平面从竖直变成水平）
+floorBody.quaternion.setFromAxisAngle(
+    new CANNON.Vec3(-1, 0, 0),  // 旋转轴：X 轴（负方向）
+    Math.PI * 0.5                // 旋转角度：90 度（π/2 弧度）
+)
+```
+
+:::warning 常见错误
+如果旋转方向反了（比如物体全部消失），通常是旋转轴方向搞反了。尝试把 `(-1, 0, 0)` 改成 `(1, 0, 0)`，或者改变角度的正负。
+
+另外，Cannon.js 的 `Plane` 是一个**无限平面**。如果物体在平面的"背面"，它会直接穿过平面掉到虚无中。确保旋转方向正确！
+:::
+
+### 角度速查表
+
+| 弧度 | 角度 | 说明 |
+|------|------|------|
+| `0` | 0° | 不旋转 |
+| `Math.PI * 0.5` | 90° | 四分之一圈 |
+| `Math.PI` | 180° | 半圈 |
+| `Math.PI * 2` | 360° | 一整圈 |
+
+## 物理材质与接触材质
+
+默认情况下，物体碰撞后几乎不弹跳，就像撞到了果冻上。这是因为没有设置物理材质属性。
+
+### ContactMaterial（接触材质）
+
+`ContactMaterial` 定义了两种材质相互作用时的物理表现：
+
+```js
+// 创建一个物理材质
+const defaultMaterial = new CANNON.Material('default')
+
+// 创建接触材质（定义两个 default 材质碰撞时的行为）
+const defaultContactMaterial = new CANNON.ContactMaterial(
+    defaultMaterial,   // 材质 A
+    defaultMaterial,   // 材质 B
+    {
+        friction: 0.1,     // 摩擦力（0 = 完全光滑，1 = 很涩）
+        restitution: 0.7   // 弹性/恢复系数（0 = 不弹，1 = 完美弹跳）
+    }
+)
+
+// 设置为世界的默认接触材质
+world.defaultContactMaterial = defaultContactMaterial
+```
+
+### 关键参数
+
+- **`friction`（摩擦力）**：0 表示像冰面一样光滑，1 表示像砂纸一样粗糙。较低的值让物体更容易滑动
+- **`restitution`（弹性系数）**：0 表示像泥巴一样完全不弹跳，1 表示像橡皮球一样完美弹跳。0.7 是一个不错的默认值
+
+```js
+// 为 Body 赋予材质
+const body = new CANNON.Body({
+    mass: 1,
+    shape: new CANNON.Sphere(0.5),
+    material: defaultMaterial  // 使用我们创建的材质
+})
+```
+
+:::tip
+你可以创建多种不同的材质，并为每对材质定义不同的接触行为。比如：
+- `iceMaterial` + `rockMaterial`：低摩擦力，低弹性
+- `rubberMaterial` + `floorMaterial`：高摩擦力，高弹性
+:::
+
+## 更新物理世界与同步坐标
+
+物理引擎不会自己运行，你需要在**每一帧**告诉它更新：
+
+```js
+const clock = new THREE.Clock()
+let oldElapsedTime = 0
+
+const tick = () => {
+    // 1. 计算时间增量（delta time）
+    const elapsedTime = clock.getElapsedTime()
+    const deltaTime = elapsedTime - oldElapsedTime
+    oldElapsedTime = elapsedTime
+
+    // 2. 更新物理世界
+    world.step(1 / 60, deltaTime, 3)
+
+    // 3. 同步物理坐标到 Three.js
+    sphere.position.copy(sphereBody.position)
+
+    // 4. 渲染
+    renderer.render(scene, camera)
+    window.requestAnimationFrame(tick)
+}
+```
+
+### world.step() 详解
+
+```js
+world.step(fixedTimeStep, deltaTime, maxSubSteps)
+```
+
+| 参数 | 说明 | 推荐值 |
+|------|------|--------|
+| `fixedTimeStep` | 物理模拟的固定时间步长 | `1/60`（60Hz） |
+| `deltaTime` | 自上次调用以来经过的真实时间 | 从 Clock 获取 |
+| `maxSubSteps` | 最多执行多少步来追赶延迟 | `3` |
+
+**为什么这么复杂？** 如果你的游戏卡顿了（比如某一帧花了 100ms），物理引擎不能一次性跳过 100ms 的模拟，否则物体会穿墙。它会把 100ms 分成多个小步（每步 1/60 秒），最多执行 `maxSubSteps` 步来追赶。
+
+:::info 深入了解
+如果你想理解为什么物理更新的时间步长如此重要，可以阅读这篇经典文章：
+[Fix Your Timestep!](https://gafferongames.com/post/fix_your_timestep/)
+:::
+
+### 坐标同步
+
+使用 `copy()` 方法可以一行代码把物理世界的坐标同步到 Three.js：
+
+```js
+// 同步位置
+mesh.position.copy(body.position)
+
+// 同步旋转（四元数）
+mesh.quaternion.copy(body.quaternion)
+```
+
+虽然 `body.position` 是 cannon-es 的 `Vec3` 类型，而 `mesh.position` 是 Three.js 的 `Vector3` 类型，但 `copy()` 方法能自动处理这种差异 -- 两个库的开发者专门做了兼容。
+
+## 完整示例：球体弹跳
+
+下面是一个完整的、可运行的球体弹跳示例：
+
+```js
+import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import * as CANNON from 'cannon-es'
+
+// --- 场景初始化 ---
+const scene = new THREE.Scene()
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100)
+camera.position.set(0, 3, 5)
+const renderer = new THREE.WebGLRenderer({ antialias: true })
+renderer.setSize(window.innerWidth, window.innerHeight)
+renderer.shadowMap.enabled = true
+document.body.appendChild(renderer.domElement)
+const controls = new OrbitControls(camera, renderer.domElement)
+
+// --- 物理世界 ---
+const world = new CANNON.World()
+world.broadphase = new CANNON.SAPBroadphase(world)
+world.allowSleep = true
+world.gravity.set(0, -9.82, 0)
+
+// 物理材质
+const defaultMaterial = new CANNON.Material('default')
+const defaultContactMaterial = new CANNON.ContactMaterial(
+    defaultMaterial, defaultMaterial,
+    { friction: 0.1, restitution: 0.7 }
+)
+world.defaultContactMaterial = defaultContactMaterial
+
+// --- 地面 ---
+// Three.js 地面
+const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(10, 10),
+    new THREE.MeshStandardMaterial({ color: '#777777' })
+)
+floor.rotation.x = -Math.PI * 0.5
+floor.receiveShadow = true
+scene.add(floor)
+
+// 物理地面
+const floorBody = new CANNON.Body()
+floorBody.mass = 0
+floorBody.addShape(new CANNON.Plane())
+floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5)
+world.addBody(floorBody)
+
+// --- 球体 ---
+// Three.js 球体
+const sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(0.5, 32, 32),
+    new THREE.MeshStandardMaterial({ color: '#ff6666' })
+)
+sphere.castShadow = true
+sphere.position.set(0, 3, 0)
+scene.add(sphere)
+
+// 物理球体
+const sphereBody = new CANNON.Body({
+    mass: 1,
+    shape: new CANNON.Sphere(0.5),
+    position: new CANNON.Vec3(0, 3, 0),
+    material: defaultMaterial
+})
+world.addBody(sphereBody)
+
+// --- 灯光 ---
+scene.add(new THREE.AmbientLight(0xffffff, 1))
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.5)
+dirLight.position.set(5, 5, 5)
+dirLight.castShadow = true
+scene.add(dirLight)
+
+// --- 动画循环 ---
+const clock = new THREE.Clock()
+let oldElapsedTime = 0
+
+const tick = () => {
+    const elapsedTime = clock.getElapsedTime()
+    const deltaTime = elapsedTime - oldElapsedTime
+    oldElapsedTime = elapsedTime
+
+    // 更新物理
+    world.step(1 / 60, deltaTime, 3)
+
+    // 同步坐标
+    sphere.position.copy(sphereBody.position)
+    sphere.quaternion.copy(sphereBody.quaternion)
+
+    controls.update()
+    renderer.render(scene, camera)
+    window.requestAnimationFrame(tick)
+}
+tick()
+```
+
+## 施加力与冲量
+
+除了让物体自由下落，你还可以通过代码影响物体的运动：
+
+### applyForce（施加力）
+
+力是**持续**的，就像你一直推着一个箱子：
+
+```js
+// 持续向右推
+body.applyForce(
+    new CANNON.Vec3(10, 0, 0),  // 力的方向和大小
+    body.position                 // 力的作用点（通常就是物体位置）
+)
+```
+
+### applyImpulse（施加冲量）
+
+冲量是**瞬间**的，就像你猛地踢了一脚球：
+
+```js
+// 瞬间向上弹射
+body.applyImpulse(
+    new CANNON.Vec3(0, 5, 0),   // 冲量的方向和大小
+    body.position                  // 作用点
+)
+```
+
+### applyLocalForce / applyLocalImpulse
+
+在物体的**本地坐标系**中施加力或冲量，而不是世界坐标系。适合"向前推进"这种相对物体的操作。
+
+### velocity（直接设置速度）
+
+你也可以直接修改速度向量：
+
+```js
+// 让物体向右飞
+body.velocity.set(5, 10, 0)
+
+// 让物体停止
+body.velocity.set(0, 0, 0)
+
+// 阻尼（模拟空气阻力）
+body.linearDamping = 0.1  // 线性阻尼
+body.angularDamping = 0.1 // 角阻尼
+```
+
+## 碰撞检测与音效
+
+cannon-es 支持碰撞事件监听：
+
+```js
+const hitSound = new Audio('/sounds/hit.mp3')
+
+const playHitSound = (collision) => {
+    // 获取碰撞冲击力（沿法线方向的冲击速度）
+    const impactStrength = collision.contact.getImpactVelocityAlongNormal()
+
+    // 只在碰撞力度足够大时播放音效
+    if (impactStrength > 1.5) {
+        hitSound.volume = Math.random()  // 随机音量增加真实感
+        hitSound.currentTime = 0          // 重置播放位置
+        hitSound.play()
+    }
+}
+
+// 监听碰撞事件
+body.addEventListener('collide', playHitSound)
+```
+
+`getImpactVelocityAlongNormal()` 返回碰撞时两个物体沿碰撞法线方向的相对速度。值越大，碰撞越猛烈。
+
+## 批量创建物体
+
+在实际项目中，你通常需要创建大量物体。关键是用一个**工厂函数**来管理创建逻辑：
+
+```js
+// 存储所有需要同步的对象
+const objectsToUpdate = []
+
+// 共享的几何体和材质（性能优化关键！）
+const sphereGeometry = new THREE.SphereGeometry(1, 20, 20)
+const sphereMaterial = new THREE.MeshStandardMaterial({
+    metalness: 0.3,
+    roughness: 0.4
+})
+
+// 工厂函数：创建球体
+const createSphere = (radius, position) => {
+    // 创建 Three.js 网格
+    const mesh = new THREE.Mesh(sphereGeometry, sphereMaterial)
+    mesh.castShadow = true
+    mesh.scale.set(radius, radius, radius) // 通过缩放复用同一个几何体
+    mesh.position.copy(position)
+    scene.add(mesh)
+
+    // 创建 Cannon.js 刚体
+    const body = new CANNON.Body({
+        mass: 1,
+        shape: new CANNON.Sphere(radius),
+        position: new CANNON.Vec3(position.x, position.y, position.z),
+        material: defaultMaterial
+    })
+    body.addEventListener('collide', playHitSound)
+    world.addBody(body)
+
+    // 保存引用以便在动画循环中同步
+    objectsToUpdate.push({ mesh, body })
+}
+```
+
+:::warning 性能优化：复用几何体和材质
+**永远不要为每个物体创建新的 `Geometry` 和 `Material`！** 这些会被发送到 GPU，重复创建会浪费大量内存。正确做法是：
+- 创建**一个**共享的几何体
+- 创建**一个**共享的材质
+- 为每个物体创建 Mesh 时使用相同的几何体和材质
+- 通过 `mesh.scale.set()` 来控制每个物体的大小
+:::
+
+### 批量创建方块
+
+```js
+const boxGeometry = new THREE.BoxGeometry(1, 1, 1)
+const boxMaterial = new THREE.MeshStandardMaterial({
+    metalness: 0.3,
+    roughness: 0.4
+})
+
+const createBox = (width, height, depth, position) => {
+    const mesh = new THREE.Mesh(boxGeometry, boxMaterial)
+    mesh.castShadow = true
+    mesh.scale.set(width, height, depth)
+    mesh.position.copy(position)
+    scene.add(mesh)
+
+    const body = new CANNON.Body({
+        mass: 1,
+        shape: new CANNON.Box(new CANNON.Vec3(width * 0.5, height * 0.5, depth * 0.5)),
+        position: new CANNON.Vec3(position.x, position.y, position.z),
+        material: defaultMaterial
+    })
+    body.addEventListener('collide', playHitSound)
+    world.addBody(body)
+
+    objectsToUpdate.push({ mesh, body })
+}
+```
+
+### 在动画循环中同步所有对象
+
+```js
+const tick = () => {
+    const elapsedTime = clock.getElapsedTime()
+    const deltaTime = elapsedTime - oldElapsedTime
+    oldElapsedTime = elapsedTime
+
+    // 更新物理世界
+    world.step(1 / 60, deltaTime, 3)
+
+    // 同步所有对象的位置和旋转
+    for (const object of objectsToUpdate) {
+        object.mesh.position.copy(object.body.position)
+        object.mesh.quaternion.copy(object.body.quaternion)
+    }
+
+    controls.update()
+    renderer.render(scene, camera)
+    window.requestAnimationFrame(tick)
+}
+```
+
+## 使用 GUI 动态创建物体
+
+结合 `lil-gui`，可以在运行时通过按钮创建物体：
+
+```js
+import GUI from 'lil-gui'
+
+const gui = new GUI()
+const debugObject = {}
+
+debugObject.createSphere = () => {
+    createSphere(
+        Math.random() * 0.5,  // 随机半径
+        {
+            x: (Math.random() - 0.5) * 3,  // 随机 X 位置
+            y: 3,                            // 固定高度
+            z: (Math.random() - 0.5) * 3   // 随机 Z 位置
+        }
+    )
+}
+gui.add(debugObject, 'createSphere')
+
+debugObject.createBox = () => {
+    createBox(
+        Math.random(), Math.random(), Math.random(),  // 随机尺寸
+        {
+            x: (Math.random() - 0.5) * 3,
+            y: 3,
+            z: (Math.random() - 0.5) * 3
+        }
+    )
+}
+gui.add(debugObject, 'createBox')
+
+// 重置按钮
+debugObject.reset = () => {
+    for (const object of objectsToUpdate) {
+        object.body.removeEventListener('collide', playHitSound)
+        world.removeBody(object.body)
+        scene.remove(object.mesh)
+    }
+    objectsToUpdate.splice(0, objectsToUpdate.length)
+}
+gui.add(debugObject, 'reset')
+```
+
+## 调试物理世界
+
+当你发现物体的物理行为不对时（比如穿透、不弹跳），你需要"看到"物理世界。有以下几种方法：
+
+### 方法 1：wireframe 辅助查看
+
+给 Three.js 的 Mesh 加上 wireframe 材质，看看物理形状是否匹配：
+
+```js
+const wireframeMaterial = new THREE.MeshBasicMaterial({
+    color: 0x00ff00,
+    wireframe: true
+})
+const debugMesh = new THREE.Mesh(sphereGeometry, wireframeMaterial)
+```
+
+### 方法 2：cannon-es-debugger
+
+社区提供了调试渲染器，可以把物理世界的形状可视化：
+
+```bash
+npm install cannon-es-debugger
+```
+
+```js
+import { CannonDebugRenderer } from 'cannon-es-debugger'
+
+const cannonDebugRenderer = new CannonDebugRenderer(scene, world)
+
+// 在动画循环中
+cannonDebugRenderer.update()
+```
+
+这会在场景中用线框显示所有物理形状的位置，方便你排查问题。
+
+### 方法 3：console.log 调试
+
+```js
+// 查看物体的位置变化
+console.log(body.position.y)
+```
+
+## 性能优化建议
+
+### 1. 限制物体数量
+
+每个物理 Body 都需要计算碰撞检测，数量越多越慢。一般来说，同时存在的动态物体不要超过几百个。
+
+### 2. 使用 allowSleep
+
+```js
+world.allowSleep = true
+```
+
+已经静止的物体不再参与物理计算，可以大幅提升性能。
+
+### 3. 选择合适的形状
+
+碰撞检测的速度取决于形状的复杂度：
+
+| 形状 | 性能 | 适用场景 |
+|------|------|----------|
+| `Sphere` | 最快 | 球形物体、弹丸 |
+| `Box` | 快 | 方块、箱子 |
+| `Plane` | 最快 | 地面、墙壁 |
+| `Cylinder` | 中等 | 柱子、管道 |
+| `ConvexPolyhedron` | 较慢 | 不规则凸形状 |
+| `Trimesh` | 最慢 | 静态复杂地形 |
+
+:::warning
+`Trimesh`（三角网格）**只能用于静态物体**（mass = 0）。对于动态的复杂形状，使用多个简单的 Shape 组合来近似。
+:::
+
+### 4. 使用 SAPBroadphase
+
+```js
+world.broadphase = new CANNON.SAPBroadphase(world)
+```
+
+SAP（Sweep and Prune）比默认的 NaiveBroadphase 在物体数量多时性能更好。
+
+### 5. 复用几何体和材质
+
+如前所述，所有使用相同形状的物体应该共享同一个 Three.js Geometry 和 Material。
+
+### 6. 及时清理不需要的物体
+
+```js
+// 从物理世界和 Three.js 世界中移除
+world.removeBody(body)
+scene.remove(mesh)
+```
+
+### 7. 考虑使用 InstancedMesh
+
+如果你需要渲染大量相同形状的物体，使用 `THREE.InstancedMesh` 可以显著提升渲染性能（虽然这超出了物理引擎的范围，但经常与物理引擎配合使用）。
+
+## 完整项目代码结构
+
+以下是本课最终代码的结构概览：
+
+```
+project/
+├── src/
+│   └── script.js          # 主脚本
+├── static/
+│   └── sounds/
+│       └── hit.mp3         # 碰撞音效
+├── package.json
+└── vite.config.js
+```
+
+最终代码实现了：
+- 物理世界初始化（重力、宽相位、休眠）
+- 物理材质和接触材质（摩擦力、弹性）
+- 地面（静态 Body + Plane 形状）
+- 工厂函数创建球体和方块
+- 碰撞音效
+- GUI 按钮动态创建/重置物体
+- 动画循环中同步所有物体
+
+## 参考链接
+
+- [cannon-es GitHub 仓库](https://github.com/pmndrs/cannon-es) -- 源码和文档
+- [cannon-es 文档](http://schteppe.github.io/cannon.js/docs/) -- API 参考（注意原版文档的 SSL 问题，使用 HTTP 访问）
+- [Fix Your Timestep!](https://gafferongames.com/post/fix_your_timestep/) -- 理解物理时间步长
+- [Matter.js](https://brm.io/matter-js/) -- 如果需要 2D 物理
+- [Ammo.js](https://github.com/kripken/ammo.js/) -- 更强大的 3D 物理引擎
+- [Rapier](https://rapier.rs/) -- 基于 Rust 的高性能物理引擎
+- [cannon-es-debugger](https://github.com/mauricionr/cannon-es-debugger) -- 物理调试渲染器

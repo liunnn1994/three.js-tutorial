@@ -1,0 +1,292 @@
+---
+title: 45 后处理
+description: 使用 EffectComposer 构建后处理管线，实现泛光、景深、暗角等视觉效果
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 后处理
+
+后处理（Post Processing）是在场景完成正常渲染之后，对最终画面施加额外视觉效果的技术。你可能在电影制作中见过类似概念——色彩校正、镜头光晕、景深模糊、运动模糊等。在 Three.js 中，后处理的原理是：将场景渲染到一个离屏的渲染目标（Render Target）中，再把该渲染目标作为纹理贴到一个始终面向摄像机的全屏四边形（fullscreen quad）上，然后在片段着色器中对该纹理进行像素级操作，最终输出到屏幕。
+
+这个过程可以链式地执行多遍（pass），形成一条后处理管线（pipeline）。
+
+:::tip
+Three.js 提供了 `EffectComposer` 来自动管理渲染目标、全屏四边形和多 pass 链式执行。你不需要手动创建渲染目标或编写全屏着色器的样板代码，只需按顺序添加各个 Pass 即可。
+:::
+
+
+<LessonPreview lesson="45-post-processing" />
+
+## EffectComposer 管线
+
+`EffectComposer` 是后处理的核心。它负责管理一系列的 Pass，每个 Pass 接收前一帧的输出纹理，经过处理后传递给下一个 Pass。
+
+### 基本结构
+
+```js
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
+
+// 创建 composer，内部自动创建渲染目标
+const composer = new EffectComposer(renderer)
+
+// Pass 1: 渲染通道 — 将场景渲染到内部渲染目标
+const renderPass = new RenderPass(scene, camera)
+composer.addPass(renderPass)
+
+// Pass 2: 泛光通道 — 对渲染结果添加光晕
+const bloomPass = new UnrealBloomPass(
+    new THREE.Vector2(sizes.width, sizes.height), // 分辨率
+    0.5,   // strength — 泛光强度
+    0.4,   // radius — 泛光扩散半径
+    0.85   // threshold — 亮度阈值，只有超过该值的像素才会产生泛光
+)
+composer.addPass(bloomPass)
+
+// Pass 3: 输出通道 — 确保正确的色彩空间转换（必加！）
+const outputPass = new OutputPass()
+composer.addPass(outputPass)
+```
+
+在动画循环中，用 `composer.render()` 替代 `renderer.render(scene, camera)`：
+
+```js
+const tick = () =>
+{
+    controls.update()
+    composer.render() // 替代 renderer.render(scene, camera)
+    requestAnimationFrame(tick)
+}
+```
+
+### 管线执行流程
+
+1. `RenderPass` 使用主场景和主摄像机将 3D 内容渲染到 `EffectComposer` 内部的渲染目标纹理中
+2. 后续的每个 Pass 从上一个 Pass 的输出纹理中读取像素数据，进行 shader 处理后将结果写入新的渲染目标
+3. 最后一个 Pass 将结果输出到屏幕（canvas）
+
+:::caution
+`EffectComposer` 链末尾**必须**添加 `OutputPass`。如果没有它，色彩空间转换（从线性工作空间到 sRGB）可能不会正确执行，导致最终画面颜色偏淡或偏亮。这是 Three.js r152 之后的标准做法，替代了之前使用的 `GammaCorrectionShader`。
+:::
+
+### 关于 Render Target 的概念
+
+`EffectComposer` 内部使用 `WebGLRenderTarget` 来实现离屏渲染。渲染目标本质上是一块 GPU 显存中的纹理缓冲区——你可以把它想象成一张"看不见的画布"。场景先渲染到这张画布上，然后这张画布的内容被当作纹理传递给后续的 Pass 使用。这种机制使得多 Pass 链式处理成为可能。
+
+## 常用后期处理效果
+
+### 泛光（Bloom / UnrealBloomPass）
+
+泛光是最常用的后处理效果之一。它会让画面中超过亮度阈值的区域产生柔和的光晕扩散效果，非常适合表现发光材质、灯光和高亮反射。
+
+```js
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
+
+const bloomPass = new UnrealBloomPass(
+    new THREE.Vector2(sizes.width, sizes.height),
+    0.5,   // strength — 泛光整体强度，值越大光晕越明显
+    0.4,   // radius — 光晕扩散范围，值越大光晕扩散越远
+    0.85   // threshold — 触发泛光的亮度阈值（0~1），只有亮度超过该值的像素才会发光
+)
+```
+
+**参数调节建议：**
+
+| 参数 | 低值效果 | 高值效果 |
+|------|---------|---------|
+| strength | 微妙的光感 | 强烈的赛博朋克风 |
+| radius | 局部小光晕 | 大范围柔和扩散 |
+| threshold | 更多区域发光 | 只有高亮区域发光 |
+
+:::tip
+如果只想让特定物体发光而其他部分不受影响，可以设置较高的 threshold（如 0.8 或 0.9），然后确保需要发光的材质使用 emissive 颜色且 emissiveIntensity 足够大。
+:::
+
+### 输出通道（OutputPass）
+
+确保最终输出到屏幕时进行正确的色彩空间转换：
+
+```js
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
+
+const outputPass = new OutputPass()
+composer.addPass(outputPass)
+```
+
+### 景深（DOF / BokehPass）
+
+模拟真实相机的景深效果——对焦区域清晰，前景和背景产生虚化（Bokeh）模糊。
+
+```js
+import { BokehPass } from 'three/addons/postprocessing/BokehPass.js'
+
+const bokehPass = new BokehPass(scene, camera, {
+    focus: 1.0,        // 对焦距离
+    aperture: 0.025,   // 光圈大小，值越大景深越浅（模糊范围越大）
+    maxblur: 0.01      // 最大模糊程度
+})
+composer.addPass(bokehPass)
+```
+
+:::caution
+`BokehPass` 直接接收 `scene` 和 `camera` 作为参数（内部会自己执行场景渲染），因此不要在它之前使用 `RenderPass`，否则场景会被渲染两次。`BokehPass` 应该作为链中的第一个 Pass 使用。
+:::
+
+### 暗角（Vignette）
+
+暗角效果让画面边缘逐渐变暗，突出中心区域，营造电影感。Three.js 没有内置的暗角 Pass，但可以通过自定义着色器 Pass 轻松实现：
+
+```js
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
+
+const vignetteShader = {
+    uniforms: {
+        tDiffuse: { value: null },
+        offset: { value: 1.0 },
+        darkness: { value: 1.0 }
+    },
+    vertexShader: `
+        varying vec2 vUv;
+        void main()
+        {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform float offset;
+        uniform float darkness;
+        varying vec2 vUv;
+        void main()
+        {
+            vec4 texel = texture2D(tDiffuse, vUv);
+            vec2 uv = (vUv - vec2(0.5)) * vec2(offset);
+            float vignette = 1.0 - dot(uv, uv);
+            texel.rgb *= smoothstep(0.0, 1.0, pow(vignette, darkness));
+            gl_FragColor = texel;
+        }
+    `
+}
+
+const vignettePass = new ShaderPass(vignetteShader)
+composer.addPass(vignettePass)
+```
+
+### 自定义 Shader Pass
+
+`ShaderPass` 是将自定义着色器接入 `EffectComposer` 管线的通用方式。你的着色器需要遵循以下约定：
+
+- 必须声明 `uniform sampler2D tDiffuse` 来接收前一 Pass 的输出纹理
+- 使用 `varying vec2 vUv` 来获取当前像素的 UV 坐标
+- 通过 `texture2D(tDiffuse, vUv)` 采样输入纹理
+
+```js
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
+
+const customShader = {
+    uniforms: {
+        tDiffuse: { value: null },
+        uTime: { value: 0 },
+        uColor: { value: new THREE.Color('#ff0000') }
+    },
+    vertexShader: `
+        varying vec2 vUv;
+        void main()
+        {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform float uTime;
+        uniform vec3 uColor;
+        varying vec2 vUv;
+        void main()
+        {
+            vec4 texel = texture2D(tDiffuse, vUv);
+            // 在此添加你的自定义效果
+            // 例如：简单的色调混合
+            vec3 color = mix(texel.rgb, uColor, 0.1);
+            gl_FragColor = vec4(color, texel.a);
+        }
+    `
+}
+
+const customPass = new ShaderPass(customShader)
+composer.addPass(customPass)
+
+// 在 tick 函数中更新 uniform
+const tick = () =>
+{
+    customPass.uniforms.uTime.value = elapsed
+    composer.render()
+    requestAnimationFrame(tick)
+}
+```
+
+:::tip
+`ShaderPass` 的 `uniforms.tDiffuse` 会由 `EffectComposer` 自动设置——你不需要手动赋值。只需要关注你自己添加的额外 uniform。
+:::
+
+### 其他可用 Pass
+
+Three.js addons 中还提供了许多内置 Pass：
+
+- **SSAOPass** — 屏幕空间环境光遮蔽，增加凹面处的阴影细节
+- **FilmPass** — 胶片颗粒和扫描线效果
+- **GlitchPass** — 数字故障/故障艺术效果
+- **DotScreenPass** — 点阵屏幕效果
+- **RGBShiftPass** — 色差分离效果
+- **SMAAPass / FXAASubpixelPass** — 后处理抗锯齿
+
+## 响应式处理
+
+当窗口大小改变时，`EffectComposer` 也需要更新尺寸和像素比：
+
+```js
+window.addEventListener('resize', () =>
+{
+    // 更新 composer 尺寸
+    composer.setSize(sizes.width, sizes.height)
+    composer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+    // 如果使用了 UnrealBloomPass，也需要更新其分辨率
+    bloomPass.resolution.set(sizes.width, sizes.height)
+})
+```
+
+:::caution
+忘记在 resize 时更新 `composer` 的大小会导致后处理效果使用错误的分辨率渲染，画面可能出现模糊、拉伸或只渲染部分区域等问题。
+:::
+
+## 性能考虑
+
+后处理本质上是额外的全屏渲染，每个 Pass 都需要对屏幕上的每个像素执行一次着色器计算。因此，每添加一个 Pass 就增加了一次全屏绘制的开销。
+
+**各效果的典型性能开销：**
+
+| 效果 | GPU 开销 | 说明 |
+|------|---------|------|
+| OutputPass | 极低 | 仅做色彩空间转换 |
+| FilmPass / DotScreenPass | 低 | 简单的像素操作 |
+| Bloom | 中等 | 需要多次降采样和模糊迭代 |
+| BokehPass (DOF) | 较高 | 需要计算每个像素的模糊权重 |
+| SSAO | 高 | 需要多次采样周围像素 |
+| 自定义着色器 | 取决于实现 | 简单混合较低，复杂噪声较高 |
+
+:::tip
+**优化策略：**
+1. 尽量减少 Pass 数量。可以将多个简单的像素级效果（暗角 + 色调映射 + 简单色彩调整）合并到一个自定义 ShaderPass 中，而不是使用三个独立的 Pass。
+2. 对移动端或低端设备，可以通过检测设备能力来决定是否启用后处理，或者降低后处理分辨率（使用 `composer.setPixelRatio(1)` 或传入半分辨率的 render target）。
+3. 泛光效果对性能影响中等，但在低端设备上仍然显著。考虑在低端设备上禁用 Bloom 或降低其分辨率。
+:::
+
+:::caution
+在多 Pass 管线中，如果某个 Pass 使用了 `depthWrite: true` 或依赖深度测试，可能会出现意外的渲染结果。大多数后处理 Pass 应该使用 2D 全屏渲染，不涉及深度测试。如果遇到渲染异常，检查材质的 `depthWrite` 和 `depthTest` 属性。
+:::

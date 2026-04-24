@@ -1,0 +1,216 @@
+---
+title: 33 全息着色器
+description: 创建科幻风格的全息投影效果，综合运用菲涅尔效应、扫描线和故障效果
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 概述
+
+本课创建一个科幻风格的全息投影效果，应用在球体、猴子头（Suzanne）和环面结三个物体上。全息效果是一个经典的着色器应用案例，它组合了多种简单的着色器技术来创建复杂的视觉效果：
+
+- **菲涅尔效应（Fresnel）** — 边缘发光，正面半透明
+- **扫描线（Scanline）** — 水平条纹动画
+- **闪烁（Flicker）** — 随机亮度波动
+- **故障效果（Glitch）** — 随机 UV 偏移和条纹撕裂
+
+:::tip
+全息效果完全依赖自定义着色器。尝试用 Three.js 的内置材质（如 `MeshBasicMaterial`）来实现这些效果几乎不可能——这正是自定义着色器的典型应用场景。
+:::
+
+
+<LessonPreview lesson="33-hologram-shader" />
+
+## 顶点着色器
+
+顶点着色器需要将一些关键数据传递给片元着色器：UV 坐标、法线和世界空间位置。
+
+```glsl
+varying vec2 vUv;
+varying vec3 vNormal;
+varying vec3 vPosition;
+
+void main() {
+    vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+    vec4 viewPosition = viewMatrix * modelPosition;
+    gl_Position = projectionMatrix * viewPosition;
+
+    vUv = uv;
+    vNormal = normalMatrix * normal;
+    vPosition = modelPosition.xyz;
+}
+```
+
+**需要传递的数据：**
+
+| 变量 | 来源 | 传递方式 | 用途 |
+|------|------|---------|------|
+| `vUv` | `uv`（Three.js 自动注入的 attribute） | `varying` | 扫描线效果（基于 Y 坐标） |
+| `vNormal` | `normal`（Three.js 自动注入）经 `normalMatrix` 变换 | `varying` | 菲涅尔效应（需要视图空间法线） |
+| `vPosition` | `modelMatrix * position` 的 xyz 分量 | `varying` | 菲涅尔效应（视线方向计算） |
+
+:::caution
+`normalMatrix` 是 Three.js 自动注入的 `mat3` 矩阵，专门用于将法线从模型空间变换到视图空间。不要用 `modelMatrix` 来变换法线——如果模型有非均匀缩放，`modelMatrix` 会导致法线方向不正确。`normalMatrix` 已经处理了这个问题。
+:::
+
+## 片元着色器 — 核心效果
+
+```glsl
+uniform float uTime;
+uniform vec3 uColor;
+varying vec2 vUv;
+varying vec3 vNormal;
+varying vec3 vPosition;
+
+// 伪随机函数
+float random(vec2 st) {
+    return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+}
+
+void main() {
+    // === 菲涅尔效果 ===
+    vec3 viewDirection = normalize(cameraPosition - vPosition);
+    float fresnel = pow(1.0 - dot(viewDirection, vNormal), 2.0);
+
+    // === 扫描线 ===
+    float scanline = sin(vUv.y * 100.0 + uTime * 5.0) * 0.5 + 0.5;
+    scanline = pow(scanline, 2.0);
+
+    // === 闪烁 ===
+    float flicker = sin(uTime * 10.0) * 0.05 + 0.95;
+
+    // === 故障效果 ===
+    float glitch = step(0.98, random(vec2(floor(uTime * 10.0), 1.0)));
+    float glitchStrength = glitch * (random(vec2(uTime, vUv.y)) - 0.5) * 0.3;
+
+    // === 组合所有效果 ===
+    float hologram = fresnel + scanline * 0.3;
+    vec3 color = uColor * hologram * flicker;
+    color += glitchStrength * uColor;
+
+    float alpha = hologram * 0.8;
+
+    gl_FragColor = vec4(color, alpha);
+}
+```
+
+### 菲涅尔效应（Fresnel Effect）
+
+```glsl
+vec3 viewDirection = normalize(cameraPosition - vPosition);
+float fresnel = pow(1.0 - dot(viewDirection, vNormal), 2.0);
+```
+
+**原理：**
+
+菲涅尔效应描述的是：当观察角度越接近垂直于表面（正对表面）时，反射越弱；当观察角度越接近平行于表面（看向边缘）时，反射越强。
+
+- `cameraPosition` — Three.js 自动注入的 uniform，表示摄像机在世界空间中的位置
+- `vPosition` — 片元的世界空间位置
+- `viewDirection` — 从片元指向摄像机的方向
+- `dot(viewDirection, vNormal)` — 法线和视线方向的点积。值越接近 1 表示越正对，越接近 0 表示越边缘
+- `1.0 - dot(...)` — 反转：正对时接近 0，边缘时接近 1
+- `pow(..., 2.0)` — 指数控制衰减曲线。值越大，边缘发光越集中在极端角度
+
+:::tip
+菲涅尔效果在 CG 中无处不在——水面反射、玻璃高光、皮肤次表面散射的边缘光、全息投影等。核心公式永远是 `pow(1.0 - dot(viewDir, normal), exponent)`，只是 exponent 的值不同。
+:::
+
+### 扫描线（Scanline）
+
+```glsl
+float scanline = sin(vUv.y * 100.0 + uTime * 5.0) * 0.5 + 0.5;
+scanline = pow(scanline, 2.0);
+```
+
+- `vUv.y * 100.0` — UV 的 Y 坐标乘以一个较大的数（100），产生密集的水平条纹
+- `+ uTime * 5.0` — 条纹随时间向上移动
+- `* 0.5 + 0.5` — 将 `sin` 的结果 `[-1, 1]` 映射到 `[0, 1]`
+- `pow(..., 2.0)` — 让条纹之间的过渡更锐利
+
+### 闪烁（Flicker）
+
+```glsl
+float flicker = sin(uTime * 10.0) * 0.05 + 0.95;
+```
+
+- `sin(uTime * 10.0)` — 以较高频率振荡（频率 10）
+- `* 0.05 + 0.95` — 只在 0.90 到 1.00 之间微小波动
+- 效果：全息影像有轻微的亮度抖动，模拟不稳定投影的感觉
+
+### 故障效果（Glitch）
+
+```glsl
+float glitch = step(0.98, random(vec2(floor(uTime * 10.0), 1.0)));
+float glitchStrength = glitch * (random(vec2(uTime, vUv.y)) - 0.5) * 0.3;
+```
+
+- `random(vec2(floor(uTime * 10.0), 1.0))` — 生成一个基于时间的伪随机值
+- `step(0.98, ...)` — 只有 2% 的时间 glitch 被激活（随机值大于 0.98 时）
+- `glitchStrength` — glitch 激活时，根据时间和 UV 生成随机偏移量
+- 最终将偏移加到颜色上，产生瞬间的颜色扰动
+
+:::tip
+`random()` 函数是一个常用的 GLSL 伪随机函数，基于 `sin` 和 `dot` 的组合。它不是真正的随机，但对于视觉效果来说足够了。注意 `floor(uTime * 10.0)` 确保故障效果在每个 0.1 秒的时间窗口内保持一致，不会每帧都跳变。
+:::
+
+## 材质设置
+
+```js
+const material = new THREE.ShaderMaterial({
+    vertexShader,
+    fragmentShader,
+    uniforms: {
+        uTime: { value: 0 },
+        uColor: { value: new THREE.Color('#00ffff') }
+    },
+    transparent: true,
+    side: THREE.DoubleSide,
+    depthWrite: false
+})
+```
+
+| 属性 | 值 | 原因 |
+|------|-----|------|
+| `transparent` | `true` | 全息效果需要半透明 |
+| `side` | `DoubleSide` | 从任何角度都能看到全息投影 |
+| `depthWrite` | `false` | 避免半透明物体之间的遮挡问题 |
+
+:::caution
+如果 `depthWrite` 为 `true`，先渲染的全息物体可能会遮挡后面的物体，即使它们是半透明的。关闭深度写入可以避免这个问题，但可能导致排序问题。对于全息效果这种"半透明 + 不遮挡"的场景，关闭深度写入是正确的选择。
+:::
+
+## 效果组合策略
+
+最终的视觉效果是多个简单效果的线性叠加：
+
+```
+最终颜色 = 基础色 * (菲涅尔 + 扫描线 * 0.3) * 闪烁 + 故障偏移
+最终透明度 = (菲涅尔 + 扫描线 * 0.3) * 0.8
+```
+
+每个效果都是独立的，你可以：
+- 增大扫描线系数让条纹更明显
+- 减小闪烁幅度让投影更稳定
+- 调整菲涅尔指数改变边缘发光的范围
+- 增大故障概率让效果更"故障"
+
+:::tip
+调整全息效果时，建议先分别调试每个效果（注释掉其他效果），确认每个效果单独看起来正确后再组合。这样可以更容易定位问题。
+:::
+
+## Three.js 自动注入的变量
+
+在这个着色器中，我们用到了多个 Three.js 自动注入的变量。使用 `ShaderMaterial` 时，以下变量无需手动声明：
+
+| 变量 | 类型 | 说明 |
+|------|------|------|
+| `modelMatrix` | `mat4` | 模型矩阵 |
+| `viewMatrix` | `mat4` | 视图矩阵 |
+| `projectionMatrix` | `mat4` | 投影矩阵 |
+| `normalMatrix` | `mat3` | 法线变换矩阵 |
+| `position` | `vec3` attribute | 顶点位置 |
+| `normal` | `vec3` attribute | 顶点法线 |
+| `uv` | `vec2` attribute | UV 坐标 |
+| `cameraPosition` | `vec3` uniform | 摄像机世界位置 |

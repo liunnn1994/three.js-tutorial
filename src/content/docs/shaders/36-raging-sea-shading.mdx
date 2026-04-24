@@ -1,0 +1,273 @@
+---
+title: 36 汹涌海面光照着色器
+description: 为海浪着色器添加光照计算，包含法线估算、Blinn-Phong 高光和菲涅尔反射
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 概述
+
+在第 29 课中，我们创建了海浪的顶点位移和颜色混合，但没有光照——海面看起来像一块彩色的塑料。在本课中，我们将第 35 课学到的光照技术应用到海面上，为海浪添加真实的明暗变化、高光反射和菲涅尔效果。
+
+这个项目的核心挑战在于：海面的顶点被着色器位移了，**原始法线不再正确**。我们需要在着色器中动态计算位移后的法线。
+
+:::tip
+这是着色器课程中最具挑战性的一课，因为它结合了多个技术：位移函数复用、有限差分法计算法线、光照模型和菲涅尔效果。建议在第 35 课的基础上学习本课。
+:::
+
+
+<LessonPreview lesson="36-raging-sea-shading-shaders" />
+
+## 噪声函数重命名
+
+为了在顶点着色器和片元着色器中都使用噪声函数，需要将噪声函数提取为可复用的函数：
+
+```glsl
+// 将之前的 snoise 重命名为 cnoise（classic 3D Perlin noise）
+// 这样更明确地表达函数的含义
+float cnoise(vec3 p) {
+    // ... Perlin 噪声实现 ...
+}
+```
+
+## 抽取高度计算函数
+
+顶点着色器和片元着色器都需要计算某个坐标的高度（elevation）。我们将高度计算逻辑封装为一个函数：
+
+```glsl
+uniform float uBigWavesElevation;
+uniform vec2 uBigWavesFrequency;
+uniform float uBigWavesSpeed;
+uniform float uSmallWavesElevation;
+uniform float uSmallWavesFrequency;
+uniform float uSmallWavesSpeed;
+uniform float uSmallIterations;
+
+// 统一的高度计算函数
+float getElevation(float x, float z, float time) {
+    // 大波浪
+    float elevation = sin(x * uBigWavesFrequency.x + time * uBigWavesSpeed)
+        * sin(z * uBigWavesFrequency.y + time * uBigWavesSpeed)
+        * uBigWavesElevation;
+
+    // 小波浪（FBM 噪声叠加）
+    for (float i = 1.0; i <= 4.0; i++) {
+        elevation -= abs(cnoise(vec3(
+            x * uSmallWavesFrequency * i,
+            z * uSmallWavesFrequency * i,
+            time * uSmallWavesSpeed
+        )) * uSmallWavesElevation / i);
+    }
+
+    return elevation;
+}
+```
+
+:::tip
+将高度计算封装为函数的好处：（1）顶点着色器和片元着色器可以共用同一套逻辑；（2）方便调试——如果高度计算有 bug，只需修改一个地方；（3）代码更清晰，逻辑更分明。
+:::
+
+## 计算位移后的法线
+
+### 有限差分法（Finite Difference）
+
+海面是一个平面，被顶点着色器位移后变成了波浪形。原始法线是 `(0, 1, 0)`（朝上），但位移后每个点的法线都不同。我们使用**有限差分法**来估算法线：
+
+```glsl
+// 在片元着色器中计算
+float currentElevation = getElevation(vModelPosition.x, vModelPosition.z, uTime);
+
+// 沿 X 方向偏移一个微小量，计算高度差
+float elevationDeltaX = getElevation(vModelPosition.x + 0.01, vModelPosition.z, uTime);
+// 沿 Z 方向偏移一个微小量，计算高度差
+float elevationDeltaZ = getElevation(vModelPosition.x, vModelPosition.z + 0.01, uTime);
+
+// 用差分构建两个切线向量
+vec3 tangentX = vec3(0.01, elevationDeltaX - currentElevation, 0.0);
+vec3 tangentZ = vec3(0.0, elevationDeltaZ - currentElevation, 0.01);
+
+// 叉积得到法线
+vec3 normal = normalize(cross(tangentZ, tangentX));
+```
+
+### 逐步解析
+
+1. **获取当前高度**：在当前片元的世界坐标 `(x, z)` 处计算高度
+2. **X 方向偏移**：在 `(x + 0.01, z)` 处计算高度，高度差除以水平距离（0.01）得到 X 方向的斜率
+3. **Z 方向偏移**：同理得到 Z 方向的斜率
+4. **构建切线**：`tangentX = (Δx, Δy, 0)` 表示沿 X 方向的表面方向向量
+5. **叉积**：`cross(tangentZ, tangentX)` 得到垂直于表面的法线
+
+:::caution
+有限差分法在片元着色器中调用 `getElevation` 函数**三次**（当前位置 + X 偏移 + Z 偏移），每次调用包含 4 层噪声循环。这意味着每个片元要执行 12 次噪声函数调用，计算量很大。如果性能不足，可以降低 `uSmallIterations` 的值。
+:::
+
+### 0.01 的含义
+
+`0.01` 是偏移量（epsilon），用于数值微分。值越小，法线越精确，但可能受浮点精度影响；值越大，法线越平滑但可能丢失细节。对于这个项目，`0.01` 是一个合理的平衡值。
+
+## 从顶点着色器传递世界坐标
+
+片元着色器需要世界空间坐标来计算光照。在顶点着色器中传递：
+
+```glsl
+varying vec3 vModelPosition;
+
+void main() {
+    vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+
+    // 计算位移
+    float elevation = getElevation(modelPosition.x, modelPosition.z, uTime);
+    modelPosition.y += elevation;
+
+    // 传递世界空间坐标到片元着色器
+    vModelPosition = modelPosition.xyz;
+
+    // 传递海拔高度用于颜色混合
+    vElevation = elevation;
+
+    vec4 viewPosition = viewMatrix * modelPosition;
+    gl_Position = projectionMatrix * viewPosition;
+}
+```
+
+:::tip
+注意 `vModelPosition` 是**位移后**的世界坐标。我们在位移之后的坐标上计算法线和光照，这样光照效果才能正确反映波浪的凹凸起伏。
+:::
+
+## 完整光照计算
+
+将漫反射、镜面高光和菲涅尔反射组合应用于海面：
+
+```glsl
+uniform vec3 uDepthColor;
+uniform vec3 uSurfaceColor;
+uniform vec3 uLightPosition;
+uniform vec3 uLightColor;
+uniform vec3 uCameraPosition;
+uniform float uColorOffset;
+uniform float uColorMultiplier;
+uniform float uTime;
+varying vec3 vModelPosition;
+varying float vElevation;
+
+void main() {
+    // === 计算法线（有限差分法） ===
+    float elevationA = getElevation(vModelPosition.x + 0.01, vModelPosition.z, uTime);
+    float elevationB = getElevation(vModelPosition.x, vModelPosition.z + 0.01, uTime);
+    float elevation = getElevation(vModelPosition.x, vModelPosition.z, uTime);
+
+    vec3 tangentX = vec3(0.01, elevationA - elevation, 0.0);
+    vec3 tangentZ = vec3(0.0, elevationB - elevation, 0.01);
+    vec3 normal = normalize(cross(tangentZ, tangentX));
+
+    // === 光照方向 ===
+    vec3 lightDirection = normalize(uLightPosition - vModelPosition);
+    vec3 viewDirection = normalize(uCameraPosition - vModelPosition);
+
+    // === 漫反射 ===
+    float diff = max(dot(normal, lightDirection), 0.0);
+
+    // === 镜面高光（Blinn-Phong） ===
+    vec3 halfVector = normalize(lightDirection + viewDirection);
+    float spec = pow(max(dot(normal, halfVector), 0.0), 64.0);
+
+    // === 菲涅尔反射 ===
+    float fresnel = pow(1.0 - max(dot(viewDirection, normal), 0.0), 3.0);
+
+    // === 颜色混合 ===
+    float mixStrength = (vElevation + uColorOffset) * uColorMultiplier;
+    mixStrength = clamp(mixStrength, 0.0, 1.0);
+    vec3 color = mix(uDepthColor, uSurfaceColor, diff);
+
+    // === 组合所有光照分量 ===
+    color += spec * uLightColor * 2.0;              // 镜面高光
+    color += fresnel * vec3(0.5, 0.8, 1.0) * 0.5;  // 菲涅尔天光反射
+
+    gl_FragColor = vec4(color, 1.0);
+}
+```
+
+## 各光照分量的效果
+
+### 漫反射 — 波浪明暗
+
+```glsl
+float diff = max(dot(normal, lightDirection), 0.0);
+vec3 color = mix(uDepthColor, uSurfaceColor, diff);
+```
+
+- 面向光源的波浪面使用 `uSurfaceColor`（浅色/亮色）
+- 背向光源的波浪面使用 `uDepthColor`（深色/暗色）
+- 这取代了第 29 课中基于海拔的颜色混合——现在颜色由**光照方向**决定，而不是高度
+
+### 镜面高光 — 水面反光
+
+```glsl
+vec3 halfVector = normalize(lightDirection + viewDirection);
+float spec = pow(max(dot(normal, halfVector), 0.0), 64.0);
+color += spec * uLightColor * 2.0;
+```
+
+- `pow(..., 64.0)` — 较高的指数产生较小、较锐利的高光点，模拟水面的镜面反射
+- 乘以 `2.0` 增强高光强度
+- 高光出现在视线方向和光线方向关于法线对称的位置——正是水面上太阳反射的位置
+
+### 菲涅尔反射 — 地平线天空光
+
+```glsl
+float fresnel = pow(1.0 - max(dot(viewDirection, normal), 0.0), 3.0);
+color += fresnel * vec3(0.5, 0.8, 1.0) * 0.5;
+```
+
+- 越远处的海面（观察角度越接近平行于水面），菲涅尔值越大
+- `vec3(0.5, 0.8, 1.0)` 模拟天空颜色的反射——远处的海面看起来更亮、更蓝
+- 这解释了为什么从飞机上看海面远处的部分总是更亮——那是天空的反射
+
+:::tip
+菲涅尔效果让海面有了"深度感"——近处的海面可以看到水面下的颜色（深色），远处的海面反射天空（亮色）。`pow(..., 3.0)` 的指数控制过渡区域的大小。值越大，远处的反射越集中在地平线附近。
+:::
+
+## 颜色参数调整
+
+添加光照后，颜色方案需要调整。之前第 29 课使用的高对比度颜色不再适合，因为光照会自然产生对比度：
+
+```js
+// 调整后的颜色（更暗、更柔和）
+uDepthColor: { value: new THREE.Color('#0a1930') },    // 深海蓝
+uSurfaceColor: { value: new THREE.Color('#151c37') },   // 稍浅的蓝
+
+// 渐变参数
+uColorOffset: { value: 0.925 },    // 接近 1.0，使大部分区域偏深色
+uColorMultiplier: { value: 1 }      // 渐变更平缓
+```
+
+:::tip
+光照提供了自然的明暗对比，不再需要通过颜色混合来模拟。颜色方案应该更柔和，让光照来"雕刻"出波浪的形状。
+:::
+
+## 性能优化
+
+片元着色器中的法线计算是最耗性能的部分（每个片元 3 次 `getElevation` 调用）。以下是一些优化策略：
+
+| 策略 | 方法 | 效果 |
+|------|------|------|
+| 降低迭代次数 | `uSmallIterations = 2` | 噪声调用减少一半 |
+| 增大差分步长 | `0.01` 改为 `0.1` | 法线更平滑（丢失细节） |
+| 仅在顶点着色器中计算 | 将法线作为 varying 传递 | 性能更好，但精度较低 |
+| 使用噪声纹理 | 替代噪声函数 | 大幅减少计算量 |
+
+## 与第 29 课的对比
+
+| 方面 | 第 29 课（无光照） | 第 36 课（有光照） |
+|------|-------------------|-------------------|
+| 颜色来源 | 基于海拔高度混合 | 基于光线方向混合 |
+| 深色/浅色含义 | 深水 vs 浅水 | 阴影面 vs 受光面 |
+| 表面细节 | 纯颜色渐变 | 漫反射 + 高光 + 菲涅尔 |
+| 真实感 | 彩色塑料 | 有光影的水面 |
+| 性能开销 | 低（仅颜色混合） | 高（法线 + 光照计算） |
+
+:::tip
+如果你在完成第 29 课后觉得效果不够真实，本课正是补上"真实感"的最后一块拼图。光照是让 3D 场景从"技术演示"变成"视觉作品"的关键。
+:::

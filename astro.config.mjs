@@ -7,19 +7,34 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
 	integrations: [
 		starlight({
-			title: 'Docs with Tailwind',
-			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/withastro/starlight' }],
+			title: 'Three.js 中文教程',
+			defaultLocale: 'root',
+			locales: {
+				root: {
+					label: '简体中文',
+					lang: 'zh-CN',
+				},
+			},
 			sidebar: [
 				{
-					label: 'Guides',
-					items: [
-						// Each item here is one entry in the navigation menu.
-						{ label: 'Example Guide', slug: 'guides/example' },
-					],
+					label: '基础入门',
+					autogenerate: { directory: 'basics' },
 				},
 				{
-					label: 'Reference',
-					autogenerate: { directory: 'reference' },
+					label: '技术技巧',
+					autogenerate: { directory: 'techniques' },
+				},
+				{
+					label: '着色器',
+					autogenerate: { directory: 'shaders' },
+				},
+				{
+					label: '高级主题',
+					autogenerate: { directory: 'advanced' },
+				},
+				{
+					label: '场景创建',
+					autogenerate: { directory: 'scene-creation' },
 				},
 			],
 			customCss: ['./src/styles/global.css'],

@@ -1,0 +1,716 @@
+---
+title: 08 几何体
+description: 深入理解 3D 几何体的核心概念 —— 顶点、面、三角形，掌握 Three.js 内置几何体和自定义 BufferGeometry
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 什么是几何体？
+
+在开始探索 Three.js 提供的各种内置几何体之前，我们需要先搞清楚一个根本问题：**什么是几何体（Geometry）？**
+
+### 用现实生活来理解
+
+想象你正在用**乐高积木**来搭东西。每一块乐高积木都有一个特定的形状 —— 方块、圆柱、斜面等等。在 3D 世界中，**几何体就是这些积木的形状定义**。
+
+更准确地说，几何体定义了一个 3D 物体的**形状和结构**。它告诉计算机："这个物体长什么样？它由哪些点组成？这些点之间怎么连接？"
+
+几何体本身是**看不见**的 —— 它只是纯粹的数据（一堆数字）。你需要把几何体和一个**材质（Material）**（决定物体表面如何显示 —— 颜色、纹理、反光等）组合在一起，才能创建一个可见的 3D 物体，这个组合叫做**网格（Mesh）**。
+
+```
+几何体（Geometry）  +  材质（Material）  =  网格（Mesh）
+    （形状）              （外观）            （可见的物体）
+```
+
+### 顶点（Vertices）
+
+几何体由最基本的元素组成 —— **顶点（Vertex，复数 Vertices）**。
+
+顶点是 3D 空间中的一个**坐标点**，由三个数值（x, y, z）来定义它的位置：
+
+```
+        y
+        |
+        |    * (0, 1, 0) ← 一个顶点
+        |
+  ------+------ x
+       /
+      /
+     z
+```
+
+:::info
+单个点叫 Vertex，多个点叫 Vertices（不是 Vertexs）。这个术语来自拉丁语。
+:::
+
+### 面（Faces）
+
+将顶点连接起来，就形成了**面（Face）**。在 Three.js（以及几乎所有现代 3D 引擎）中，面是由**三角形**组成的 —— 每三个顶点构成一个三角形面片。
+
+为什么用三角形？因为三角形是最简单的多边形，而且具有一个重要特性：**三个点永远在同一个平面上**。这保证了面的数学计算（如光照、碰撞检测）总是可靠的。
+
+```
+  * (0, 1, 0)       三个顶点连接在一起
+  / \               形成一个三角形面
+ /   \
+/     \
+*-------*
+(0,0,0)  (1, 0, 0)
+```
+
+简单来说，几何体的构建过程是：
+
+1. 定义一堆**顶点**（空间中的坐标点）
+2. 将顶点三个一组连接，形成**三角形面片**
+3. 无数三角形面片拼在一起，就形成了完整的 3D 形状
+
+### 每个顶点可以携带多种数据
+
+除了位置坐标，每个顶点还可以携带其他信息：
+
+| 属性 | 名称 | 用途 |
+|------|------|------|
+| `position` | 位置 | 顶点在 3D 空间中的坐标（x, y, z）—— **必须有的** |
+| `normal` | 法线 | 顶点表面的朝向方向，用于**光照计算**（决定光线如何反射） |
+| `uv` | UV 坐标 | 2D 纹理映射坐标，决定贴图上的哪个像素对应到这个顶点 |
+| `color` | 颜色 | 顶点的颜色值，可以实现渐变色效果 |
+
+:::tip
+你可以给顶点添加任何自定义数据。在后面的粒子课程中，我们会在每个顶点上存储"粒子大小"等自定义属性，让不同的粒子拥有不同的大小。Three.js 的自定义属性机制非常灵活。
+:::
+
+
+<LessonPreview lesson="08-geometries" />
+
+## Mesh（网格）= Geometry + Material
+
+**网格（Mesh）** 是 Three.js 中最常用的 3D 对象类型。它将**几何体**（形状）和**材质**（外观）结合在一起，形成一个可以被渲染的可见物体：
+
+```js
+const mesh = new THREE.Mesh(geometry, material)
+```
+
+可以这样理解：
+
+| 组成部分 | 类比 | Three.js 类 |
+|---------|------|------------|
+| Geometry（几何体） | 物体的骨架/形状 | `BoxGeometry`、`SphereGeometry`、`BufferGeometry` 等 |
+| Material（材质） | 物体的皮肤/外观 | `MeshBasicMaterial`、`MeshStandardMaterial` 等 |
+| Mesh（网格） | 完整的物体 | `THREE.Mesh` |
+
+参考文档：[Three.js - Mesh](https://threejs.org/docs/#api/en/objects/Mesh)
+
+## 内置几何体
+
+Three.js 提供了丰富的内置几何体，涵盖了常见的 3D 形状。所有内置几何体都继承自 `BufferGeometry` 类。在 [Three.js 官方文档的 Geometries 页面](https://threejs.org/docs/#api/en/geometries/BufferGeometry)可以查看完整列表。
+
+在官方文档中，每个几何体都有一个可交互的演示面板，你可以实时调整参数来理解它们的行为。后续课程中我们会学习如何创建类似的调试面板。
+
+### 常用几何体一览
+
+#### BoxGeometry（立方体）
+
+最基础的几何体，用于创建长方体。
+
+```js
+new THREE.BoxGeometry(
+    1,    // width  — 宽度（x 轴方向）
+    1,    // height — 高度（y 轴方向）
+    1,    // depth  — 深度（z 轴方向）
+    1,    // widthSegments  — 宽度细分段数（默认 1）
+    1,    // heightSegments — 高度细分段数（默认 1）
+    1     // depthSegments  — 深度细分段数（默认 1）
+)
+```
+
+立方体有 6 个面，每面由 2 个三角形组成，所以默认情况下有 **12 个三角形**。如果将三个细分参数都设为 2，每个面会变成 4x4 = 8 个三角形，6 个面共 48 个三角形。
+
+参考文档：[Three.js - BoxGeometry](https://threejs.org/docs/#api/en/geometries/BoxGeometry)
+
+#### PlaneGeometry（平面）
+
+一个简单的矩形平面，默认只有 2 个三角形。可以用来创建地面、墙壁、广告牌等。
+
+```js
+new THREE.PlaneGeometry(
+    1,    // width  — 宽度
+    1,    // height — 高度
+    1,    // widthSegments  — 宽度细分
+    1     // heightSegments — 高度细分
+)
+```
+
+:::tip
+PlaneGeometry 默认是竖直的（面朝 z 轴正方向）。如果你想让平面水平放置（像地面一样），需要将它绕 x 轴旋转 -90 度：`plane.rotation.x = -Math.PI / 2`。
+:::
+
+参考文档：[Three.js - PlaneGeometry](https://threejs.org/docs/#api/en/geometries/PlaneGeometry)
+
+#### SphereGeometry（球体）
+
+非常实用的几何体，用于创建星球、弹珠、气泡等球状物体。
+
+```js
+new THREE.SphereGeometry(
+    1,    // radius        — 半径
+    32,   // widthSegments — 水平方向细分（类似经线数）
+    16    // heightSegments — 垂直方向细分（类似纬线数）
+)
+```
+
+| 细分段数 | 三角形数 | 效果 |
+|---------|---------|------|
+| 8, 8 | 约 128 | 明显的多面体，能看到三角形面片 |
+| 16, 16 | 约 512 | 接近球形，但仍有轻微棱角 |
+| 32, 32 | 约 2048 | 看起来很圆滑 |
+| 64, 64 | 约 8192 | 非常光滑，适合高品质渲染 |
+
+参考文档：[Three.js - SphereGeometry](https://threejs.org/docs/#api/en/geometries/SphereGeometry)
+
+#### CircleGeometry（圆形）
+
+一个实心的圆盘，由从中心向外辐射的三角形组成。
+
+```js
+new THREE.CircleGeometry(
+    1,    // radius — 半径
+    32    // segments — 边缘的细分段数（越多越圆）
+)
+```
+
+#### ConeGeometry（圆锥体）
+
+```js
+new THREE.ConeGeometry(
+    1,    // radius — 底面半径
+    1,    // height — 高度
+    32    // radialSegments — 底面边缘的细分段数
+)
+```
+
+常用于创建尖塔、帐篷、交通锥等形状。
+
+参考文档：[Three.js - ConeGeometry](https://threejs.org/docs/#api/en/geometries/ConeGeometry)
+
+#### CylinderGeometry（圆柱体）
+
+```js
+new THREE.CylinderGeometry(
+    1,    // radiusTop    — 顶部半径
+    1,    // radiusBottom — 底部半径
+    1,    // height       — 高度
+    32    // radialSegments — 圆周细分段数
+)
+```
+
+注意：当 `radiusTop` 和 `radiusBottom` 不同时，可以创建**锥台**。如果 `radiusTop = 0`，就变成了圆锥体（和 ConeGeometry 一样）。这个几何体适合制作柱子、管道、火箭等形状。
+
+参考文档：[Three.js - CylinderGeometry](https://threejs.org/docs/#api/en/geometries/CylinderGeometry)
+
+#### RingGeometry（圆环 / 平面环）
+
+```js
+new THREE.RingGeometry(
+    0.5,  // innerRadius — 内半径
+    1,    // outerRadius — 外半径
+    32    // thetaSegments — 圆周细分段数
+)
+```
+
+这是一个**扁平的环形**（像一个甜甜圈的俯视图），不是 3D 的环面。适合制作戒指、光环、方向盘等。
+
+#### TorusGeometry（环面 / 甜甜圈）
+
+这才是真正的 3D 环面 —— 像一个甜甜圈。
+
+```js
+new THREE.TorusGeometry(
+    1,    // radius   — 环的整体半径（中心到管道中心的距离）
+    0.4,  // tube     — 管道的半径
+    16,   // radialSegments  — 管道截面的细分
+    100   // tubularSegments — 环绕管道的细分
+)
+```
+
+参考文档：[Three.js - TorusGeometry](https://threejs.org/docs/#api/en/geometries/TorusGeometry)
+
+#### TorusKnotGeometry（环面纽结）
+
+一个非常有趣的几何体，形状像一个打了结的甜甜圈。它非常适合用来测试光照效果和材质，因为表面有很多曲面和凹凸，能很好地展示光线如何反射。
+
+```js
+new THREE.TorusKnotGeometry(
+    1,    // radius   — 整体半径
+    0.3,  // tube     — 管道半径
+    100,  // tubularSegments — 管道方向的细分
+    16    // radialSegments  — 截面方向的细分
+)
+```
+
+参考文档：[Three.js - TorusKnotGeometry](https://threejs.org/docs/#api/en/geometries/TorusKnotGeometry)
+
+#### 多面体家族
+
+这些几何体基于正多面体（Platonic Solids），每一面都是相同大小的正多边形：
+
+```js
+// 十二面体 —— 12 个正五边形面
+new THREE.DodecahedronGeometry(1)  // 参数：半径
+
+// 八面体 —— 8 个等边三角形面（让人想起《新世纪福音战士》中的物体）
+new THREE.OctahedronGeometry(1)
+
+// 四面体 —— 4 个等边三角形面（最简单的正多面体）
+new THREE.TetrahedronGeometry(1)
+
+// 二十面体 —— 20 个等边三角形面
+new THREE.IcosahedronGeometry(1)
+```
+
+:::tip
+这些多面体都有一个 `detail` 参数（第二个参数），用来控制细分级别。`detail = 0` 时是标准形状，数值越大面越多、越接近球形。
+:::
+
+#### 高级几何体（了解即可）
+
+以下几何体在本课不会深入使用，但了解它们的存在很有帮助：
+
+| 几何体 | 用途 |
+|--------|------|
+| `ShapeGeometry` | 基于 2D 曲线/路径创建平面形状（如心形） |
+| `TubeGeometry` | 沿一条 3D 路径创建管状几何体（如电线、管道） |
+| `ExtrudeGeometry` | 将 2D 形状挤出成 3D（类似给一个形状"加厚度"） |
+| `LatheGeometry` | 通过旋转一条轮廓线来创建旋转体（如花瓶、酒杯） |
+| `TextGeometry` | 将文本转为 3D 几何体（后续课程会用到） |
+
+:::info 组合几何体
+Three.js 没有一个单独的 "HouseGeometry" 或 "TreeGeometry"。复杂的形状通常通过**组合多个简单几何体**来创建。比如：
+- 一栋房子 = 1 个 `BoxGeometry`（墙壁）+ 1 个 `ConeGeometry`（屋顶）+ 1 个 `PlaneGeometry`（门）
+- 一棵树 = 1 个 `CylinderGeometry`（树干）+ 1 个 `SphereGeometry` 或 `ConeGeometry`（树冠）
+
+如果形状太复杂（比如一个人体模型），应该使用 Blender 等 3D 建模软件制作，然后导入 Three.js。
+:::
+
+## 细分 / 段数（Segments）
+
+几乎所有几何体都有"段数"或"细分"参数。理解这个概念对于创建高质量的 3D 场景至关重要。
+
+### 什么是细分？
+
+还记得几何体是由三角形面片组成的吗？**细分就是控制一个面上有多少个三角形。**
+
+以立方体的一个面为例：
+
+**细分段数为 1（默认）**：
+```
+┌─────────────────┐
+│╲               │  只有 2 个三角形
+│  ╲             │
+│    ╲           │
+│      ╲         │
+│        ╲       │
+│─────────╲     │
+│          ╲    │
+│            ╲  │
+│              ╲│
+└─────────────────┘
+```
+
+**细分段数为 2**：
+```
+┌───────┬─────────┐
+│╲     │╲       │  每个小区间都有 2 个三角形
+│  ╲   │  ╲     │  共 8 个三角形
+│    ╲ │    ╲   │
+├─────╲│──────╲ │
+│╲     │╲      │
+│  ╲   │  ╲    │
+│    ╲ │    ╲  │
+└──────┴───────╲┘
+```
+
+**细分段数为 3**：
+```
+┌────┬────┬────┐
+│╲   │╲   │╲   │  更多三角形
+│  ╲ │  ╲ │  ╲ │  共 18 个三角形
+│    ╲│    ╲│    ╲│
+├────╲│────╲│────╲│
+│╲   │╲   │╲   │
+│  ╲ │  ╲ │  ╲ │
+│    ╲│    ╲│    ╲│
+├────╲│────╲│────╲│
+│╲   │╲   │╲   │
+│  ╲ │  ╲ │  ╲ │
+│    ╲│    ╲│    ╲│
+└────┴────┴────╲┘
+```
+
+### 为什么需要更多细分？
+
+对于一个普通的立方体（每个面都是平面），更多的细分没有意义 —— 它看起来还是一样的。
+
+但对于**曲面**来说，细分至关重要：
+
+```js
+// 低细分 —— 看起来像一个多面体，棱角分明
+new THREE.SphereGeometry(1, 8, 8)
+
+// 高细分 —— 看起来很光滑，接近完美的球
+new THREE.SphereGeometry(1, 64, 64)
+```
+
+**细分最重要的应用场景是变形**。想象你要创建一个地形（高低起伏的地面）：
+
+1. 你需要一个 `PlaneGeometry` 作为地面
+2. 如果段数为 1，只有 4 个顶点，你根本无法做出起伏效果 —— 你需要更多的顶点来"弯曲"这个平面
+3. 如果段数为 100，你就有上万个顶点，每个顶点都可以单独移动，创造出逼真的山脉、山谷等地形
+
+```js
+// 一个有很多细分的平面，可以用来做地形
+const terrainGeometry = new THREE.PlaneGeometry(10, 10, 100, 100)
+```
+
+:::caution 性能注意事项
+细分越高 → 三角形越多 → GPU 渲染负担越重。在保证视觉效果的前提下，尽量使用较低的细分级别。如果一个面是平的且不需要变形，保持默认的段数即可。
+:::
+
+## Wireframe（线框）模式
+
+在材质中开启 `wireframe` 属性，可以显示几何体的线框结构 —— 也就是组成几何体的所有三角形的边线：
+
+```js
+const material = new THREE.MeshBasicMaterial({
+    color: 0xff0000,
+    wireframe: true  // 开启线框模式
+})
+```
+
+线框模式非常有用：
+
+1. **理解几何体结构** —— 你能清楚地看到顶点和三角形是如何排列的
+2. **调试细分问题** —— 轻松发现细分是否足够均匀
+3. **创造独特视觉效果** —— 线框风格常用于科幻、赛博朋克等未来感十足的 UI 设计
+
+:::warning 线框粗细
+线框的线条粗细通常是 1 像素，大多数浏览器/操作系统无法渲染更粗的线框。如果你需要更粗的线条效果，可能需要使用 `Line` 对象或其他方案。
+:::
+
+## BufferGeometry（缓冲几何体）
+
+Three.js 中所有的几何体都继承自 `BufferGeometry`。`BufferGeometry` 是存储几何体数据的标准方式。了解它的工作原理，对于创建自定义形状和处理粒子系统至关重要。
+
+### BufferGeometry vs 旧 Geometry
+
+在 Three.js 的早期版本中，使用的是 `Geometry` 类（不带 "Buffer" 前缀）。从 r125 版本开始，旧的 `Geometry` 被移除，**`BufferGeometry` 成为唯一的几何体类**。
+
+两者的核心区别：
+
+| 特性 | 旧 Geometry | BufferGeometry（当前标准） |
+|------|-------------|--------------------------|
+| 数据存储 | JavaScript 对象数组 | GPU 缓冲区（Buffer） |
+| 性能 | 较慢（CPU 处理） | 很快（数据直接在 GPU 上） |
+| 灵活性 | 可以随意修改 | 更高效的数据操作 |
+| 状态 | 已废弃 | Three.js 唯一标准 |
+
+:::info 为什么叫 "Buffer"？
+"Buffer" 指的是 **WebGL Buffer** —— 一种直接存储在 GPU 显存中的数据结构。`BufferGeometry` 将几何体数据（顶点位置、法线、UV 等）存储在 GPU 可直接访问的缓冲区中，避免了 CPU 和 GPU 之间频繁的数据传输，从而大幅提升性能。
+:::
+
+### Float32Array（类型化数组）
+
+在创建自定义几何体之前，我们需要了解 `Float32Array` —— 一种 JavaScript 的类型化数组。
+
+```js
+const positionsArray = new Float32Array(9)
+```
+
+**为什么用 Float32Array 而不是普通数组？**
+
+| 特性 | 普通数组 `[]` | `Float32Array` |
+|------|-------------|----------------|
+| 存储类型 | 可以混合存储（数字、字符串、对象……） | **只能**存储 32 位浮点数 |
+| 长度 | 可变（随时 push/pop） | **固定**（创建时就确定了） |
+| 内存 | 较大（每个元素有额外开销） | 紧凑（每个元素占 4 字节） |
+| 性能 | 一般 | GPU 友好，处理速度更快 |
+
+:::tip
+`Float32Array` 是原生的 JavaScript 特性，和 Three.js 无关。你可以在 [MDN 文档](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Float32Array)中了解更多。Three.js 要求使用它来存储顶点数据，因为这些数据最终会发送给 GPU，而 GPU 处理固定长度的浮点数数组效率最高。
+:::
+
+### 手动创建一个三角形
+
+让我们从最简单的开始 —— 手动创建一个三角形。
+
+#### 步骤 1：创建 Float32Array
+
+一个三角形由 3 个顶点组成，每个顶点有 3 个坐标值（x, y, z），所以总共需要 3 x 3 = 9 个数值：
+
+```js
+// 方法一：先创建固定长度的数组，再逐个赋值
+const positionsArray = new Float32Array(9)
+positionsArray[0] = 0    // 顶点 1 的 x
+positionsArray[1] = 0    // 顶点 1 的 y
+positionsArray[2] = 0    // 顶点 1 的 z
+positionsArray[3] = 0    // 顶点 2 的 x
+positionsArray[4] = 1    // 顶点 2 的 y
+positionsArray[5] = 0    // 顶点 2 的 z
+positionsArray[6] = 1    // 顶点 3 的 x
+positionsArray[7] = 0    // 顶点 3 的 y
+positionsArray[8] = 0    // 顶点 3 的 z
+
+// 方法二：直接传入值（更简洁）
+const positionsArray = new Float32Array([
+    0, 0, 0,    // 顶点 1：原点
+    0, 1, 0,    // 顶点 2：正上方
+    1, 0, 0     // 顶点 3：正右方
+])
+```
+
+注意 `Float32Array` 是一维数组。你不能在里面嵌套数组或对象 —— 所有值都必须平铺在一行中。数据在内存中的排列方式如下：
+
+```
+索引:  0  1  2  3  4  5  6  7  8
+数据: [x₁ y₁ z₁ x₂ y₂ z₂ x₃ y₃ z₃]
+       ├─顶点1─┤ ├─顶点2─┤ ├─顶点3─┤
+```
+
+#### 步骤 2：创建 BufferAttribute
+
+将 `Float32Array` 包装成 Three.js 的 `BufferAttribute` 对象：
+
+```js
+const positionsAttribute = new THREE.BufferAttribute(positionsArray, 3)
+//                                                               ↑
+//                          itemSize = 3，表示每 3 个值组成一个顶点
+```
+
+`BufferAttribute` 的第二个参数是 `itemSize`，告诉 Three.js："每几个连续的值属于同一个顶点。" 对于位置数据，每个顶点有 x、y、z 三个分量，所以 `itemSize = 3`。
+
+如果以后你要存储 UV 坐标（每个顶点只有 u、v 两个分量），`itemSize` 就是 2。如果存储粒子的"大小"（每个顶点只有 1 个值），`itemSize` 就是 1。
+
+参考文档：[Three.js - BufferAttribute](https://threejs.org/docs/#api/en/core/BufferAttribute)
+
+#### 步骤 3：将属性设置到 BufferGeometry
+
+```js
+const geometry = new THREE.BufferGeometry()
+geometry.setAttribute('position', positionsAttribute)
+```
+
+`setAttribute` 接收两个参数：
+1. **属性名称**（字符串）— 这里必须用 `'position'`，因为这是 Three.js 内置着色器所识别的名称
+2. **BufferAttribute 对象** — 包含实际数据的属性
+
+:::warning 为什么属性名必须是 'position'？
+
+Three.js 内部使用 **着色器（Shader）** 来渲染物体。着色器是一段运行在 GPU 上的程序，它会查找名为 `position` 的属性来获取顶点位置。如果你用了其他名字（比如 `'vertices'` 或 `'pos'`），着色器就找不到数据，什么东西都不会渲染出来。
+
+后续课程中我们会自己写着色器，到那时就可以自定义属性名了。但现在，使用内置材质时必须遵守这个命名约定。
+
+其他内置属性名：`'normal'`（法线）、`'uv'`（UV 坐标）。
+:::
+
+#### 步骤 4：创建 Mesh 并渲染
+
+```js
+const material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true })
+const mesh = new THREE.Mesh(geometry, material)
+scene.add(mesh)
+```
+
+:::tip 面是自动生成的
+在上面的代码中，我们只提供了顶点位置，**没有手动定义面**。Three.js 会自动将每 3 个连续的顶点组成一个三角形。所以第一个三角形用前 3 个顶点，第二个三角形用接下来的 3 个顶点，以此类推。你不需要像旧版 Three.js 那样手动指定面索引。
+:::
+
+### 创建多个随机三角形
+
+现在让我们创建 50 个随机分布的三角形：
+
+```js
+// 创建空的 BufferGeometry
+const geometry = new THREE.BufferGeometry()
+
+// 决定三角形数量
+const count = 50
+
+// 计算需要的数组长度：
+// 50 个三角形 × 每个三角形 3 个顶点 × 每个顶点 3 个坐标值 = 450
+const positionsArray = new Float32Array(count * 3 * 3)
+
+// 用随机值填充数组
+for(let i = 0; i < count * 3 * 3; i++)
+{
+    positionsArray[i] = (Math.random() - 0.5) * 4
+}
+
+// 创建属性并设置到几何体
+const positionsAttribute = new THREE.BufferAttribute(positionsArray, 3)
+geometry.setAttribute('position', positionsAttribute)
+
+// 创建网格
+const material = new THREE.MeshBasicMaterial({
+    color: 0xff0000,
+    wireframe: true
+})
+const mesh = new THREE.Mesh(geometry, material)
+scene.add(mesh)
+```
+
+:::info 为什么是 `(Math.random() - 0.5) * 4`？
+
+- `Math.random()` 生成 0 到 1 之间的随机数
+- `Math.random() - 0.5` 将范围变为 -0.5 到 0.5（以 0 为中心）
+- `* 4` 将范围扩大到 -2 到 2
+
+这样三角形会随机分布在以原点为中心、边长为 4 的立方体空间内。乘以更大的数值可以扩大分布范围。
+:::
+
+### 数组长度的计算
+
+创建 Float32Array 时，长度的计算是很多人容易出错的地方。记住这个公式：
+
+```
+数组长度 = 三角形数量 × 每个三角形的顶点数 × 每个顶点的坐标分量数
+数组长度 = count         × 3                   × 3
+```
+
+也就是 `count * 3 * 3`。以 50 个三角形为例：`50 * 3 * 3 = 450` 个浮点数。
+
+## Index（索引）
+
+有些几何体的面之间会**共享顶点**。比如立方体 —— 它的每个角被多个面共用。如果不使用索引，相同的顶点会在数据中重复多次，浪费内存。
+
+**索引（Index）** 是一种优化技术：你可以提供一个索引数组，告诉 GPU "第一个三角形使用第 0、1、2 号顶点，第二个三角形使用第 1、2、3 号顶点……" 这样重复的顶点只需要存储一次。
+
+```
+// 不使用索引（重复存储）
+顶点数据: [v0, v1, v2, v1, v3, v2, ...]
+// v1 和 v2 被存储了多次
+
+// 使用索引（每个顶点只存一次）
+顶点数据: [v0, v1, v2, v3, ...]
+索引数据: [0, 1, 2, 1, 3, 2, ...]
+//          ↑ 第一个三角形的索引
+//                   ↑ 第二个三角形的索引
+```
+
+Three.js 的内置几何体（如 `BoxGeometry`）默认使用索引来优化性能。
+
+本课中我们不会手动创建索引几何体（代码组织起来比较复杂），但你可以在 [Three.js BufferGeometry 文档](https://threejs.org/docs/#api/en/core/BufferGeometry)中找到相关示例。
+
+## 完整代码
+
+```js
+import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+
+/**
+ * Base
+ */
+// Canvas
+const canvas = document.querySelector('canvas.webgl')
+
+// Scene
+const scene = new THREE.Scene()
+
+/**
+ * Object —— 使用自定义 BufferGeometry 创建随机三角形
+ */
+const geometry = new THREE.BufferGeometry()
+
+const count = 50
+const positionsArray = new Float32Array(count * 3 * 3)
+
+for(let i = 0; i < count * 3 * 3; i++)
+{
+    positionsArray[i] = (Math.random() - 0.5) * 4
+}
+
+const positionsAttribute = new THREE.BufferAttribute(positionsArray, 3)
+geometry.setAttribute('position', positionsAttribute)
+
+const material = new THREE.MeshBasicMaterial({
+    color: 0xff0000,
+    wireframe: true
+})
+
+const mesh = new THREE.Mesh(geometry, material)
+scene.add(mesh)
+
+/**
+ * Sizes
+ */
+const sizes = {
+    width: window.innerWidth,
+    height: window.innerHeight
+}
+
+window.addEventListener('resize', () =>
+{
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
+
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
+
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+})
+
+/**
+ * Camera
+ */
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+camera.position.z = 3
+scene.add(camera)
+
+// Controls
+const controls = new OrbitControls(camera, canvas)
+controls.enableDamping = true
+
+/**
+ * Renderer
+ */
+const renderer = new THREE.WebGLRenderer({
+    canvas: canvas
+})
+renderer.setSize(sizes.width, sizes.height)
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+/**
+ * Animate
+ */
+const clock = new THREE.Clock()
+
+const tick = () =>
+{
+    const elapsedTime = clock.getElapsedTime()
+
+    // Update controls
+    controls.update()
+
+    // Render
+    renderer.render(scene, camera)
+
+    // Call tick again on the next frame
+    window.requestAnimationFrame(tick)
+}
+
+tick()
+```
+
+## 本课要点回顾
+
+| 概念 | 说明 |
+|------|------|
+| **顶点（Vertex）** | 3D 空间中的坐标点，由 x, y, z 定义 |
+| **面（Face）** | 由 3 个顶点组成的三角形，是几何体的基本构建单元 |
+| **网格（Mesh）** | Geometry + Material 的组合，形成可见的 3D 物体 |
+| **细分（Segments）** | 控制一个面由多少个三角形组成；越高越光滑但越耗性能 |
+| **BufferGeometry** | Three.js 中所有几何体的基类，数据存储在 GPU 缓冲区中 |
+| **Float32Array** | 类型化数组，只能存 32 位浮点数，长度固定，GPU 友好 |
+| **BufferAttribute** | 将 Float32Array 包装成 Three.js 可识别的顶点属性 |
+| **wireframe** | 材质属性，显示几何体的线框结构 |
+| **Index（索引）** | 优化技术，避免共享顶点的重复存储 |

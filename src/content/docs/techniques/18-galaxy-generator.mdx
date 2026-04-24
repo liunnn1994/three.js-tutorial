@@ -1,0 +1,557 @@
+---
+title: 18 银河生成器
+description: 使用参数化粒子系统创建壮观的银河效果 -- 从零开始理解螺旋星系的数学原理
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 本课概览
+
+在这一课中，我们将运用粒子（Points）的知识，创建一个**参数化的银河生成器**。用户可以通过调试面板（lil-gui）实时调整银河的形态、分支数量、旋转程度、颜色等参数。每当参数改变时，银河会自动重新生成。
+
+这不仅仅是一次技术练习 -- 你将学到**过程化生成（Procedural Generation）**的核心思想：用数学公式和随机性来创造看起来自然、有机的视觉效果。
+
+
+<LessonPreview lesson="18-galaxy-generator" />
+
+## 什么是过程化生成？
+
+**过程化生成（Procedural Generation）** 是指通过算法和数学公式（而非手工设计）来创建内容的技术。在游戏和 3D 领域，它被广泛用于：
+
+- 生成地形、星空、植被
+- 创建纹理和材质
+- 构建关卡和地图
+
+其核心思想是：**定义规则，让计算机随机填充细节**。
+
+本课中的银河生成器就是一个典型的过程化生成案例 -- 我们定义螺旋的数学规则，然后用大量随机粒子填充它。
+
+:::tip
+过程化生成的优势在于"可重现的随机性"：每次使用相同参数，结果相同；但改变参数，就能得到完全不同的效果。
+:::
+
+## 银河的数学原理
+
+### 极坐标基础
+
+要理解银河的形状，首先要理解**极坐标（Polar Coordinates）**。在普通坐标系（x, y）中，我们用"左右 + 上下"来定位一个点。而在极坐标中，我们用"距离 + 角度"来定位：
+
+- **半径（radius）**：点到中心的距离
+- **角度（angle）**：点相对于某个方向旋转了多少度
+
+在 JavaScript 中，`Math.sin()` 和 `Math.cos()` 函数就是连接这两种坐标系的桥梁：
+
+```js
+// 将极坐标转换为直角坐标
+const x = Math.cos(angle) * radius  // 水平位置
+const y = Math.sin(angle) * radius  // 垂直位置
+```
+
+想象你在圆心站着，`Math.cos(angle)` 告诉你向东走多远，`Math.sin(angle)` 告诉你向北走多远。两者结合起来，你就在圆上走了一圈。
+
+### 螺旋线的秘密
+
+螺旋星系的核心形状就是一条**螺旋线**。螺旋线的规律是：离中心越远的点，旋转的角度越大。
+
+用数学来表达：
+
+```js
+const spinAngle = radius * spinStrength
+```
+
+这里 `radius` 是粒子到中心的随机距离，`spinStrength` 是一个控制旋转程度的参数。这意味着：
+
+- 靠近中心的粒子（`radius` 很小）几乎不旋转
+- 远离中心的粒子（`radius` 很大）旋转很多
+
+把螺旋角度和分支角度结合起来，我们就得到了完整的银河位置公式。
+
+## 参数对象
+
+创建银河之前，我们先把所有可调参数集中到一个对象中。这样做的好处是：
+
+1. lil-gui 需要一个对象来绑定控件
+2. 参数集中管理，方便维护
+3. 可以在任何地方引用这些参数
+
+```js
+const parameters = {
+    count: 100000,          // 粒子总数
+    size: 0.01,             // 每个粒子的大小
+    radius: 5,              // 银河的半径
+    branches: 3,            // 螺旋分支的数量
+    spin: 1,                // 旋转强度
+    randomness: 0.2,        // 随机偏移强度
+    randomnessPower: 3,     // 随机分布的集中程度
+    insideColor: '#ff6030', // 银河内部颜色（靠近中心）
+    outsideColor: '#1b3984' // 银河外部颜色（远离中心）
+}
+```
+
+:::info
+每个参数都有明确的物理含义。`count` 控制性能和细节程度，`radius` 控制银河大小，`branches` 决定螺旋臂数量，`spin` 控制螺旋的松紧程度，`randomness` 控制星体的分散程度。
+:::
+
+## 为什么使用 BufferGeometry + Points？
+
+当需要渲染成千上万个粒子时，我们不能为每个粒子创建一个独立的 Mesh。那样会导致：
+
+- 几万个 `THREE.Mesh` 对象在场景中
+- 每个粒子都是一次独立的渲染调用（Draw Call）
+- 帧率直接崩溃
+
+**BufferGeometry + Points** 是解决方案：
+
+- 一个 `BufferGeometry` 存储所有粒子的位置
+- 一个 `PointsMaterial` 控制所有粒子的外观
+- 一次渲染调用搞定所有粒子
+- 可以轻松处理 10 万甚至 100 万个粒子
+
+```js
+// 创建空的 BufferGeometry
+const geometry = new THREE.BufferGeometry()
+
+// 创建一个 Float32Array 来存储所有粒子的位置
+// 每个粒子需要 3 个值（x, y, z），所以数组长度是 粒子数 x 3
+const positions = new Float32Array(parameters.count * 3)
+
+// 将位置数据设置为 BufferGeometry 的属性
+geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+```
+
+:::warning
+`Float32Array` 是一种特殊的数组类型，专门用于存储浮点数。WebGL 底层使用它来高效传输数据到 GPU。不能用普通的 JavaScript 数组 `[]` 替代。
+:::
+
+### Float32Array 的索引技巧
+
+因为每个粒子有 3 个坐标值（x, y, z），我们需要用 `i * 3` 的方式来索引：
+
+```
+粒子 0: positions[0] = x, positions[1] = y, positions[2] = z
+粒子 1: positions[3] = x, positions[4] = y, positions[5] = z
+粒子 2: positions[6] = x, positions[7] = y, positions[8] = z
+...
+粒子 i: positions[i*3] = x, positions[i*3+1] = y, positions[i*3+2] = z
+```
+
+为了代码可读性，我们用一个变量 `i3` 来存储 `i * 3`：
+
+```js
+for (let i = 0; i < parameters.count; i++) {
+    const i3 = i * 3  // 当前粒子在数组中的起始索引
+
+    // 现在可以用 positions[i3]     访问 x
+    //         positions[i3 + 1] 访问 y
+    //         positions[i3 + 2] 访问 z
+}
+```
+
+## 创建螺旋星系 -- 逐步拆解
+
+### 第一步：随机半径
+
+每个粒子需要一个从中心到边缘的随机距离：
+
+```js
+const radius = Math.random() * parameters.radius
+```
+
+`Math.random()` 返回 0 到 1 之间的随机数，乘以 `parameters.radius`（默认 5）后，每个粒子到中心的距离在 0 到 5 之间均匀分布。
+
+### 第二步：创建分支（Branches）
+
+银河有多条螺旋臂（branch）。我们需要把粒子均匀分配到每条臂上。
+
+关键技巧是使用**取模运算（Modulo）** `i % parameters.branches`：
+
+```js
+// 假设 branches = 3
+// i = 0 → 0 % 3 = 0
+// i = 1 → 1 % 3 = 1
+// i = 2 → 2 % 3 = 2
+// i = 3 → 3 % 3 = 0
+// i = 4 → 4 % 3 = 1
+// i = 5 → 5 % 3 = 2
+// ...循环往复：0, 1, 2, 0, 1, 2, ...
+```
+
+取模运算 `%` 返回除法的余数。`i % 3` 的结果永远在 0、1、2 之间循环 -- 正好对应 3 条分支。
+
+接下来，我们需要把这些 0、1、2 的整数转换成**角度**。完整的一圈是 `2 * Math.PI` 弧度（约 6.28），所以：
+
+```js
+const branchAngle = (i % parameters.branches) / parameters.branches * Math.PI * 2
+```
+
+这行代码的含义是：
+1. `i % parameters.branches` → 得到 0、1、2 循环
+2. `/ parameters.branches` → 除以 3，得到 0、0.33、0.67 的比例
+3. `* Math.PI * 2` → 乘以一整圈的弧度数
+
+对于 3 条分支，结果大约是：
+- 分支 0：角度 = 0（正右方）
+- 分支 1：角度 = 2.09（约 120 度）
+- 分支 2：角度 = 4.19（约 240 度）
+
+三条分支均匀分布在圆周上。
+
+### 第三步：添加旋转（Spin）
+
+螺旋星系的关键在于：**离中心越远的恒星，旋转的角度越大**。
+
+```js
+const spinAngle = radius * parameters.spin
+```
+
+这里用的是**当前粒子的半径**（而非银河的最大半径），所以：
+- 靠近中心的粒子（radius 小）旋转角度小
+- 远离中心的粒子（radius 大）旋转角度大
+
+`parameters.spin` 是一个强度系数，默认为 1。如果设为负数，螺旋方向会反转。
+
+### 第四步：将极坐标转换为 XZ 平面坐标
+
+把分支角度和旋转角度相加后，用 `Math.cos` 和 `Math.sin` 转换为 X 和 Z 坐标：
+
+```js
+positions[i3    ] = Math.cos(branchAngle + spinAngle) * radius
+positions[i3 + 1] = 0  // Y 轴暂设为 0，后面加上随机偏移
+positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius
+```
+
+注意：我们用的是 X 和 Z 轴（不是 X 和 Y），因为银河是**水平铺开**的，Y 轴代表高度。
+
+此时，如果去掉旋转（`spin = 0`），你会看到粒子像车轮的辐条一样从中心向外延伸。加上旋转后，辐条就变成了螺旋臂。
+
+### 第五步：添加随机性（Randomness）
+
+真实的星系并不是完美的几何形状，恒星会随机散布在螺旋臂附近。我们需要给每个粒子的位置加上随机偏移。
+
+```js
+const randomX = Math.pow(Math.random(), parameters.randomnessPower)
+    * (Math.random() < 0.5 ? 1 : -1)
+    * parameters.randomness * radius
+
+const randomY = Math.pow(Math.random(), parameters.randomnessPower)
+    * (Math.random() < 0.5 ? 1 : -1)
+    * parameters.randomness * radius
+
+const randomZ = Math.pow(Math.random(), parameters.randomnessPower)
+    * (Math.random() < 0.5 ? 1 : -1)
+    * parameters.randomness * radius
+```
+
+这段代码有几个关键点需要理解：
+
+**1. 正负随机方向**
+
+`Math.random() < 0.5 ? 1 : -1` 让随机值可以是正数或负数，50% 的概率各一半。这样粒子会向两侧散开，而不是只往一个方向偏移。
+
+**2. 随机值乘以半径**
+
+`* radius` 确保离中心越远的粒子，散布范围越大。这符合真实星系的特征 -- 外围的螺旋臂比内部的更宽。
+
+**3. 幂函数控制分布集中度（randomnessPower）**
+
+`Math.pow(Math.random(), parameters.randomnessPower)` 是一个巧妙的技巧。`Math.random()` 返回 0 到 1 的均匀随机数，但 `Math.pow(value, 3)` 会让结果更偏向 0：
+
+- 原始均匀分布：0.1, 0.3, 0.5, 0.7, 0.9
+- 三次方后：0.001, 0.027, 0.125, 0.343, 0.729
+
+这意味着**大多数粒子会紧贴螺旋臂，只有少数会散开很远** -- 正是我们想要的效果。`randomnessPower` 值越大，粒子越集中在螺旋臂上；值越小（接近 1），分布越均匀。
+
+最后，把随机偏移加到位置上：
+
+```js
+positions[i3    ] = Math.cos(branchAngle + spinAngle) * radius + randomX
+positions[i3 + 1] = randomY
+positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ
+```
+
+## 颜色渐变 -- 顶点着色（Vertex Colors）
+
+银河的颜色应该从中心到边缘产生渐变。我们用**顶点颜色**来实现这个效果。
+
+### 什么是顶点颜色？
+
+在 Three.js 中，默认情况下一个材质对所有顶点使用同一种颜色。但如果开启了 `vertexColors: true`，每个顶点可以有自己的颜色，Three.js 会自动在相邻顶点之间进行插值（混合）。
+
+### 实现方法
+
+和位置一样，我们创建一个 `Float32Array` 来存储颜色：
+
+```js
+const colors = new Float32Array(parameters.count * 3)
+
+// 创建两种颜色
+const colorInside = new THREE.Color(parameters.insideColor)  // 中心颜色
+const colorOutside = new THREE.Color(parameters.outsideColor) // 边缘颜色
+
+for (let i = 0; i < parameters.count; i++) {
+    const i3 = i * 3
+
+    // 根据 radius 计算混合比例
+    // 靠近中心（radius 小）→ 混合比例接近 0 → 更偏 insideColor
+    // 远离中心（radius 大）→ 混合比例接近 1 → 更偏 outsideColor
+    const mixedColor = colorInside.clone()
+    mixedColor.lerp(colorOutside, radius / parameters.radius)
+
+    colors[i3    ] = mixedColor.r
+    colors[i3 + 1] = mixedColor.g
+    colors[i3 + 2] = mixedColor.b
+}
+
+// 将颜色数据添加到几何体
+geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+```
+
+`THREE.Color` 的 `lerp()` 方法（线性插值）接受一个 0 到 1 的混合比例：
+- 比例为 0 → 完全是 `colorInside`
+- 比例为 1 → 完全是 `colorOutside`
+- 比例为 0.5 → 两者的混合
+
+`radius / parameters.radius` 正好给出 0 到 1 的比例值，因为 `radius` 最大等于 `parameters.radius`。
+
+:::warning
+注意：颜色数组的名称**必须**是 `'color'`，这是 Three.js 的内置约定名称。`PointsMaterial` 中设置 `vertexColors: true` 后，会自动读取名为 `'color'` 的属性。
+:::
+
+## 粒子材质配置
+
+```js
+const material = new THREE.PointsMaterial({
+    size: parameters.size,
+    sizeAttenuation: true,                // 远处的粒子更小（透视效果）
+    depthWrite: false,                     // 禁用深度写入
+    blending: THREE.AdditiveBlending,      // 加法混合
+    vertexColors: true                     // 使用顶点颜色
+})
+```
+
+这些参数都很关键：
+
+| 参数 | 说明 |
+|------|------|
+| `sizeAttenuation: true` | 启用透视效果，远处的粒子看起来更小。关闭后所有粒子大小相同。 |
+| `depthWrite: false` | 禁止粒子写入深度缓冲区。如果不关闭，粒子会互相遮挡，在中心密集区域看起来会有"洞"。 |
+| `blending: THREE.AdditiveBlending` | 加法混合模式。颜色会叠加而不是覆盖，中心粒子密集区域会变得更亮，产生"发光"效果。 |
+
+## 销毁旧的银河 -- 内存管理
+
+当用户调整参数时，我们需要重新生成银河。但在此之前，必须先**销毁旧的银河**，否则：
+
+- 场景中会同时存在多个银河
+- 旧几何体和材质仍然占用 GPU 内存
+- 粒子越来越多，帧率急剧下降
+- 最终浏览器崩溃
+
+```js
+let geometry = null
+let material = null
+let points = null
+
+const generateGalaxy = () => {
+    // 如果已经有银河，先销毁旧的
+    if (points !== null) {
+        geometry.dispose()     // 释放几何体占用的 GPU 内存
+        material.dispose()     // 释放材质占用的 GPU 内存
+        scene.remove(points)   // 从场景中移除粒子对象
+    }
+
+    // 创建新的银河...
+}
+```
+
+### dispose() 做了什么？
+
+Three.js 中，`geometry` 和 `material` 在创建时会向 GPU 上传数据。调用 `.dispose()` 会告诉 WebGL 释放这些 GPU 缓冲区。
+
+- `geometry.dispose()` -- 释放顶点数据（位置、颜色等）
+- `material.dispose()` -- 释放着色器程序和纹理等
+
+注意：`Mesh` 或 `Points` 对象本身不需要 `dispose()`，因为它只是一个"容器"，把几何体和材质组合在一起，不占用独立的 GPU 内存。只需要把它从场景中 `remove()` 即可。
+
+:::warning
+在 WebGL 中频繁创建和删除对象时，**务必**调用 `dispose()`。内存泄漏是 WebGL 应用中最常见的问题之一。
+:::
+
+## GUI 调试面板集成
+
+使用 `onFinishChange` 而非 `onChange` 来触发银河重建：
+
+```js
+gui.add(parameters, 'count')
+    .min(100).max(1000000).step(100)
+    .onFinishChange(generateGalaxy)
+
+gui.add(parameters, 'size')
+    .min(0.001).max(0.1).step(0.001)
+    .onFinishChange(generateGalaxy)
+
+gui.add(parameters, 'radius')
+    .min(0.01).max(20).step(0.01)
+    .onFinishChange(generateGalaxy)
+
+gui.add(parameters, 'branches')
+    .min(2).max(20).step(1)
+    .onFinishChange(generateGalaxy)
+
+gui.add(parameters, 'spin')
+    .min(-5).max(5).step(0.001)
+    .onFinishChange(generateGalaxy)
+
+gui.add(parameters, 'randomness')
+    .min(0).max(2).step(0.001)
+    .onFinishChange(generateGalaxy)
+
+gui.add(parameters, 'randomnessPower')
+    .min(1).max(10).step(0.001)
+    .onFinishChange(generateGalaxy)
+
+gui.addColor(parameters, 'insideColor')
+    .onFinishChange(generateGalaxy)
+
+gui.addColor(parameters, 'outsideColor')
+    .onFinishChange(generateGalaxy)
+```
+
+:::danger
+为什么用 `onFinishChange` 而不是 `onChange`？
+
+`onChange` 在你**拖动滑块的过程中**就会不断触发。假设你把粒子数从 1000 拖到 50000，中间会触发上百次银河重建，每次都要创建和销毁大量 GPU 资源，可能导致浏览器卡死。
+
+`onFinishChange` 只在你**松开鼠标/手指后**触发一次，安全得多。
+:::
+
+## 银河旋转动画
+
+让银河缓慢旋转，增加视觉吸引力：
+
+```js
+const tick = () => {
+    const elapsedTime = clock.getElapsedTime()
+
+    // 整个银河绕 Y 轴缓慢旋转
+    points.rotation.y = elapsedTime * 0.1
+
+    controls.update()
+    renderer.render(scene, camera)
+    window.requestAnimationFrame(tick)
+}
+```
+
+因为所有粒子都在一个 `Points` 对象中，旋转这个对象就等于旋转整个银河。
+
+## 完整的生成函数
+
+将以上所有步骤组合在一起：
+
+```js
+const generateGalaxy = () => {
+    // 销毁旧的银河
+    if (points !== null) {
+        geometry.dispose()
+        material.dispose()
+        scene.remove(points)
+    }
+
+    // 创建几何体
+    geometry = new THREE.BufferGeometry()
+    const positions = new Float32Array(parameters.count * 3)
+    const colors = new Float32Array(parameters.count * 3)
+
+    const colorInside = new THREE.Color(parameters.insideColor)
+    const colorOutside = new THREE.Color(parameters.outsideColor)
+
+    for (let i = 0; i < parameters.count; i++) {
+        const i3 = i * 3
+
+        // 位置
+        const radius = Math.random() * parameters.radius
+        const spinAngle = radius * parameters.spin
+        const branchAngle = (i % parameters.branches) / parameters.branches * Math.PI * 2
+
+        const randomX = Math.pow(Math.random(), parameters.randomnessPower)
+            * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius
+        const randomY = Math.pow(Math.random(), parameters.randomnessPower)
+            * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius
+        const randomZ = Math.pow(Math.random(), parameters.randomnessPower)
+            * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius
+
+        positions[i3    ] = Math.cos(branchAngle + spinAngle) * radius + randomX
+        positions[i3 + 1] = randomY
+        positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ
+
+        // 颜色
+        const mixedColor = colorInside.clone()
+        mixedColor.lerp(colorOutside, radius / parameters.radius)
+
+        colors[i3    ] = mixedColor.r
+        colors[i3 + 1] = mixedColor.g
+        colors[i3 + 2] = mixedColor.b
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+
+    // 材质
+    material = new THREE.PointsMaterial({
+        size: parameters.size,
+        sizeAttenuation: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        vertexColors: true
+    })
+
+    // 粒子
+    points = new THREE.Points(geometry, material)
+    scene.add(points)
+}
+
+// 首次调用生成银河
+generateGalaxy()
+```
+
+## 性能优化建议
+
+### 粒子数量的权衡
+
+| 粒子数 | 效果 | 性能 |
+|--------|------|------|
+| 1,000 ~ 10,000 | 稀疏，能看清单个粒子 | 任何设备流畅 |
+| 50,000 ~ 100,000 | 密集的银河效果 | 主流设备流畅 |
+| 500,000 ~ 1,000,000 | 非常密集 | 高端设备可以，低端设备可能卡顿 |
+
+:::tip
+判断粒子大小是否合适的经验法则：当粒子小到远处看起来像"雾气"而非"方块"时，大小就合适了。粒子越小、数量越多，效果越好。
+:::
+
+### 其他性能技巧
+
+1. **不要在每帧重建几何体**：只在参数改变时重建，旋转动画只需改变 `points.rotation`
+2. **使用 `requestAnimationFrame`**：让浏览器控制帧率
+3. **限制像素比**：`renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))` 避免高 DPI 屏幕过度渲染
+4. **优先使用 BufferGeometry**：这是 Three.js 中最高效的几何体类型
+5. **减少 JS 变量创建**：在循环内部避免创建新对象（如 `new THREE.Color()`），尽量在外部创建
+
+## 扩展思路
+
+学完本课后，你可以尝试以下改进：
+
+- 添加银河核心的发光效果（可以用一个大尺寸、高亮度的中心粒子）
+- 使用自定义 ShaderMaterial 绘制圆形粒子（替代默认的方形）
+- 根据距离中心的远近调整粒子大小
+- 添加背景星空（另一组随机分布的粒子）
+- 用 `GUI` 添加导出/导入参数的功能，保存你喜欢的银河配置
+
+## 参考链接
+
+- [Three.js Points 文档](https://threejs.org/docs/#api/en/objects/Points)
+- [Three.js BufferGeometry 文档](https://threejs.org/docs/#api/en/core/BufferGeometry)
+- [Three.js PointsMaterial 文档](https://threejs.org/docs/#api/en/materials/PointsMaterial)
+- [MDN: Float32Array](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Float32Array)
+- [MDN: Math.cos / Math.sin](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Math/cos)
+- [过程化生成 - Wikipedia](https://zh.wikipedia.org/wiki/%E7%A8%8B%E5%BC%8F%E5%8C%96%E7%94%9F%E6%88%90)
+- [lil-gui 文档](https://lil-gui.georgealways.com/)

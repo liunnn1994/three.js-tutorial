@@ -1,0 +1,269 @@
+---
+title: 34 烟花着色器
+description: 使用粒子和顶点着色器创建高性能的烟花爆炸效果，包含球形分布、重力和闪烁
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 概述
+
+本课创建一个完整的烟花系统：点击屏幕发射烟花，粒子从爆炸点向各个方向扩散，受重力影响逐渐下落，最终消失。所有动画在顶点着色器中完成，确保即使有数千个粒子也能流畅运行。
+
+烟花效果需要处理多个相互关联的动画阶段：
+1. **扩散** — 粒子从爆炸点向各方向快速扩展
+2. **重力** — 粒子逐渐下落
+3. **尺寸变化** — 先放大再缩小
+4. **颜色渐变** — 从亮色变为暗色
+5. **闪烁** — 消失前随机闪烁
+6. **淡出** — 透明度逐渐降低
+
+:::tip
+所有粒子都执行相同的着色器代码，但行为各不相同。关键在于如何利用自定义 attribute（如 `aLife`、`aRandom`）让每个粒子在生命周期中有不同的起始时间和随机参数，从而产生多样的行为。
+:::
+
+
+<LessonPreview lesson="34-fireworks-shaders" />
+
+## 项目架构
+
+烟花使用函数式架构——每次点击创建一个新的烟花实例：
+
+```js
+const createFirework = (count, position, colors) => {
+    // 1. 创建 geometry 和自定义 attributes
+    // 2. 创建 ShaderMaterial
+    // 3. 创建 Points 并添加到场景
+    // 4. 设置定时移除
+}
+```
+
+:::tip
+将烟花创建封装为函数有两个好处：（1）每次点击时调用函数即可生成新烟花；（2）可以通过定时器在烟花结束后将其从场景和内存中移除，避免内存泄漏。
+:::
+
+## 粒子属性数据
+
+```js
+const count = 3000
+const positions = new Float32Array(count * 3)
+const aVelocity = new Float32Array(count * 3)   // 速度方向
+const aColor = new Float32Array(count * 3)       // 粒子颜色
+const aSize = new Float32Array(count)            // 粒子大小
+const aLife = new Float32Array(count)            // 生命起始偏移
+const aRandom = new Float32Array(count)          // 随机种子
+
+for (let i = 0; i < count; i++) {
+    // 初始位置（爆炸点）
+    positions[i * 3]     = position.x
+    positions[i * 3 + 1] = position.y
+    positions[i * 3 + 2] = position.z
+
+    // 球形随机速度方向
+    const theta = Math.random() * Math.PI * 2
+    const phi = Math.acos(2 * Math.random() - 1)
+    const speed = 1 + Math.random() * 3
+
+    aVelocity[i * 3]     = Math.sin(phi) * Math.cos(theta) * speed
+    aVelocity[i * 3 + 1] = Math.sin(phi) * Math.sin(theta) * speed
+    aVelocity[i * 3 + 2] = Math.cos(phi) * speed
+
+    aSize[i] = Math.random() * 2 + 0.5
+    aLife[i] = Math.random()
+    aRandom[i] = Math.random()
+}
+```
+
+### 球形分布原理
+
+```js
+const theta = Math.random() * Math.PI * 2     // 方位角 [0, 2PI)
+const phi = Math.acos(2 * Math.random() - 1)   // 极角 [0, PI]
+const speed = 1 + Math.random() * 3            // 随机速度
+
+x = sin(phi) * cos(theta) * speed
+y = sin(phi) * sin(theta) * speed
+z = cos(phi) * speed
+```
+
+这是球坐标系到笛卡尔坐标的转换：
+- `theta` 控制水平方向
+- `phi` 控制仰角（`acos(2 * random - 1)` 确保球面上的点均匀分布）
+- `speed` 控制每个粒子的初始速度
+
+:::tip
+如果使用 `phi = Math.random() * Math.PI` 而不是 `Math.acos(2 * Math.random() - 1)`，粒子会在两极聚集。后者使用反余弦变换来补偿球面面积的纬度变化，实现真正的均匀球面分布。
+:::
+
+## 顶点着色器
+
+顶点着色器是整个烟花效果的核心，它计算粒子在任意时刻的位置、大小和颜色：
+
+```glsl
+uniform float uTime;
+uniform float uPixelRatio;
+attribute vec3 aVelocity;
+attribute float aSize;
+attribute float aLife;
+attribute float aRandom;
+varying vec3 vColor;
+varying float vAlpha;
+
+void main() {
+    // === 生命周期进度 ===
+    float progress = mod(uTime * 0.5 + aLife, 1.0);
+
+    vec3 pos = position;
+
+    // === 速度扩散 ===
+    pos += aVelocity * progress;
+
+    // === 重力效果 ===
+    pos.y -= progress * progress * 4.0;
+
+    // === 标准投影变换 ===
+    vec4 modelPosition = modelMatrix * vec4(pos, 1.0);
+    vec4 viewPosition = viewMatrix * modelPosition;
+    gl_Position = projectionMatrix * viewPosition;
+
+    // === 粒子大小（先大后小） ===
+    float sizeProgress = sin(progress * 3.14159);
+    gl_PointSize = uPixelRatio * aSize * 20.0 * sizeProgress * (1.0 / -viewPosition.z);
+
+    // === 颜色渐变 ===
+    vColor = mix(vec3(1.0, 0.8, 0.2), vec3(1.0, 0.1, 0.0), progress);
+
+    // === 闪烁 + 淡出 ===
+    float twinkle = sin(progress * 30.0 + aRandom * 100.0) * 0.5 + 0.5;
+    vAlpha = (1.0 - progress) * twinkle;
+}
+```
+
+### 生命周期进度
+
+```glsl
+float progress = mod(uTime * 0.5 + aLife, 1.0);
+```
+
+- `uTime * 0.5` — 控制烟花展开的速度（值越大越快）
+- `+ aLife` — 每个粒子有不同的起始时间偏移，让它们不会同时出现和消失
+- `mod(..., 1.0)` — 将值限制在 `[0, 1)` 范围内，实现循环播放
+
+### 重力模拟
+
+```glsl
+pos.y -= progress * progress * 4.0;
+```
+
+- `progress * progress`（二次函数）模拟加速度——粒子一开始下落缓慢，越到后面下落越快，这与真实重力的 `y = 0.5 * g * t^2` 公式一致
+- `4.0` 控制重力的强度
+
+### 先大后小的尺寸变化
+
+```glsl
+float sizeProgress = sin(progress * 3.14159);
+gl_PointSize = uPixelRatio * aSize * 20.0 * sizeProgress * (1.0 / -viewPosition.z);
+```
+
+- `sin(progress * PI)` — 在 `[0, PI]` 上，`sin` 从 0 上升到 1 再下降到 0，完美描述了"先放大后缩小"的变化曲线
+- 这比使用 `(1.0 - progress)` 效果更丰富——烟花粒子先快速放大，到达最大尺寸后再逐渐缩小消失
+
+### 闪烁效果
+
+```glsl
+float twinkle = sin(progress * 30.0 + aRandom * 100.0) * 0.5 + 0.5;
+vAlpha = (1.0 - progress) * twinkle;
+```
+
+- `progress * 30.0` — 高频振荡，产生闪烁效果
+- `+ aRandom * 100.0` — 每个粒子的闪烁频率不同
+- `* (1.0 - progress)` — 整体淡出，即使有闪烁，越到生命周期末期越透明
+
+## 片元着色器
+
+```glsl
+varying vec3 vColor;
+varying float vAlpha;
+
+void main() {
+    float dist = length(gl_PointCoord - vec2(0.5));
+    if (dist > 0.5) discard;
+
+    float strength = 1.0 - dist * 2.0;
+    strength = pow(strength, 1.5);
+
+    gl_FragColor = vec4(vColor * strength, vAlpha * strength);
+}
+```
+
+与之前的粒子效果类似的圆形裁剪 + 柔和边缘。不同之处在于最终颜色同时乘以 `strength` 和 `vAlpha`——粒子中心最亮最不透明，边缘最暗最透明。
+
+## 多色烟花
+
+可以为不同粒子分配不同颜色：
+
+```js
+const palette = [
+    new THREE.Color('#ff6030'),
+    new THREE.Color('#30ff60'),
+    new THREE.Color('#6030ff'),
+    new THREE.Color('#ffff30')
+]
+
+for (let i = 0; i < count; i++) {
+    const color = palette[Math.floor(Math.random() * palette.length)]
+    aColor[i * 3]     = color.r
+    aColor[i * 3 + 1] = color.g
+    aColor[i * 3 + 2] = color.b
+}
+```
+
+或者使用 `aColor` attribute 在着色器中直接使用每个粒子的颜色，而不是用 `mix()` 做渐变。
+
+## 动画进度重映射
+
+一个重要的概念是**进度重映射**。烟花的各个阶段（扩散、下落、闪烁、消失）需要在不同时间段发生。`progress` 值为 `[0, 1]`，但实际效果需要：
+
+- `0.0 ~ 0.1`：快速膨胀
+- `0.1 ~ 0.5`：缓慢减速
+- `0.5 ~ 0.8`：开始下落
+- `0.8 ~ 1.0`：闪烁并消失
+
+这可以通过对 `progress` 应用数学函数来重映射。例如使用 `smoothstep`、`pow` 或自定义曲线来控制每个效果在生命周期中出现的时间。
+
+## 清理机制
+
+烟花播放完毕后需要从场景中移除，否则会积累越来越多的 Points 对象：
+
+```js
+const createFirework = (count, position) => {
+    // ... 创建烟花 ...
+    scene.add(points)
+
+    // 3 秒后从场景中移除
+    setTimeout(() => {
+        scene.remove(points)
+        geometry.dispose()
+        material.dispose()
+    }, 3000)
+}
+```
+
+:::caution
+不要忘记调用 `geometry.dispose()` 和 `material.dispose()` 来释放 GPU 资源。如果不做清理，每次点击都会创建新的 geometry 和 material，最终导致内存泄漏和 GPU 资源耗尽。
+:::
+
+## 关键技术总结
+
+| 技术 | 实现方式 | 效果 |
+|------|----------|------|
+| 球形速度分布 | 球坐标转笛卡尔坐标 | 粒子均匀向各方向扩散 |
+| 重力模拟 | `progress * progress` | 加速下落 |
+| 先大后小 | `sin(progress * PI)` | 粒子膨胀后收缩 |
+| 闪烁 | 高频 `sin` + 随机偏移 | 消失前随机闪烁 |
+| 生命周期 | `mod(uTime + aLife, 1.0)` | 粒子循环播放，错开开始时间 |
+| 加法混合 | `AdditiveBlending` | 重叠处更亮，模拟发光效果 |
+
+:::tip
+`AdditiveBlending` 是粒子发光效果的标准选择。不过注意，如果烟花粒子太多且颜色很亮，加法混合可能导致过曝（白色区域）。可以通过降低颜色亮度或最终 alpha 值来控制。
+:::

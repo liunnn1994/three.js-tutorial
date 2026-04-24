@@ -1,0 +1,301 @@
+---
+title: 35 光照着色器
+description: 在自定义着色器中手动实现 Phong 光照模型，包含漫反射、镜面高光和环境光
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 概述
+
+Three.js 的 `ShaderMaterial` 默认**不支持光照**。使用 `MeshStandardMaterial` 时，Three.js 会在内部自动处理所有光照计算——但那些算法极其复杂。在本课中，我们将自己在着色器中实现一个简化版的光照模型（类似 Phong 着色），学习光照计算的底层原理。
+
+:::tip
+为什么要自己实现光照？（1）学习光照的底层原理；（2）为自定义着色器（如海浪、旗帜）添加光照时，尝试注入 Three.js 内置光照系统"简直是噩梦"，自己实现更简单可控；（3）自定义光照性能更高，因为只计算需要的光照类型。
+:::
+
+
+<LessonPreview lesson="35-lights-shading-shaders" />
+
+## 光照模型概述
+
+我们将实现一个包含三个分量的光照模型：
+
+1. **环境光（Ambient）** — 恒定的基础亮度，模拟光线在场景中的多次反弹
+2. **漫反射（Diffuse）** — 光线照射到粗糙表面后向各方向均匀散射
+3. **镜面反射（Specular）** — 光线在光滑表面上产生的高光亮点
+
+```
+最终颜色 = 环境光 + 漫反射 + 镜面反射
+```
+
+:::tip
+本课的光照在**片元着色器**中计算（Phong shading），而不是顶点着色器中（Gouraud shading）。在顶点着色器中计算光照更高效但容易产生视觉瑕疵（光照不平滑），在片元着色器中计算更精确，每个像素独立计算光照。
+:::
+
+## 法线传递
+
+光照计算需要法线信息。法线在顶点着色器中经 `normalMatrix` 变换后，通过 `varying` 传递到片元着色器：
+
+```glsl
+// 顶点着色器
+varying vec3 vNormal;
+varying vec3 vPosition;
+
+void main() {
+    vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+
+    // 使用 normalMatrix 将法线变换到视图空间
+    vNormal = normalMatrix * normal;
+    // 存储世界空间位置（用于片元着色器中的光照计算）
+    vPosition = modelPosition.xyz;
+
+    gl_Position = projectionMatrix * viewMatrix * modelPosition;
+}
+```
+
+**为什么使用 `normalMatrix`？**
+
+`normalMatrix` 是 `modelMatrix` 的逆转置矩阵的 3x3 部分。对于包含非均匀缩放的模型变换，直接用 `modelMatrix` 变换法线会导致法线方向错误。`normalMatrix` 专门用于确保法线在变换后仍然垂直于表面。
+
+:::caution
+`normalMatrix` 将法线变换到**视图空间**（View Space），而 `modelPosition.xyz` 是**世界空间**（World Space）的位置。如果光照计算在同一个空间中进行，两者需要统一。实际实现中，可以选择在世界空间或视图空间中做光照计算，本课示例在世界空间中进行。
+:::
+
+## 环境光（Ambient Light）
+
+环境光是光照模型中最简单的部分——一个恒定的基础亮度：
+
+```glsl
+// 片元着色器
+uniform vec3 uColor;
+uniform float uAmbientIntensity;
+
+void main() {
+    vec3 ambient = uColor * uAmbientIntensity;
+    // ...
+}
+```
+
+- `uAmbientIntensity` 通常设为 `0.1 ~ 0.3`
+- 环境光不依赖于光源位置、法线方向或观察角度
+- 它模拟的是场景中经过多次反弹后的间接光照
+
+## 漫反射（Diffuse）
+
+漫反射基于**兰伯特定律（Lambert's Law）**：表面的亮度与光线入射角的余弦成正比。
+
+```glsl
+uniform vec3 uLightPosition;
+uniform vec3 uLightColor;
+uniform vec3 uColor;
+varying vec3 vNormal;
+varying vec3 vPosition;
+
+void main() {
+    vec3 normal = normalize(vNormal);
+    vec3 lightDirection = normalize(uLightPosition - vPosition);
+
+    // 漫反射 = max(dot(法线, 光线方向), 0.0)
+    float light = dot(normal, lightDirection);
+    light = clamp(light, 0.0, 1.0);  // 防止背面也受光
+
+    vec3 diffuse = uColor * light * uLightColor;
+    // ...
+}
+```
+
+**逐步解析：**
+
+1. `normalize(vNormal)` — 法线需要归一化，因为 `varying` 插值后长度可能不为 1
+2. `uLightPosition - vPosition` — 从片元位置指向光源位置的向量
+3. `dot(normal, lightDirection)` — 法线和光线方向的点积
+   - 值为 1.0：光线垂直照射（最亮）
+   - 值为 0.0：光线平行于表面（无光照）
+   - 值为负：光线从背面照射
+4. `clamp(light, 0.0, 1.0)` — 将负值截断为 0，防止背光面出现负颜色
+
+:::tip
+`dot(normal, lightDir)` 的几何含义就是入射角的余弦值。这正是兰伯特定律的数学表达——余弦值越大（入射角越小），光照越强。这也是为什么 `dot` 产品是光照计算中最基础的操作。
+:::
+
+## 镜面反射（Specular）
+
+镜面反射基于 Phong 反射模型，计算视线方向与反射方向的接近程度：
+
+```glsl
+uniform vec3 uLightPosition;
+uniform vec3 uLightColor;
+uniform float uShininess;
+varying vec3 vNormal;
+varying vec3 vPosition;
+
+void main() {
+    vec3 normal = normalize(vNormal);
+    vec3 lightDirection = normalize(uLightPosition - vPosition);
+
+    // === Phong 镜面反射 ===
+    vec3 viewDirection = normalize(cameraPosition - vPosition);
+    vec3 reflectDirection = reflect(-lightDirection, normal);
+
+    float specular = dot(viewDirection, reflectDirection);
+    specular = clamp(specular, 0.0, 1.0);
+    specular = pow(specular, uShininess);  // uShininess 通常为 32 ~ 128
+
+    vec3 specularColor = specular * uLightColor;
+    // ...
+}
+```
+
+**`reflect()` 函数说明：**
+
+`reflect(incident, normal)` 是 GLSL 内置函数，计算入射向量关于法线的反射向量。注意入射向量需要指向**表面**（即从光源到片元的方向取反），所以传入 `-lightDirection`。
+
+**`pow(specular, shininess)` 的作用：**
+
+- `shininess` 值越大，高光点越小、越锐利（光滑表面）
+- `shininess` 值越小，高光范围越大、越弥散（粗糙表面）
+- 典型值：塑料 32，金属 64~128，镜面 256+
+
+:::tip
+`cameraPosition` 是 Three.js 自动注入到着色器的 `uniform`，表示摄像机在世界空间中的位置。在 `ShaderMaterial` 的片元着色器中可以直接使用。
+:::
+
+## Blinn-Phong 改进
+
+标准 Phong 模型使用反射向量，计算量较大。Blinn-Phong 使用**半角向量（Half Vector）**来近似，效果更好且计算更高效：
+
+```glsl
+// Blinn-Phong（推荐）
+vec3 viewDirection = normalize(cameraPosition - vPosition);
+vec3 lightDirection = normalize(uLightPosition - vPosition);
+vec3 halfVector = normalize(lightDirection + viewDirection);
+
+float specular = dot(normal, halfVector);
+specular = clamp(specular, 0.0, 1.0);
+specular = pow(specular, uShininess);
+```
+
+**Phong vs Blinn-Phong：**
+
+| 方面 | Phong | Blinn-Phong |
+|------|-------|-------------|
+| 反射计算 | `reflect()` + `dot(viewDir, reflectDir)` | `halfVector = normalize(lightDir + viewDir)` + `dot(normal, halfVector)` |
+| 高光形状 | 略长（沿反射方向拉伸） | 更圆、更自然 |
+| 性能 | 略低（需要 `reflect` 计算） | 略高 |
+| 使用场景 | 传统渲染 | 现代渲染（大多数引擎的默认选择） |
+
+:::tip
+Blinn-Phong 的 `dot(normal, halfVector)` 中，当视线和光线在同一侧且关于法线对称时，半角向量恰好等于法线方向，此时点积为 1（最大高光）。这个直觉理解比反射向量更容易把握。
+:::
+
+## 完整光照模型
+
+将三个分量组合起来：
+
+```glsl
+uniform vec3 uColor;
+uniform vec3 uLightPosition;
+uniform vec3 uLightColor;
+uniform float uAmbientIntensity;
+uniform float uShininess;
+varying vec3 vNormal;
+varying vec3 vPosition;
+
+void main() {
+    vec3 normal = normalize(vNormal);
+    vec3 lightDirection = normalize(uLightPosition - vPosition);
+    vec3 viewDirection = normalize(cameraPosition - vPosition);
+
+    // 环境光
+    vec3 ambient = uColor * uAmbientIntensity;
+
+    // 漫反射
+    float diff = max(dot(normal, lightDirection), 0.0);
+    vec3 diffuse = diff * uLightColor * uColor;
+
+    // 镜面反射（Blinn-Phong）
+    vec3 halfVector = normalize(lightDirection + viewDirection);
+    float spec = pow(max(dot(normal, halfVector), 0.0), uShininess);
+    vec3 specular = spec * uLightColor;
+
+    // 最终颜色
+    vec3 result = ambient + diffuse + specular;
+    gl_FragColor = vec4(result, 1.0);
+}
+```
+
+## 多光源支持
+
+通过循环支持多个光源：
+
+```glsl
+uniform vec3 uLightPositions[3];
+uniform vec3 uLightColors[3];
+uniform int uLightCount;
+
+void main() {
+    vec3 normal = normalize(vNormal);
+    vec3 viewDirection = normalize(cameraPosition - vPosition);
+
+    // 环境光
+    vec3 ambient = uColor * 0.2;
+
+    // 遍历所有光源
+    vec3 totalLight = vec3(0.0);
+    for (int i = 0; i < 3; i++) {
+        vec3 lightDir = normalize(uLightPositions[i] - vPosition);
+
+        // 漫反射
+        float diff = max(dot(normal, lightDir), 0.0);
+        totalLight += diff * uLightColors[i];
+
+        // 镜面反射
+        vec3 halfVector = normalize(lightDir + viewDirection);
+        float spec = pow(max(dot(normal, halfVector), 0.0), 32.0);
+        totalLight += spec * uLightColors[i];
+    }
+
+    vec3 result = ambient + uColor * totalLight;
+    gl_FragColor = vec4(result, 1.0);
+}
+```
+
+:::caution
+GLSL 中 `for` 循环的条件必须是编译时可确定的常量（不能使用 `uLightCount` 作为循环上界）。如果需要动态数量的光源，一种变通方法是用固定上界循环，配合 `if (i >= uLightCount) break;`。
+:::
+
+## 方向光（Directional Light）
+
+方向光没有位置，只有一个方向：
+
+```glsl
+uniform vec3 uDirectionalLightDir;  // 指向光源的方向（归一化）
+uniform vec3 uDirectionalLightColor;
+
+void main() {
+    // 方向光的漫反射
+    float diff = max(dot(normal, uDirectionalLightDir), 0.0);
+    vec3 directionalDiffuse = diff * uDirectionalLightColor * uColor;
+
+    // 方向光的镜面反射
+    vec3 halfVector = normalize(uDirectionalLightDir + viewDirection);
+    float spec = pow(max(dot(normal, halfVector), 0.0), 32.0);
+    vec3 directionalSpecular = spec * uDirectionalLightColor;
+}
+```
+
+与点光源的区别在于，方向光的光线方向对所有片元都相同（没有 `lightPosition - fragmentPosition` 的计算）。
+
+## 坐标空间注意事项
+
+光照计算中涉及的向量必须在**同一个坐标空间**中。常见的做法有两种：
+
+1. **世界空间** — 法线用 `mat3(modelMatrix) * normal` 变换（适用于无缩放的模型）
+2. **视图空间** — 法线用 `normalMatrix * normal` 变换，位置用 `viewMatrix * modelPosition` 变换
+
+如果混合使用不同空间的向量（如视图空间法线 + 世界空间光线方向），光照结果会完全错误。
+
+:::tip
+对于本课的简单场景（模型无缩放），使用 `normalMatrix * normal` 传递法线、`modelPosition.xyz` 传递世界位置，然后在片元着色器中在世界空间计算光照，是合理的选择。
+:::

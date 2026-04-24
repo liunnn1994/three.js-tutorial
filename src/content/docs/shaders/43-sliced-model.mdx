@@ -1,0 +1,306 @@
+---
+title: 43 切片模型着色器
+description: 使用着色器裁剪技术创建模型切片/横截面效果
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 切片效果概述
+
+切片模型（Sliced Model）是一种将 3D 模型"切开"以揭示内部结构的视觉效果。想象用一把无形的刀沿着一个平面切割模型——平面一侧的部分被移除，另一侧保留，而切面处可以看到模型的"截面"。这种效果在工业设计展示、产品分解图、游戏中的破坏效果等场景中非常常见。
+
+实现这种效果的核心是 GLSL 中的 `discard` 关键字——它可以在片元着色器中丢弃特定的像素，使其不被渲染到屏幕上。通过判断像素的世界坐标与切面平面的关系，我们可以精确控制哪些像素保留、哪些丢弃。
+
+本课中，我们将这种效果应用在一个齿轮模型上。齿轮由外壳、齿轮和轴心三个部分组成，我们只对外壳部分应用切片效果，以揭示内部的齿轮结构。
+
+
+<LessonPreview lesson="43-sliced-model-shader" />
+
+## 项目设置
+
+项目的基础设置包括：
+
+- **GLTFLoader + DracoLoader**：加载压缩的 GLTF 模型（齿轮模型）
+- **MeshStandardMaterial**：为齿轮提供 PBR 光照
+- **HDR 环境贴图**：提供反射和柔和光照
+- **DirectionalLight**：投射阴影并增加对比度
+- **OrbitControls**：允许用户旋转观察
+
+```js
+// 基本的光照和场景设置
+const directionalLight = new THREE.DirectionalLight(0xffffff, 2)
+directionalLight.position.set(5, 5, 5)
+directionalLight.castShadow = true
+
+// 环境贴图提供反射
+const environmentMap = await loadHDR('environment.hdr')
+scene.environment = environmentMap
+```
+
+## 顶点着色器
+
+切片效果主要在片元着色器中实现，但顶点着色器需要传递世界坐标和法线给片元着色器：
+
+```glsl
+varying vec3 vPosition;
+varying vec3 vNormal;
+varying vec2 vUv;
+
+void main() {
+    // 将顶点变换到世界空间
+    vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+    vPosition = modelPosition.xyz;
+
+    // 变换法线到世界空间
+    vNormal = normalMatrix * normal;
+
+    // 传递 UV 坐标
+    vUv = uv;
+
+    gl_Position = projectionMatrix * viewMatrix * modelPosition;
+}
+```
+
+### 为什么需要世界坐标
+
+切面平面的定义是在世界空间中的（例如 "y = 0.5 的平面"），因此我们需要将顶点坐标变换到世界空间后才能计算与切面的距离。如果使用模型空间的坐标，当模型被移动、旋转或缩放后，切面位置会出现偏移。
+
+## 片元着色器
+
+片元着色器是切片效果的核心实现部分：
+
+```glsl
+uniform float uSlicePosition;   // 切面位置
+uniform vec3 uSlicePlane;       // 切面法线
+uniform vec3 uInsideColor;      // 切面内部颜色
+uniform vec3 uOutsideColor;     // 外部颜色
+uniform float uTime;
+uniform float uSliceEdgeWidth;  // 边缘发光宽度
+
+varying vec3 vPosition;
+varying vec3 vNormal;
+varying vec2 vUv;
+
+void main() {
+    // 计算点到切面的有符号距离
+    float sliceDistance = dot(vPosition, uSlicePlane) - uSlicePosition;
+
+    // 丢弃切面一侧的像素
+    if (sliceDistance > 0.0) discard;
+
+    // 计算切面边缘的距离因子（0 = 边缘，1 = 远离边缘）
+    float edge = smoothstep(0.0, uSliceEdgeWidth, abs(sliceDistance));
+
+    // 切面处的内部效果——使用网格图案
+    if (abs(sliceDistance) < 0.02) {
+        // 创建简单的网格线图案
+        vec2 grid = fract(vPosition.xz * 20.0);
+        float lineX = smoothstep(0.02, 0.0, abs(grid.x - 0.5) - 0.48);
+        float lineY = smoothstep(0.02, 0.0, abs(grid.y - 0.5) - 0.48);
+        float line = max(lineX, lineY);
+
+        // 网格线 + 边缘发光
+        vec3 insideColor = uInsideColor + line * 0.5;
+        float glow = (1.0 - edge) * 0.5;
+        insideColor += glow * vec3(0.2, 0.5, 1.0);
+
+        gl_FragColor = vec4(insideColor, 1.0);
+        return;
+    }
+
+    // 外部正常光照
+    vec3 normal = normalize(vNormal);
+    vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
+    float light = max(dot(normal, lightDir), 0.0);
+    light = light * 0.7 + 0.3;  // 环境光补偿
+
+    // 靠近切面处添加边缘发光
+    vec3 color = uOutsideColor * light;
+    float edgeGlow = (1.0 - edge) * 0.3;
+    color += edgeGlow * vec3(0.1, 0.4, 0.8);
+
+    gl_FragColor = vec4(color, 1.0);
+}
+```
+
+### 切面距离计算
+
+`dot(vPosition, uSlicePlane) - uSlicePosition` 是点到平面的有符号距离公式。其中：
+
+- `uSlicePlane` 是平面的法线向量（如 `vec3(0, 1, 0)` 表示水平平面）
+- `uSlicePosition` 是平面到原点的距离
+- `dot()` 的结果是顶点在法线方向上的投影
+- 结果大于 0 表示在切面"前方"（将被丢弃），小于 0 表示在切面"后方"（保留）
+
+### discard 关键字
+
+`discard` 是 GLSL 中的特殊语句，它会立即终止当前片元的处理，该像素不会被写入帧缓冲区。与设置透明度为 0 不同，`discard` 会完全跳过后续的混合和深度写入操作。
+
+## 动态切片
+
+让切面随时间移动，创建自动展示效果：
+
+```js
+// 在动画循环中
+const clock = new THREE.Clock()
+
+function animate() {
+    const elapsedTime = clock.getElapsedTime()
+
+    // 切面来回移动
+    material.uniforms.uSlicePosition.value =
+        Math.sin(elapsedTime * 0.5) * 2
+
+    // 也可以根据鼠标位置控制切面
+    // material.uniforms.uSlicePosition.value = mouseY
+
+    renderer.render(scene, camera)
+    requestAnimationFrame(animate)
+}
+```
+
+使用 GUI 进行交互控制：
+
+```js
+gui.add(material.uniforms.uSlicePosition, 'value')
+    .min(-3).max(3).step(0.01).name('切面位置')
+gui.add(material.uniforms.uSliceEdgeWidth, 'value')
+    .min(0.01).max(0.5).step(0.01).name('边缘宽度')
+```
+
+## 多方向切片
+
+使用多个平面同时进行切片，可以实现更复杂的切割效果：
+
+```glsl
+uniform vec3 uSlicePlaneX;  // X 轴方向切面法线
+uniform float uSliceX;      // X 轴切面位置
+uniform vec3 uSlicePlaneY;  // Y 轴方向切面法线
+uniform float uSliceY;      // Y 轴切面位置
+uniform vec3 uSlicePlaneZ;  // Z 轴方向切面法线
+uniform float uSliceZ;      // Z 轴切面位置
+
+void main() {
+    float distX = dot(vPosition, uSlicePlaneX) - uSliceX;
+    float distY = dot(vPosition, uSlicePlaneY) - uSliceY;
+    float distZ = dot(vPosition, uSlicePlaneZ) - uSliceZ;
+
+    // 任何方向上的切面都可以丢弃像素
+    if (distX > 0.0) discard;
+    if (distY > 0.0) discard;
+    if (distZ > 0.0) discard;
+
+    // ... 后续渲染逻辑
+}
+```
+
+这样你可以实现类似"只保留第一象限"的效果，或者创建对角线方向的切片。
+
+## 切面内部的网格图案
+
+被切开的截面通常不应该只是一个纯色平面。为了让截面看起来更有科技感和工程感，我们可以在切面处绘制网格线图案：
+
+```glsl
+// 在切面处绘制精细的网格
+vec2 grid = fract(vPosition.xz * 20.0);
+
+// 水平线和垂直线
+float lineX = step(0.95, grid.x);
+float lineY = step(0.95, grid.y);
+float line = max(lineX, lineY);
+
+// 主网格线（更粗的线）
+vec2 majorGrid = fract(vPosition.xz * 4.0);
+float majorLineX = step(0.96, majorGrid.x);
+float majorLineY = step(0.96, majorGrid.y);
+float majorLine = max(majorLineX, majorLineY);
+
+// 合并网格
+float finalLine = max(line, majorLine * 1.5);
+```
+
+`fract()` 函数取小数部分，将连续的空间坐标转换为重复的 0-1 范围。`step()` 函数用于判断是否接近网格线位置（如 0.95 以上就是线）。
+
+## 边缘发光效果
+
+切面边缘的发光是通过 `smoothstep` 函数实现的。`smoothstep` 根据到切面的距离产生一个平滑的过渡值，距离越近发光越强：
+
+```glsl
+float edge = smoothstep(0.0, edgeWidth, abs(sliceDistance));
+float glow = 1.0 - edge;
+
+// 将发光叠加到颜色上
+color += glow * glowColor * glowIntensity;
+```
+
+`smoothstep(0.0, edgeWidth, abs(sliceDistance))` 的行为：
+- 距离为 0 时，返回 0（完全在边缘）
+- 距离为 edgeWidth 时，返回 1（完全远离边缘）
+- 中间值平滑插值
+
+这种技术叫做"距离场着色"——利用到某个几何特征（这里是平面）的距离来控制视觉效果。
+
+## 使用噪声增强切面效果
+
+如果想要更有机的切割效果（不是平整的切面，而是像被腐蚀或溶解的边缘），可以在切面距离中加入噪声：
+
+```glsl
+// 引入噪声函数
+uniform float uNoiseScale;
+uniform float uNoiseStrength;
+
+// 在片元着色器中
+float noise = snoise(vPosition * uNoiseScale + uTime * 0.2);
+float noisySliceDistance = sliceDistance + noise * uNoiseStrength;
+
+if (noisySliceDistance > 0.0) discard;
+```
+
+这样切面就不再是平整的，而是像被火焰或酸液腐蚀过的不规则边缘，非常适合爆炸、分解、魔法效果等场景。
+
+## Three.js 内置的 clippingPlanes
+
+如果你的需求只是简单的平面裁剪（不需要在切面上绘制特殊效果），Three.js 提供了内置的 `clippingPlanes` 功能：
+
+```js
+renderer.localClippingEnabled = true
+
+const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0.5)
+material.clippingPlanes = [plane]
+material.clipShadows = true
+material.side = THREE.DoubleSide  // 切面处需要双面渲染
+```
+
+:::tip
+`clippingPlanes` 的优势：性能更好（在 GPU 硬件层面执行裁剪），且自动处理阴影裁剪。缺点是无法自定义切面处的视觉效果（不能绘制网格、发光等）。
+
+`discard` 的优势：完全灵活，可以在切面处绘制任何效果。缺点是会影响 GPU 的 Early-Z 优化（深度测试提前拒绝），可能导致性能下降。
+
+选择哪种方式取决于你的需求——如果只需要裁剪，用 `clippingPlanes`；如果需要在切面处添加特殊效果，用 `discard`。
+:::
+
+## 在 GLTF 模型上应用
+
+对于加载的 GLTF 模型，我们需要遍历模型的子网格，只对特定部分（如外壳）应用切片效果：
+
+```js
+const loader = new GLTFLoader()
+loader.load('gears.glb', (gltf) => {
+    gltf.scene.traverse((child) => {
+        if (child.isMesh) {
+            // 根据名称判断是否需要应用切片
+            if (child.name === 'outerHull') {
+                child.material = slicedMaterial  // 应用切片材质
+            } else {
+                child.material = normalMaterial  // 正常材质
+            }
+        }
+    })
+    scene.add(gltf.scene)
+})
+```
+
+:::tip
+`discard` 会影响 GPU 的 Early-Z（Early Depth Test）优化。正常情况下，GPU 在片元着色器执行之前就可以通过深度测试丢弃被遮挡的像素。但当片元着色器中有 `discard` 时，GPU 必须先执行完整个片元着色器才能确定该片元是否被丢弃，这会增加 GPU 的工作量。对于复杂的片元着色器，这种性能影响可能比较明显。
+:::

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particles cursor animation</title>
+    
+<style>*
+{
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body
+{
+    overflow: hidden;
+}
+
+.webgl
+{
+    position: fixed;
+    top: 0;
+    left: 0;
+    outline: none;
+}
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.184.0/+esm","three/":"https://cdn.jsdelivr.net/npm/three@0.184.0/","lil-gui":"https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm","gsap":"https://cdn.jsdelivr.net/npm/gsap@3.12/+esm"}}</script></head>
+<body>
+    <canvas class="webgl"></canvas>
+    
+<script type="module">
+import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+const particlesVertexShader = "uniform vec2 uResolution;\n\nvoid main()\n{\n    // Final position\n    vec4 modelPosition = modelMatrix * vec4(position, 1.0);\n    vec4 viewPosition = viewMatrix * modelPosition;\n    vec4 projectedPosition = projectionMatrix * viewPosition;\n    gl_Position = projectedPosition;\n\n    // Point size\n    gl_PointSize = 0.3 * uResolution.y;\n    gl_PointSize *= (1.0 / - viewPosition.z);\n}"
+const particlesFragmentShader = "void main()\n{\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n    #include <tonemapping_fragment>\n    #include <colorspace_fragment>\n}"
+
+/**
+ * Base
+ */
+// Canvas
+const canvas = document.querySelector('canvas.webgl')
+
+// Scene
+const scene = new THREE.Scene()
+
+// Loaders
+const textureLoader = new THREE.TextureLoader()
+
+/**
+ * Sizes
+ */
+const sizes = {
+    width: window.innerWidth,
+    height: window.innerHeight,
+    pixelRatio: Math.min(window.devicePixelRatio, 2)
+}
+
+window.addEventListener('resize', () =>
+{
+    // Update sizes
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
+    sizes.pixelRatio = Math.min(window.devicePixelRatio, 2)
+
+    // Materials
+    particlesMaterial.uniforms.uResolution.value.set(sizes.width * sizes.pixelRatio, sizes.height * sizes.pixelRatio)
+
+    // Update camera
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
+
+    // Update renderer
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(sizes.pixelRatio)
+})
+
+/**
+ * Camera
+ */
+// Base camera
+const camera = new THREE.PerspectiveCamera(35, sizes.width / sizes.height, 0.1, 100)
+camera.position.set(0, 0, 18)
+scene.add(camera)
+
+// Controls
+const controls = new OrbitControls(camera, canvas)
+controls.enableDamping = true
+
+/**
+ * Renderer
+ */
+const renderer = new THREE.WebGLRenderer({
+    canvas: canvas,
+    antialias: true
+})
+renderer.setClearColor('#181818')
+renderer.setSize(sizes.width, sizes.height)
+renderer.setPixelRatio(sizes.pixelRatio)
+
+/**
+ * Particles
+ */
+const particlesGeometry = new THREE.PlaneGeometry(10, 10, 32, 32)
+
+const particlesMaterial = new THREE.ShaderMaterial({
+    vertexShader: particlesVertexShader,
+    fragmentShader: particlesFragmentShader,
+    uniforms:
+    {
+        uResolution: new THREE.Uniform(new THREE.Vector2(sizes.width * sizes.pixelRatio, sizes.height * sizes.pixelRatio)),
+    }
+})
+const particles = new THREE.Points(particlesGeometry, particlesMaterial)
+scene.add(particles)
+
+/**
+ * Animate
+ */
+const tick = () =>
+{
+    // Update controls
+    controls.update()
+
+    // Render
+    renderer.render(scene, camera)
+
+    // Call tick again on the next frame
+    window.requestAnimationFrame(tick)
+}
+
+tick()
+</script></body>
+</html>

@@ -1,0 +1,348 @@
+---
+title: 44 程序化地形着色器
+description: 使用噪声函数生成程序化地形和山脉
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 程序化地形概述
+
+程序化地形（Procedural Terrain）是使用数学算法（而非手工建模）在运行时生成地形的技术。这种方法在游戏开发中被广泛使用——例如 Minecraft 的地形、No Man's Sky 的星球表面、各种开放世界游戏的大地图，都是程序化生成的。
+
+本课中，我们将通过多层噪声函数在着色器中生成逼真的地形，包括山脉、平原、水面和积雪。整个地形仅由一个平面网格（PlaneGeometry）构成，所有的高低起伏都通过顶点着色器中的位移来实现。
+
+### 项目的特殊之处
+
+本课有一个独特的视觉元素：地形被放置在一个中间挖了洞的"盒子"（边框）中，水面上有模糊反射效果。这个盒子的形状使用 `three-bvh-csg`（构造实体几何）库通过布尔运算创建——从一个大盒子中"挖掉"一个较小的盒子。
+
+
+<LessonPreview lesson="44-procedural-terrain-shader" />
+
+## 基本原理
+
+程序化地形的核心原理可以概括为：
+
+1. 创建一个高细分的平面网格
+2. 在顶点着色器中，根据每个顶点的 xz 坐标计算一个高度值
+3. 将高度值叠加到顶点的 y 坐标上
+4. 高度值由噪声函数生成，模拟自然地形的高低起伏
+5. 在片元着色器中，根据高度值分配不同颜色（水域、草地、岩石、积雪等）
+
+## FBM（分形布朗运动）
+
+FBM（Fractal Brownian Motion）是程序化地形的基石。自然界的地形具有"自相似性"——从远处看的大山和近处看的小丘陵遵循相似的规律。FBM 通过叠加多个不同尺度的噪声层来模拟这种特性：
+
+```glsl
+uniform float uElevation;     // 总高度
+uniform float uFrequency;     // 基础频率
+uniform int uOctaves;          // 叠加层数
+uniform float uLacunarity;     // 间隙度（每层频率增长系数）
+uniform float uPersistence;    // 持续度（每层振幅衰减系数）
+
+float fbm(vec3 p) {
+    float value = 0.0;
+    float amplitude = 1.0;
+    float frequency = 1.0;
+
+    for (int i = 0; i < 8; i++) {
+        if (i >= uOctaves) break;
+        value += snoise(p * frequency) * amplitude;
+        amplitude *= uPersistence;  // 振幅衰减
+        frequency *= uLacunarity;   // 频率增长
+    }
+    return value;
+}
+```
+
+### FBM 参数详解
+
+**八度数（Octaves）**：
+- 控制噪声叠加的层数
+- 值越大，地形细节越丰富（从大山到小石头都有）
+- 典型值：4-8。超过 8 后视觉差异很小，但 GPU 开销增加
+- 在着色器中，循环上限必须用常量，所以我们用 `for (int i = 0; i < 8; i++)` 配合 `if (i >= uOctaves) break;`
+
+**持续度（Persistence）**：
+- 控制每层振幅的衰减速度
+- 值为 0.5 时，每层振幅减半（最常用）
+- 值越大，高频细节越突出，地形越"尖锐"
+- 值越小，地形越"平滑圆润"
+
+**间隙度（Lacunarity）**：
+- 控制每层频率的增长速度
+- 值为 2.0 时，每层频率翻倍（最常用）
+- 值越大，各层间的频率跨度越大
+
+:::tip
+调整 FBM 参数就像在调一台合成器——`频率`控制山的大小和间距，`持续度`控制山的尖锐程度，`八度数`控制从宏观到微观有多少层细节，`间隙度`控制各层之间的比例关系。
+:::
+
+## 顶点着色器
+
+```glsl
+uniform float uTime;
+uniform float uElevation;
+uniform float uFrequency;
+uniform int uOctaves;
+uniform float uLacunarity;
+uniform float uPersistence;
+
+varying float vElevation;
+varying vec3 vNormal;
+varying vec3 vPosition;
+varying vec2 vUv;
+
+void main() {
+    vec3 pos = position;
+
+    // 使用 FBM 计算地形高度
+    float elevation = fbm(pos * uFrequency + uTime * 0.05);
+
+    // 将高度叠加到 y 坐标
+    pos.y += elevation * uElevation;
+
+    vec4 modelPosition = modelMatrix * vec4(pos, 1.0);
+    vec4 viewPosition = viewMatrix * modelPosition;
+    gl_Position = projectionMatrix * viewPosition;
+
+    vElevation = elevation;
+    vNormal = normalMatrix * normal;
+    vPosition = modelPosition.xyz;
+    vUv = uv;
+}
+```
+
+### 时间偏移
+
+`uTime * 0.05` 使得噪声采样位置随时间缓慢变化，产生地形"流动"的效果。这种效果常用于科幻或抽象风格的场景。如果想要静态地形，只需将时间偏移设为 0。
+
+## 法线重新计算
+
+地形变形后，平面的原始法线（全部朝上）不再准确。山脉的斜面应该有倾斜的法线，否则光照会完全不正确。我们使用**有限差分法**在顶点着色器中重新计算法线：
+
+```glsl
+// 差分法重新计算地形法线
+float eps = 0.01;
+
+// 在 x 和 z 方向上各偏移一小段距离，计算高度差
+float hL = fbm(vec3(pos.x - eps, pos.y, pos.z) * uFrequency);
+float hR = fbm(vec3(pos.x + eps, pos.y, pos.z) * uFrequency);
+float hD = fbm(vec3(pos.x, pos.y, pos.z - eps) * uFrequency);
+float hU = fbm(vec3(pos.x, pos.y, pos.z + eps) * uFrequency);
+
+// 使用叉积原理构建法线
+vec3 computedNormal = normalize(vec3(hL - hR, 2.0 * eps, hD - hU));
+
+// 将计算好的法线传递给片元着色器
+vNormal = normalMatrix * computedNormal;
+```
+
+### 差分法原理
+
+有限差分法的原理是在当前顶点附近取四个点（左、右、前、后），分别计算它们的高度，然后用高度差来估算表面的倾斜方向：
+
+- `hL - hR`：x 方向的高度差（x 分量）
+- `hD - hU`：z 方向的高度差（z 分量）
+- `2.0 * eps`：y 分量（两点间距离的两倍，确保法线向量有合理的长度）
+
+这个法线向量实际上是两个切线向量的叉积。虽然不如解析法精确，但在着色器中计算方便，效果足够好。
+
+:::caution
+差分法每个顶点需要额外调用 4 次 FBM 函数，加上原来的 1 次，总共 5 次。如果 FBM 有 8 个八度，那就是 5 x 8 = 40 次噪声采样。对于高细分的平面，这会显著增加 GPU 负担。如果性能是瓶颈，可以考虑将法线计算烘焙到纹理中，或者使用更少的八度数来计算法线。
+:::
+
+## 片元着色器 — 生物群落着色
+
+根据海拔高度分配不同颜色，模拟不同地理区域的自然面貌：
+
+```glsl
+uniform vec3 uDeepColor;     // 深水颜色
+uniform vec3 uShallowColor;  // 浅水颜色
+uniform vec3 uSandColor;     // 沙滩颜色
+uniform vec3 uGrassColor;    // 草地颜色
+uniform vec3 uRockColor;     // 岩石颜色
+uniform vec3 uSnowColor;     // 积雪颜色
+
+varying float vElevation;
+varying vec3 vNormal;
+varying vec2 vUv;
+
+void main() {
+    float h = vElevation;
+    vec3 color;
+
+    // 基于海拔的分层着色
+    if (h < -0.3) {
+        // 深水区
+        color = uDeepColor;
+    } else if (h < -0.1) {
+        // 深水到浅水的过渡
+        color = mix(uDeepColor, uShallowColor, (h + 0.3) / 0.2);
+    } else if (h < 0.0) {
+        // 浅水到沙滩的过渡
+        color = mix(uShallowColor, uSandColor, (h + 0.1) / 0.1);
+    } else if (h < 0.3) {
+        // 草地到岩石的过渡
+        color = mix(uGrassColor, uRockColor, h / 0.3);
+    } else {
+        // 岩石到积雪的过渡
+        float snowFactor = clamp((h - 0.3) / 0.5, 0.0, 1.0);
+        color = mix(uRockColor, uSnowColor, snowFactor);
+    }
+
+    // 基于法线的光照
+    vec3 normal = normalize(vNormal);
+    vec3 lightDir = normalize(vec3(1.0, 2.0, 1.0));
+    float NdotL = max(dot(normal, lightDir), 0.0);
+
+    // 半球环境光 + 漫反射
+    float ambientLight = 0.3;
+    float diffuseLight = NdotL * 0.7;
+    float light = ambientLight + diffuseLight;
+
+    gl_FragColor = vec4(color * light, 1.0);
+}
+```
+
+### 颜色分层逻辑
+
+地形着色的关键是根据高度值在不同的"带"之间平滑过渡：
+
+| 高度范围 | 地形类型 | 颜色 |
+|----------|---------|------|
+| h < -0.3 | 深水 | 深蓝色 |
+| -0.3 ~ -0.1 | 水深过渡 | 深蓝 → 浅蓝 |
+| -0.1 ~ 0.0 | 浅水/沙滩 | 浅蓝 → 沙色 |
+| 0.0 ~ 0.3 | 草地/岩石 | 绿色 → 灰色 |
+| 0.3+ | 岩石/积雪 | 灰色 → 白色 |
+
+`mix()` 函数实现了相邻层之间的平滑过渡。第三个参数是混合因子，需要归一化到 0-1 范围。例如 `(h + 0.3) / 0.2` 将 `h` 从 `[-0.3, -0.1]` 映射到 `[0, 1]`。
+
+### 更高级的着色：基于坡度
+
+仅仅基于高度着色还不够真实——陡峭的山坡不应该有草，而应该露出岩石。我们可以结合法线来计算坡度：
+
+```glsl
+// 计算坡度（法线与"上方向"的偏差程度）
+float slope = 1.0 - max(dot(normal, vec3(0.0, 1.0, 0.0)), 0.0);
+
+// 在草地高度范围内，坡度大的地方显示岩石
+if (h > 0.0 && h < 0.3) {
+    float slopeRock = smoothstep(0.3, 0.7, slope);
+    color = mix(color, uRockColor, slopeRock);
+}
+```
+
+坡度为 0 表示完全平坦，坡度为 1 表示完全垂直。`smoothstep(0.3, 0.7, slope)` 使得坡度超过 0.3 时开始出现岩石，到 0.7 时完全变为岩石。
+
+## 水面效果
+
+水面是程序化地形中不可缺少的元素。通常使用一个单独的平面来表示水面，放置在固定的高度（如 y = 0）：
+
+```js
+// 创建水面
+const waterGeometry = new THREE.PlaneGeometry(10, 10, 1, 1)
+waterGeometry.rotateX(-Math.PI / 2)
+const waterMaterial = new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color('#003366'),
+    metalness: 0.0,
+    roughness: 0.1,
+    transmission: 0.5,   // 透射（折射效果）
+    transparent: true,
+    opacity: 0.7
+})
+const water = new THREE.Mesh(waterGeometry, waterMaterial)
+water.position.y = -0.1  // 稍低于沙滩高度
+scene.add(water)
+```
+
+### 水面反射
+
+Three.js 提供了 `Reflector` 类来实现平面反射。将 Reflector 放在水面的位置，它会把上方的场景渲染为纹理并映射到水面上，模拟反射效果：
+
+```js
+import { Reflector } from 'three/examples/jsm/objects/Reflector.js'
+
+const waterReflector = new Reflector(
+    new THREE.PlaneGeometry(10, 10),
+    {
+        clipBias: 0.003,
+        textureWidth: window.innerWidth * 0.5,
+        textureHeight: window.innerHeight * 0.5,
+        color: new THREE.Color(0x777777)
+    }
+)
+waterReflector.rotation.x = -Math.PI / 2
+waterReflector.position.y = -0.1
+```
+
+## 边框盒子的布尔运算
+
+本课的边框盒子使用 `three-bvh-csg` 库通过布尔运算创建。CSG（Constructive Solid Geometry，构造实体几何）允许我们对几何体执行"并集"、"差集"、"交集"等布尔操作：
+
+```js
+import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg'
+
+// 安装：npm install three-bvh-csg@0.0.16
+
+// 创建两个"刷子"（参与布尔运算的几何体）
+const boardBrush = new Brush(new THREE.BoxGeometry(11, 2, 11))
+const holeBrush = new Brush(new THREE.BoxGeometry(9, 2.5, 9))
+holeBrush.position.y = 0.5  // 稍微抬高，使洞上下都有
+
+// 创建评估器并执行差集运算
+const evaluator = new Evaluator()
+const boardGeometry = evaluator.evaluate(
+    boardBrush, holeBrush, SUBTRACTION
+).geometry
+
+// 将结果应用到网格上
+const boardMaterial = new THREE.MeshStandardMaterial({
+    color: '#1a1a2e',
+    metalness: 0.5,
+    roughness: 0.3
+})
+const board = new THREE.Mesh(boardGeometry, boardMaterial)
+```
+
+`SUBTRACTION` 运算从 `boardBrush`（大盒子）中减去 `holeBrush`（小盒子），得到一个中间有洞的盒子形状。
+
+:::tip
+`three-bvh-csg` 内部使用 BVH（Bounding Volume Hierarchy，包围体层级）来加速布尔运算，性能远优于传统的暴力遍历方法。BVH 是一种空间加速结构，在光线追踪和碰撞检测中也被广泛使用。
+:::
+
+## GUI 参数控制
+
+通过 GUI 实时调整地形参数是调试和创作的关键：
+
+```js
+gui.add(material.uniforms.uElevation, 'value')
+    .min(0).max(5).step(0.01).name('高度')
+gui.add(material.uniforms.uFrequency, 'value')
+    .min(0.1).max(10).step(0.01).name('频率')
+gui.add(material.uniforms.uOctaves, 'value')
+    .min(1).max(8).step(1).name('八度数')
+gui.add(material.uniforms.uLacunarity, 'value')
+    .min(1).max(4).step(0.01).name('间隙度')
+gui.add(material.uniforms.uPersistence, 'value')
+    .min(0).max(1).step(0.01).name('持续度')
+```
+
+## 平面网格的细分
+
+平面网格的细分程度直接影响地形的细节表现：
+
+```js
+// 低细分：地形粗糙，多边形明显
+const lowDetail = new THREE.PlaneGeometry(10, 10, 32, 32)
+
+// 高细分：地形平滑，细节丰富
+const highDetail = new THREE.PlaneGeometry(10, 10, 512, 512)
+```
+
+细分度需要与 FBM 的最高频率匹配。如果最高频率对应的波长小于两个顶点之间的间距，就会出现锯齿和走样。作为经验法则，平面网格的细分数应该至少是 `最高频率 x 平面尺寸` 的 2-4 倍。
+
+:::tip
+FBM 的参数控制地形的整体特征：`频率` 控制山的大小和间距（低频 = 大山），`持续度` 控制细节的丰富程度（高持续度 = 更尖锐的山），`八度数` 控制从宏观到微观有多少层细节。调整这些参数时，建议先固定其他参数，只调一个，观察效果后再调下一个。
+:::

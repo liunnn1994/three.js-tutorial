@@ -1,0 +1,232 @@
+---
+title: 38 地球着色器
+description: 创建具有大气层效果的地球着色器
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 地球着色器简介
+
+在本课中，我们将使用自定义着色器创建一个美丽且相当逼真的地球效果。虽然这听起来似乎很简单 — 找一张地球纹理贴到球体上就行了 — 但实际上效果中包含了大量需要着色器实现的特征：日夜纹理切换、暗面的城市灯光、移动的云层、海洋的太阳高光反射、日夜交界处的暮光色调，以及围绕地球的体积感大气层。
+
+虽然我们不是在进行基于物理的渲染（PBR），不会使用超写实的散射公式，但通过着色器技巧的组合，完全可以创建出令人信服的地球效果。更重要的是，我们将自己实现所有这些效果，深入理解每个部分的工作原理，而不是简单地复制现成的代码。
+
+
+<LessonPreview lesson="38-earth-shaders" />
+
+## 项目设置
+
+场景中有一个细分良好的球体几何体，并且已经设置为自转。着色器文件放在 `src/shaders/earth/` 文件夹中，包含顶点着色器和片元着色器。
+
+顶点着色器与之前课程中的一致，主要做了以下工作：
+
+- 发送 UV 坐标（`vUv`）用于纹理采样
+- 发送变换后的法线（`vNormal`），使用模型矩阵变换并将 w 分量设为 0（因为法线是方向向量，只受旋转影响不受平移影响），然后在片元着色器中重新归一化（因为光栅化插值可能导致法线失去单位长度）
+- 发送模型空间的位置（`vPosition`），用于计算视线方向（view direction）和光照计算
+
+在片元着色器中，视线方向通过 `cameraPosition`（Three.js 内置 uniform）和 `vPosition` 的差值计算得出，表示从摄像机到当前片段的方向向量。
+
+## 纹理准备
+
+我们使用了来自 [Solar System Scope](https://www.solarsystemscope.com/textures/) 网站的高分辨率地球纹理，该网站提供了太阳系多个行星的免费纹理资源。需要注意这些纹理采用的是 CC 署名许可（CC Attribution License），如果在公开网站上使用，需要适当注明来源。
+
+静态文件夹中准备了以下纹理：
+
+- **白天纹理（Day Texture）** — 4K 分辨率，编码为 sRGB 色彩空间，展示地球在阳光照射下的真实外观，包括海洋、大陆、沙漠、冰川等。
+- **夜晚纹理（Night Texture）** — 4K 分辨率，同样为 sRGB 编码，展示地球背光面的城市灯光分布。可以看到亚洲东部、欧洲西部、北美东海岸等人口密集区域灯光格外明亮。
+- **镜面 + 云层纹理（Specular Clouds Texture）** — 编码为线性色彩空间（Linear Space）。这个纹理比较特殊：它将两种数据打包在同一个纹理中。红色通道存储镜面反射强度数据，用于控制哪些区域（主要是海洋）会产生高光反射；其他通道存储云层数据，用于在地球表面叠加移动的云层。
+
+:::tip
+将多种数据打包到同一个纹理的不同通道中是着色器开发中的常见优化手法。这样做既减少了 GPU 需要采样的纹理数量（节省带宽），也简化了纹理管理工作。记住，用于"展示"的纹理（如昼夜纹理）使用 sRGB 编码，而用于"数据计算"的纹理（如镜面遮罩）使用线性空间编码。
+:::
+
+## 片元着色器 — 完整实现
+
+```glsl
+// 片元着色器
+uniform sampler2D uDayTexture;
+uniform sampler2D uNightTexture;
+uniform sampler2D uCloudsTexture;
+uniform vec3 uSunDirection;
+uniform float uTime;
+varying vec2 vUv;
+varying vec3 vNormal;
+varying vec3 vPosition;
+
+void main() {
+    vec3 normal = normalize(vNormal);
+    vec3 viewDir = normalize(cameraPosition - vPosition);
+
+    // 1. 日夜纹理混合
+    float sunDot = dot(normal, normalize(uSunDirection));
+    float dayMix = smoothstep(-0.1, 0.3, sunDot);
+
+    vec3 dayColor = texture2D(uDayTexture, vUv).rgb;
+    vec3 nightColor = texture2D(uNightTexture, vUv).rgb;
+    vec3 color = mix(nightColor, dayColor, dayMix);
+
+    // 2. 云层叠加
+    vec2 cloudUv = vUv;
+    cloudUv.x += uTime * 0.01;  // 云层缓慢移动
+    float clouds = texture2D(uCloudsTexture, cloudUv).r;
+    color = mix(color, vec3(1.0), clouds * dayMix * 0.8);
+
+    // 3. 大气层菲涅尔边缘发光
+    float fresnel = pow(1.0 - max(dot(viewDir, normal), 0.0), 3.0);
+    vec3 atmosphereColor = vec3(0.3, 0.6, 1.0);
+    color += atmosphereColor * fresnel * 1.5;
+
+    // 4. 海面高光反射（使用 Blinn-Phong 模型）
+    vec3 halfVector = normalize(uSunDirection + viewDir);
+    float specular = pow(max(dot(normal, halfVector), 0.0), 100.0);
+    color += specular * vec3(1.0) * 0.5;
+
+    gl_FragColor = vec4(color, 1.0);
+}
+```
+
+## 日夜纹理切换详解
+
+日夜切换是整个地球效果的核心机制。其原理是利用表面法线与太阳方向的**点积**（dot product）来判断每个片段朝向太阳的程度：
+
+```glsl
+float sunDot = dot(normal, normalize(uSunDirection));
+float dayMix = smoothstep(-0.1, 0.3, sunDot);
+```
+
+- `sunDot` 的值域为 `[-1, 1]`。值为 1 表示法线正对太阳（正午），值为 -1 表示法线背对太阳（午夜），值为 0 表示处于晨昏线（terminator）上。
+- `smoothstep(-0.1, 0.3, sunDot)` 将点积映射到 `[0, 1]` 范围，在 `-0.1` 到 `0.3` 之间创建平滑过渡。负值的下界（-0.1）使暗部延伸到地平线以下，正值的上界（0.3）让亮部从日出前就开始显现，避免了过于硬的日夜分界线。
+
+`dayMix` 为 1 时显示白天纹理，为 0 时显示夜晚纹理（城市灯光）。可以通过将夜晚纹理的亮度乘以一个系数（如 1.5）来增强城市灯光的视觉冲击力：
+
+```glsl
+vec3 nightColor = texture2D(uNightTexture, vUv).rgb * 1.5;
+```
+
+## 云层动画
+
+云层通过偏移 UV 坐标的 x 分量来模拟地球自转带来的云层移动：
+
+```glsl
+vec2 cloudUv = vUv;
+cloudUv.x += uTime * 0.01;  // 随时间缓慢偏移
+float clouds = texture2D(uCloudsTexture, cloudUv).r;
+```
+
+`uTime * 0.01` 控制云层移动速度。值越大云层移动越快，建议保持较小的值以模拟真实的大气运动速度。
+
+云层只应在白天可见（夜间云层对光线的反射远不如城市灯光明显），因此使用 `clouds * dayMix * 0.8` 将云层效果与日夜混合因子相乘。`0.8` 是云层的最大不透明度，使云层不会完全遮盖地表，保持一定的透明感。
+
+## 海面高光反射
+
+太阳在海面上的反射是地球渲染中一个关键的视觉细节。我们使用 Blinn-Phong 模型来实现：
+
+```glsl
+vec3 halfVector = normalize(uSunDirection + viewDir);
+float specular = pow(max(dot(normal, halfVector), 0.0), 100.0);
+color += specular * vec3(1.0) * 0.5;
+```
+
+- **半角向量（halfVector）**：太阳方向与视线方向的中间向量。Blinn-Phong 模型使用半角向量而不是反射向量，计算更高效且高光形状更加自然。
+- **高光指数 100.0**：控制高光的锐利程度。值越大，高光斑点越小越集中；值越小，高光越分散。100 是一个合理的折中值，让海面上的太阳倒影看起来像一个小亮点而非一大片亮区。
+
+:::caution
+如果使用镜面遮罩纹理，可以通过乘以镜面纹理的红色通道来限制高光只出现在海洋区域（`specular *= texture2D(uSpecularClouds, vUv).r;`），这样大陆表面就不会出现不合逻辑的镜面反射。
+:::
+
+## 菲涅尔大气层效果
+
+菲涅尔效果（Fresnel Effect）是大气层渲染的核心。它基于一个物理现象：当视线与表面法线的夹角越大（即越接近掠射角度），光线的反射越强。在地球的边缘，视线几乎与球面平行，因此大气层散射的光线更强烈，呈现出明亮的蓝色光晕。
+
+```glsl
+float fresnel = pow(1.0 - max(dot(viewDir, normal), 0.0), 3.0);
+vec3 atmosphereColor = vec3(0.3, 0.6, 1.0);
+color += atmosphereColor * fresnel * 1.5;
+```
+
+- `dot(viewDir, normal)` 在球体正面（垂直看向表面）时接近 1，在边缘（掠射角度）时接近 0。
+- `1.0 - dot(...)` 将其反转：正面为 0（无大气效果），边缘为 1（最强大气效果）。
+- `pow(..., 3.0)` 使用三次方使衰减更加陡峭，让大气光晕更加集中在球体边缘。
+- `atmosphereColor = vec3(0.3, 0.6, 1.0)` 是大气散射的典型蓝色调。
+
+## 大气层外壳 — 独立球体
+
+为了让大气效果更加真实和具有体积感，我们在地球球体外面再套一个略大的半透明球体，专门用于渲染大气层：
+
+```js
+const atmosphereMaterial = new THREE.ShaderMaterial({
+    vertexShader: atmosphereVertexShader,
+    fragmentShader: atmosphereFragmentShader,
+    uniforms: {
+        uSunDirection: { value: new THREE.Vector3(1, 0.5, 0.5) }
+    },
+    side: THREE.BackSide,    // 从内部看
+    transparent: true,
+    blending: THREE.AdditiveBlending
+})
+
+const atmosphere = new THREE.Mesh(
+    new THREE.SphereGeometry(1.1, 64, 64),  // 半径比地球大 10%
+    atmosphereMaterial
+)
+```
+
+关键设置说明：
+
+- **`side: THREE.BackSide`** — 只渲染球体的背面。因为我们的摄像机在外面看向这个球体，渲染背面意味着我们实际上看到的是球体内壁。当视线从球体边缘掠过时，内壁法线几乎垂直于视线，从而产生强烈的菲涅尔效果。
+- **`transparent: true`** — 启用透明度，使大气球体不会遮挡其后面的地球。
+- **`blending: THREE.AdditiveBlending`** — 使用加法混合，让大气层颜色与背后的地球颜色叠加而非覆盖，营造发光效果。
+- **半径 1.1** — 比地球球体（半径 1.0）大 10%，模拟大气层的厚度。
+
+大气层的片元着色器相对简单：
+
+```glsl
+varying vec3 vNormal;
+
+void main() {
+    // 注意：因为使用 BackSide，法线方向是反的
+    float intensity = pow(0.7 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+    gl_FragColor = vec4(0.3, 0.6, 1.0, intensity * 0.8);
+}
+```
+
+这里直接用法线与固定方向的点积来近似菲涅尔效果。由于使用了 BackSide 渲染，法线方向会自动取反，所以在球体边缘处法线与观察方向的点积较小，`0.7 - dot(...)` 的值较大，从而产生更亮的效果。
+
+## 太阳方向控制
+
+太阳方向通过 Phi 和 Theta 两个角度参数来控制：
+
+- **Phi（仰角）** — 控制太阳在天空中的高度。Phi 为 0 时太阳在地平线上，为 PI/2 时太阳在正头顶。
+- **Theta（方位角）** — 控制太阳绕地球旋转的水平方向。
+
+```js
+const sunDirection = new THREE.Vector3()
+const phi = Math.PI / 4    // 45 度仰角
+const theta = 0            // 初始方位角
+
+sunDirection.x = Math.sin(phi) * Math.cos(theta)
+sunDirection.y = Math.cos(phi)
+sunDirection.z = Math.sin(phi) * Math.sin(theta)
+
+material.uniforms.uSunDirection.value.copy(sunDirection.normalize())
+```
+
+可以通过 dat.gui 让用户实时调整这两个角度，也可以添加时间动画让太阳缓慢移动，模拟昼夜交替。
+
+## 暮光效果增强
+
+在日夜交界处（晨昏线附近），可以添加微妙的暖色调来模拟大气散射导致的暮光效果：
+
+```glsl
+// 计算暮光因子 — 在日夜过渡区域最强
+float twilight = smoothstep(0.0, 0.2, dayMix) * (1.0 - smoothstep(0.2, 0.5, dayMix));
+vec3 twilightColor = vec3(1.0, 0.4, 0.1);  // 暖橙色调
+color += twilightColor * twilight * 0.3;
+```
+
+这段代码利用两个 `smoothstep` 的乘积来创建一个在 `dayMix` 为 0.2 附近达到峰值的钟形曲线，使暖色调只出现在晨昏线附近的狭窄区域，模拟真实的日落/日出色彩。
+
+:::tip
+地球纹理可以从 [NASA Visible Earth](https://visibleearth.nasa.gov/) 获取免费的极高分辨率纹理，也可以从 [Solar System Scope](https://www.solarsystemscope.com/textures/) 获取经过优化的版本。如果你不想使用照片纹理，也可以使用程序化噪声生成独特的行星表面，配合本课的大气层效果同样出色。
+:::

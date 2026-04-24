@@ -1,0 +1,200 @@
+---
+title: 23 Blender 自定义模型
+description: 使用 Blender 创建 3D 模型并导出为 Three.js 可用的 glTF 格式
+---
+
+## 为什么需要 3D 建模软件
+
+虽然 Three.js 提供了很多内置几何体（BoxGeometry, SphereGeometry 等），但它们只能创建简单的形状。要创建复杂的模型（角色、建筑、家具等），你需要使用专业的 3D 建模软件。
+
+### 常见 3D 软件对比
+
+| 软件 | 价格 | 优势 | 适用场景 |
+|------|------|------|----------|
+| **Blender** | 免费开源 | 功能全面、社区活跃、轻量 | 通用建模、本课程使用 |
+| Cinema 4D | 付费 | 渲染质量好、易上手 | 运动图形、广告 |
+| Maya | 付费 | 行业标准、动画工具强 | 影视、动画 |
+| 3ds Max | 付费 | 建模工具丰富 | 游戏建模 |
+| ZBrush | 付费 | 雕刻功能最强 | 角色雕塑 |
+| Substance Painter | 付费 | 材质绘制 | 纹理绘制 |
+
+本课程使用 Blender，因为它是免费开源的、跨平台（Windows/Mac/Linux）、安装包小、功能全面，且有庞大的社区支持。
+
+下载地址：[blender.org](https://www.blender.org/)
+
+## Blender 界面基础
+
+### 导航操作
+
+| 操作 | 快捷键 | 说明 |
+|------|--------|------|
+| 旋转视图 | 按住鼠标中键拖动 | 围绕物体旋转视角 |
+| 平移视图 | Shift + 鼠标中键拖动 | 上下左右平移 |
+| 缩放视图 | 滚轮 | 放大/缩小 |
+| 聚焦物体 | 数字键盘 . | 将选中物体居中显示 |
+
+### 物体操作
+
+| 快捷键 | 功能 | 说明 |
+|--------|------|------|
+| G | 移动（Grab） | 移动选中物体 |
+| R | 旋转（Rotate） | 旋转选中物体 |
+| S | 缩放（Scale） | 缩放选中物体 |
+| E | 挤出（Extrude） | 从面/边向外挤出 |
+| I | 内插面（Inset） | 在面内创建一个缩小的面 |
+| Ctrl+R | 环切（Loop Cut） | 添加一圈环形边 |
+| Tab | 模式切换 | 物体模式/编辑模式切换 |
+| 1/2/3 | 选择模式 | 顶点/边/面选择模式 |
+| A | 全选/取消全选 | 切换全选状态 |
+| X/Delete | 删除 | 删除选中的元素 |
+| Shift+A | 添加物体 | 打开添加菜单 |
+
+### 编辑模式 vs 物体模式
+
+- **物体模式（Object Mode）**：选择、移动、旋转、缩放整个物体
+- **编辑模式（Edit Mode）**：编辑物体的顶点、边、面等几何细节
+
+按 Tab 键在两种模式间切换。
+
+## 建模流程
+
+### 基本步骤
+
+1. **添加基础形状** — Shift+A → Mesh，选择 Cube、Cylinder 等
+2. **进入编辑模式** — Tab
+3. **修改几何体** — 使用挤出（E）、环切（Ctrl+R）、内插面（I）等
+4. **调整顶点/边/面** — 用 G/R/S 操作选中的元素
+5. **退出编辑模式** — Tab
+6. **应用变换** — Ctrl+A → Apply Scale（重要！）
+
+:::caution
+在导出前一定要**应用缩放**（Ctrl+A → Scale），否则导入 Three.js 后可能大小不正确。
+:::
+
+### 建模风格建议
+
+#### 低多边形风格（Low Poly）
+
+- 减少细分，保持面数较低
+- 使用 Flat Shading（在 Three.js 中设置 `material.flatShading = true`）
+- 颜色通过材质而非纹理
+- 适合性能要求高的场景
+
+#### PBR 写实风格
+
+- 保持合理的拓扑结构
+- 使用平滑法线
+- 烘焙法线贴图以增加细节而不增加面数
+- 配合粗糙度、金属度等纹理
+
+## UV 展开
+
+UV 展开是将 3D 模型的表面"展开"成 2D 平面的过程，这样才能正确贴纹理。
+
+### 基本步骤
+
+1. 进入编辑模式（Tab）
+2. 选择需要展开的面
+3. 按 U 打开 UV 映射菜单
+4. 选择展开方式：
+   - **Unwrap** — 智能展开
+   - **Smart UV Project** — 自动投影（适合简单模型）
+   - **Cube/Cylinder/Sphere Projection** — 按形状投影
+
+5. 在 UV 编辑器中检查和调整展开结果
+
+## 材质设置
+
+### Blender 中设置材质
+
+1. 选中物体
+2. 切换到材质面板（右侧属性面板中的球体图标）
+3. 点击 New 创建新材质
+4. 设置颜色、粗糙度、金属度等
+
+### 导出前的材质检查
+
+- 确保所有物体都有材质
+- 删除未使用的材质槽
+- 材质名称应该有意义（不要用 "Material.001"）
+
+## 导出为 glTF 格式
+
+glTF（GL Transmission Format）是 Web 3D 的标准格式，Three.js 对它有最好的支持。
+
+### 导出步骤
+
+1. 选中要导出的物体（按 A 全选，或 Shift+点击多选）
+2. File → Export → glTF 2.0 (.glb/.gltf)
+3. 配置导出选项
+
+### 导出选项说明
+
+| 选项 | 推荐设置 | 说明 |
+|------|----------|------|
+| Format | `.glb` | 二进制格式，单文件，推荐 |
+| Include | Selected Objects | 仅导出选中物体 |
+| Transform | +Y Up | glTF 默认 Y 轴向上 |
+| Meshes | Apply Modifiers | 应用修改器 |
+| Materials | Export Materials | 导出材质 |
+| Compression | Draco | 可选，减小文件大小 |
+
+### GLB vs GLTF
+
+- **.glb** — 单个二进制文件，推荐用于 Web
+- **.gltf** — JSON 文件 + 外部纹理/数据文件，多个文件
+
+## 导出前检查清单
+
+- [ ] 确认缩放正确（Blender 默认单位是米）
+- [ ] 应用了所有变换（Ctrl+A → All Transforms）
+- [ ] 检查法线方向（蓝色朝外）
+- [ ] 清除未使用的材质和纹理
+- [ ] 将修改器应用到网格
+- [ ] 检查原点位置（通常放在物体底部中心）
+- [ ] 模型大小合理（通常控制在 1-10 个单位内）
+
+## 导入 Three.js 验证
+
+导出后立即在 Three.js 中测试：
+
+```js
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+
+const gltfLoader = new GLTFLoader()
+
+gltfLoader.load('./model.glb', (gltf) => {
+    const model = gltf.scene
+    scene.add(model)
+
+    // 检查模型大小
+    const box = new THREE.Box3().setFromObject(model)
+    const size = box.getSize(new THREE.Vector3())
+    console.log('模型尺寸:', size)
+
+    // 如果模型太大或太小，调整缩放
+    model.scale.set(0.5, 0.5, 0.5)
+
+    // 居中模型
+    const center = box.getCenter(new THREE.Vector3())
+    model.position.sub(center)
+})
+```
+
+### 常见导入问题
+
+| 问题 | 原因 | 解决方法 |
+|------|------|----------|
+| 模型太小/太大 | Blender 单位与 Three.js 不匹配 | 调整 scale 或在 Blender 中缩放 |
+| 模型方向错误 | 坐标系不同 | 导出时选择 +Y Up |
+| 材质丢失 | 不支持的材质类型 | 使用 Principled BSDF |
+| 颜色不对 | 色彩空间问题 | 确保 `texture.colorSpace = THREE.SRGBColorSpace` |
+| 模型变形 | 缩放未应用 | Blender 中 Ctrl+A → Scale |
+
+## 参考链接
+
+- [Blender 官网](https://www.blender.org/)
+- [Blender 快捷键速查表](https://download.blender.org/documentation/BlenderHotkeyReference.pdf)
+- [Three.js GLTFLoader 文档](https://threejs.org/docs/#examples/en/loaders/GLTFLoader)
+- [glTF 格式规范](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html)
+- [Don McCurdy 的 glTF 指南](https://modelviewer.dev/examples/loading/)

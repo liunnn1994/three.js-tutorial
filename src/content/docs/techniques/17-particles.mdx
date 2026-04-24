@@ -1,0 +1,397 @@
+---
+title: 17 粒子
+description: 深入学习 Three.js 粒子系统——从创建基本粒子到纹理、颜色、透明度问题和动画
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 什么是粒子？
+
+粒子（Particles）是 3D 图形中一个非常强大的概念。简单来说，**一个粒子就是场景中一个微小的点**。你可以用成千上万个粒子来模拟：
+
+- 星空中的星星
+- 飘落的雪花和雨滴
+- 烟雾和火焰
+- 灰尘和光效
+
+在 WebGL 中，每个粒子本质上是由**两个三角形组成的一个小平面**（Billboard），并且**始终面向摄像机**。这意味着无论你怎么旋转视角，粒子看起来都是正面朝向你的。
+
+### 为什么不用几千个 Mesh？
+
+你可以用 `new THREE.Mesh()` 创建几千个小球或小方块来模拟粒子效果。但这会有严重的**性能问题**——每个 Mesh 都是一次独立的绘制调用（draw call），GPU 需要分别处理每一个。
+
+而使用粒子系统（`THREE.Points`），**成千上万个粒子只需要一次绘制调用**，GPU 可以高效地批量处理它们。这就是粒子的核心优势。
+
+
+<LessonPreview lesson="17-particles" />
+
+## 创建粒子的基本步骤
+
+创建粒子和创建 Mesh 非常类似，只有两个区别：
+
+| 创建 Mesh | 创建 Points |
+|---|---|
+| `THREE.BufferGeometry` | `THREE.BufferGeometry` |
+| `THREE.MeshStandardMaterial` | **`THREE.PointsMaterial`** |
+| `new THREE.Mesh(geometry, material)` | **`new THREE.Points(geometry, material)`** |
+
+参考文档：[THREE.Points](https://threejs.org/docs/#api/en/objects/Points)、[THREE.PointsMaterial](https://threejs.org/docs/#api/en/materials/PointsMaterial)
+
+### 使用内置几何体创建粒子
+
+你可以像创建 Mesh 一样，用 Three.js 自带的几何体来生成粒子：
+
+```js
+const particlesGeometry = new THREE.SphereGeometry(1, 32, 32)
+
+const particlesMaterial = new THREE.PointsMaterial({
+    size: 0.02,
+    sizeAttenuation: true
+})
+
+const particles = new THREE.Points(particlesGeometry, particlesMaterial)
+scene.add(particles)
+```
+
+你会看到粒子的形状和球体表面上顶点的分布一样——粒子出现在球面的顶点位置上。
+
+## size 和 sizeAttenuation
+
+`PointsMaterial` 有两个非常重要的属性：
+
+### size — 粒子大小
+
+```js
+particlesMaterial.size = 0.02  // 世界单位中的大小（当 sizeAttenuation 为 true 时）
+```
+
+### sizeAttenuation — 透视衰减
+
+```js
+particlesMaterial.sizeAttenuation = true   // 靠近相机的粒子大，远处的小（3D 透视效果）
+particlesMaterial.sizeAttenuation = false  // 所有粒子大小相同，不随距离变化
+```
+
+:::info
+当 `sizeAttenuation` 为 `false` 时，`size` 的单位变为**屏幕像素**。例如 `size: 4` 意味着每个粒子都是 4x4 像素的正方形。这种方式**性能更好**，但效果不够真实。
+
+通常我们会用 `sizeAttenuation: true` 来获得更真实的效果——雪花靠近你时看起来更大，远离你时更小。
+:::
+
+## 创建自定义随机粒子分布
+
+更多时候，我们不想让粒子出现在某个几何体的表面上，而是想**随机分布在空间中的任意位置**。这就需要我们自己创建一个空的 BufferGeometry，然后手动填充位置数据。
+
+### 第一步：创建 Float32Array
+
+GPU 处理数据时，效率最高的数据格式是 `Float32Array`（32 位浮点数组）。我们需要一个**一维数组**来存储所有粒子的 x, y, z 坐标，三个一组：
+
+```
+[x1, y1, z1, x2, y2, z2, x3, y3, z3, ...]
+```
+
+每个粒子占 3 个值（x, y, z），所以如果有 `count` 个粒子，数组总长度就是 `count * 3`：
+
+```js
+const count = 5000
+const positions = new Float32Array(count * 3)
+```
+
+:::info
+为什么要用 `Float32Array` 而不是普通数组 `[]`？因为 `Float32Array` 是一块连续的、固定大小的内存，GPU 可以直接读取，传输速度远快于普通 JavaScript 数组或对象数组。
+:::
+
+### 第二步：填充随机位置
+
+我们想让粒子均匀地分布在空间中心周围（比如从 -5 到 +5 的立方体区域内）。`Math.random()` 返回 0 到 1 的值，我们可以用 `Math.random() - 0.5` 把它变成 -0.5 到 +0.5，然后乘以想要的范围：
+
+```js
+for (let i = 0; i < count * 3; i++) {
+    positions[i] = (Math.random() - 0.5) * 10  // -5 到 +5
+}
+```
+
+:::tip
+为什么是 `(Math.random() - 0.5) * 10`？
+- `Math.random()` → 0 到 1
+- `Math.random() - 0.5` → -0.5 到 +0.5
+- `(Math.random() - 0.5) * 10` → -5 到 +5
+
+这样粒子会均匀地出现在正负两个方向上，形成以原点为中心的分布。
+:::
+
+### 第三步：设置 BufferAttribute
+
+把 `Float32Array` 包装成 `BufferAttribute`，然后添加到几何体的 `position` 属性上：
+
+```js
+particlesGeometry.setAttribute(
+    'position',
+    new THREE.BufferAttribute(positions, 3)  // 3 = 每个顶点 3 个分量（x, y, z）
+)
+```
+
+:::caution
+`new THREE.BufferAttribute(array, itemSize)` 中的第二个参数 `itemSize` 必须设为 **3**。这告诉 GPU：数组中的数据是"三个一组"的，分别对应一个顶点的 x, y, z。如果设为 1，GPU 会尝试用一个值来定位顶点，那是不可能的。
+:::
+
+### 完整代码
+
+```js
+const count = 5000
+const particlesGeometry = new THREE.BufferGeometry()
+const positions = new Float32Array(count * 3)
+
+for (let i = 0; i < count * 3; i++) {
+    positions[i] = (Math.random() - 0.5) * 10
+}
+
+particlesGeometry.setAttribute(
+    'position',
+    new THREE.BufferAttribute(positions, 3)
+)
+
+const particlesMaterial = new THREE.PointsMaterial({
+    size: 0.1,
+    sizeAttenuation: true,
+    color: '#ff88cc'
+})
+
+const particles = new THREE.Points(particlesGeometry, particlesMaterial)
+scene.add(particles)
+```
+
+## 粒子纹理
+
+默认的粒子是白色的小方块。要获得更好看的效果，我们可以使用**纹理贴图**。
+
+### 加载粒子纹理
+
+你可以使用 PNG 格式的粒子纹理（白色代表可见部分，黑色/透明代表不可见部分）。Three.js 官方和一些社区提供了大量免费的粒子纹理。
+
+```js
+const particleTexture = textureLoader.load('/textures/particles/2.png')
+
+particlesMaterial.map = particleTexture
+```
+
+参考文档：[PointsMaterial.map](https://threejs.org/docs/#api/en/materials/PointsMaterial.map)
+
+### 使用 alphaMap 实现透明
+
+如果你的粒子纹理中间有内容、四周是黑色的（或透明的），你需要使用 `alphaMap` 而不是 `map`，这样才能让黑色区域变得透明：
+
+```js
+particlesMaterial.map = particleTexture
+particlesMaterial.transparent = true
+particlesMaterial.alphaMap = particleTexture
+```
+
+:::caution
+使用 `alphaMap` 时，一定要把 `transparent` 设为 `true`！
+:::
+
+:::tip
+你可以自己制作粒子纹理——用 GIMP、Photoshop 等工具画一个简单的白色圆形或星形，保存为带透明通道的 PNG 文件就行。也可以从 [Kenney.nl](https://kenney.nl/assets/particle-pack) 等网站下载免费的 CC0 粒子纹理包。
+:::
+
+## 粒子透明度问题（重要！）
+
+当你使用透明粒子纹理后，可能会发现一个问题：**前面的粒子遮挡了后面的粒子**。即使粒子的透明区域（alpha = 0）是看不见的，GPU 仍然会把它画在那里，导致后面的粒子被"隐形地"挡住了。
+
+这是 WebGL 渲染透明物体时的一个经典问题。GPU 按创建顺序绘制粒子，先画的粒子（即使是透明的）会占据深度缓冲区（depth buffer），后面的粒子即使真的有内容，也可能被 GPU 判断为"在前面那个粒子之后"而被丢弃。
+
+有 **4 种解决方案**，需要根据你的具体场景来选择：
+
+### 方案 1：alphaTest（推荐新手使用）
+
+```js
+particlesMaterial.alphaTest = 0.001
+```
+
+参考文档：[Material.alphaTest](https://threejs.org/docs/#api/en/materials/Material.alphaTest)
+
+`alphaTest` 让 GPU 在 alpha 值低于指定阈值时**完全不渲染该像素**（不是渲染为透明，而是跳过它）。这样透明区域就不会占据深度缓冲区了。
+
+- 优点：简单有效
+- 缺点：边缘可能不太完美，有锯齿感
+
+### 方案 2：depthWrite = false（推荐通用使用）
+
+```js
+particlesMaterial.depthWrite = false
+```
+
+参考文档：[Material.depthWrite](https://threejs.org/docs/#api/en/materials/Material.depthWrite)
+
+告诉 GPU **不要把粒子写入深度缓冲区**。这样即使前面的粒子"画了"，也不会影响后面粒子的深度判断。
+
+- 优点：效果好，且不影响场景中的其他物体
+- 缺点：在非常特定的情况下可能出现视觉错误
+
+### 方案 3：depthTest = false（不推荐）
+
+```js
+particlesMaterial.depthTest = false
+```
+
+告诉 GPU **不要做深度测试**，无论粒子是在前面还是后面，都直接画上去。
+
+- 优点：可以解决问题
+- 缺点：如果你的场景中有其他物体（比如立方体），粒子会出现在立方体的后面也能被看到——这显然是错误的。只适合纯粒子场景
+
+### 方案 4：AdditiveBlending（适合光效、火花）
+
+```js
+particlesMaterial.depthWrite = false  // 仍需配合 depthWrite
+particlesMaterial.blending = THREE.AdditiveBlending
+```
+
+参考文档：[THREE.AdditiveBlending](https://threejs.org/docs/#api/en/constants/Materials)
+
+加法混合模式下，重叠粒子的颜色会**相加**而不是覆盖——就像混合灯光颜色一样（红 + 绿 + 蓝 = 白）。这会产生一种"发光"的效果，非常适合火花、星星、光效等场景。
+
+- 优点：视觉效果非常酷
+- 缺点：可能会影响性能（特别是粒子数量多且粒子很大时），结果与普通混合不同
+
+:::tip
+**最佳实践**：组合使用多种方案。最常见的组合是 `depthWrite: false` + `AdditiveBlending`。你也可以尝试同时使用 `alphaTest` 和 `depthWrite: false` 来获得更好的效果。以上方案对性能的影响都不大，可以放心组合使用。
+:::
+
+## 为每个粒子设置不同颜色
+
+如果我们想让每个粒子有不同的颜色，需要添加一个 **color** 属性到几何体上，就像我们之前添加 position 属性一样。
+
+### 创建颜色数组
+
+颜色也是三个一组（R, G, B），每个分量从 0 到 1：
+
+```js
+const colors = new Float32Array(count * 3)
+
+for (let i = 0; i < count * 3; i++) {
+    colors[i] = Math.random()  // R, G, B 各自随机 0~1
+}
+```
+
+### 添加到几何体
+
+```js
+particlesGeometry.setAttribute(
+    'color',           // 注意：属性名必须是 'color'（单数！）
+    new THREE.BufferAttribute(colors, 3)
+)
+```
+
+:::caution
+属性名必须是 `'color'`（单数），不是 `'colors'`（复数）。这是 Three.js 内置着色器中约定的名字——材质的着色器会自动查找名为 `color` 的顶点属性。
+:::
+
+### 启用顶点颜色
+
+```js
+particlesMaterial.vertexColors = true  // 注意：属性名是复数！
+```
+
+:::caution
+在 `PointsMaterial` 上启用顶点颜色的属性名是 `vertexColors`（复数，带 s）。不要和几何体属性名 `'color'`（单数）搞混了！
+:::
+
+:::info
+当启用了顶点颜色后，粒子材质的 `color`（基础颜色）会和顶点颜色混合。如果你只想显示顶点颜色而不受基础颜色影响，可以注释掉 `particlesMaterial.color` 的设置。
+:::
+
+## 动画粒子
+
+### 整体动画（简单但有效）
+
+因为 `THREE.Points` 继承自 `THREE.Object3D`，所以你可以像操作其他 3D 物体一样对整个粒子系统进行动画：
+
+```js
+const tick = () => {
+    const elapsedTime = clock.getElapsedTime()
+
+    // 让所有粒子整体旋转
+    particles.rotation.y = elapsedTime * 0.1
+
+    // 或者让粒子整体下落（像雪花）
+    // particles.position.y = -elapsedTime * 2
+
+    renderer.render(scene, camera)
+    window.requestAnimationFrame(tick)
+}
+```
+
+### 逐个粒子动画（性能需注意）
+
+如果我们想控制每个粒子的位置（比如让它们做波浪运动），就需要直接修改 `positions` 数组中的值。
+
+:::caution
+逐帧更新大量粒子的位置是非常消耗性能的操作！下面展示的方法适合粒子数量较少（100 个以下）的情况。对于 50000+ 个粒子，应该在着色器（Shader）中完成动画——我们会在后面的课程中学到。
+:::
+
+核心代码：
+
+```js
+const tick = () => {
+    const elapsedTime = clock.getElapsedTime()
+
+    for (let i = 0; i < count; i++) {
+        // i3 是当前粒子在数组中的起始索引
+        const i3 = i * 3
+
+        // 获取当前粒子的 x 坐标，用来偏移波浪动画
+        const x = particlesGeometry.attributes.position.array[i3]
+
+        // 更新 y 坐标：用 sin 函数 + x 偏移来创建波浪效果
+        particlesGeometry.attributes.position.array[i3 + 1] =
+            Math.sin(elapsedTime + x)
+    }
+
+    // 关键步骤！必须告诉 Three.js 属性已经更新了
+    particlesGeometry.attributes.position.needsUpdate = true
+
+    renderer.render(scene, camera)
+    window.requestAnimationFrame(tick)
+}
+```
+
+:::caution
+**千万不要忘记 `needsUpdate = true`！** 如果你修改了属性数组中的值但没有设置这个标志，Three.js 不会把更新后的数据发送给 GPU，你在画面上就看不到任何变化。
+:::
+
+:::tip
+`i3 + 0` 是 x 坐标，`i3 + 1` 是 y 坐标，`i3 + 2` 是 z 坐标。理解这个一维数组到三维坐标的映射关系是操作粒子位置的关键。
+:::
+
+## 性能建议
+
+粒子系统虽然高效，但仍然需要注意性能：
+
+1. **粒子数量选择**：1000 ~ 100,000 通常是合理的范围。超过 100,000 可能在低端设备上出现问题。
+2. **使用 `depthWrite: false`**：避免透明度排序问题，且对性能有积极影响。
+3. **纹理优于复杂几何体**：用纹理贴图模拟形状，而不是用复杂的粒子形状。
+4. **`sizeAttenuation: false` 更快**：但不那么真实。根据场景需要选择。
+5. **逐粒子动画要用着色器**：JavaScript 循环更新 50,000 个粒子的位置会让风扇狂转。正确的做法是在 GPU 着色器中完成（后续课程会学到）。
+6. **加法混合可能有性能开销**：`AdditiveBlending` 在粒子数量多且粒子较大时可能导致帧率下降。
+
+:::caution
+在移动设备上，不同 GPU 对粒子大小的支持不同。某些设备会限制粒子的最大像素大小（通常在 64~256 像素之间）。如果发现粒子在某些设备上"被截断"，可能就是这个原因。
+:::
+
+## 核心知识点总结
+
+| 概念 | 说明 |
+|---|---|
+| `THREE.Points` | 粒子系统的容器类，替代 `THREE.Mesh` |
+| `THREE.PointsMaterial` | 粒子专用材质，有 `size`、`sizeAttenuation` 等特殊属性 |
+| `Float32Array` | GPU 友好的高效数据格式 |
+| `BufferAttribute` | 将 TypedArray 包装成 GPU 可识别的顶点属性 |
+| `size` | 粒子大小（单位取决于 `sizeAttenuation`） |
+| `sizeAttenuation` | `true` = 透视效果，`false` = 固定像素大小 |
+| `alphaTest` | 低于阈值时完全不渲染该像素 |
+| `depthWrite = false` | 不写入深度缓冲区（推荐用于透明粒子） |
+| `AdditiveBlending` | 加法混合模式，颜色叠加，适合光效 |
+| `vertexColors` | 启用顶点颜色（复数！） |
+| `needsUpdate = true` | 修改属性数组后必须设置，否则 GPU 不会更新 |

@@ -1,0 +1,576 @@
+---
+title: 11 材质
+description: 深入了解 Three.js 中各种内置材质的原理、特性和使用方法，从零基础理解什么是材质以及如何选择合适的材质
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 什么是材质？（3D 世界的"皮肤"）
+
+在开始写代码之前，让我们先从直觉上理解一下什么是材质。
+
+想象一下你捏了一个**泥人**。这个泥人的"形状"叫做**几何体（Geometry）**——它是骨架，决定了物体长什么样。但你还没给泥人上色对吧？现在你拿出一罐颜料，给泥人涂上了颜色——这一层"颜料"就是**材质（Material）**。
+
+在 3D 编程中，材质的工作原理也差不多。几何体只是定义了物体的形状（顶点、边、面），而材质决定了这些**表面的每个可见像素应该显示什么颜色**。
+
+:::info 底层原理
+材质的内部包含**着色器（Shader）**程序——一段运行在 GPU 上的代码，负责计算每个像素的最终颜色。如果从零开始手写 WebGL 着色器会非常困难，幸运的是 Three.js 提供了大量**内置材质**，每个材质都封装了预制的着色器，你只需要设置几个参数就能得到不错的效果。
+:::
+
+### 材质在代码中的位置
+
+在 Three.js 中，一个可见的 3D 物体叫做 **Mesh（网格）**。每个 Mesh 由两部分组成：
+
+```
+Mesh = Geometry（形状） + Material（外观）
+```
+
+所以当你创建一个物体时，流程是这样的：
+
+```js
+// 第一步：创建形状
+const geometry = new THREE.SphereGeometry(1, 32, 32)
+
+// 第二步：创建材质
+const material = new THREE.MeshStandardMaterial({ color: '#ff0000' })
+
+// 第三步：将两者组合成 Mesh
+const mesh = new THREE.Mesh(geometry, material)
+
+// 第四步：添加到场景中
+scene.add(mesh)
+```
+
+:::tip 多个 Mesh 可以共享同一个材质
+你不需要为每个物体创建单独的材质。同一个材质实例可以应用到多个不同的 Mesh 上，这在性能优化时非常重要。
+:::
+
+### 本课的场景设置
+
+为了测试各种材质，我们首先创建三个不同的几何体，并将它们都使用同一个材质：
+
+```js
+// 创建一个材质（会被所有物体共享）
+const material = new THREE.MeshBasicMaterial()
+
+// 创建三个不同形状的几何体
+const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), material)
+sphere.position.x = -1.5
+
+const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material)
+
+const torus = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.2, 16, 32), material)
+torus.position.x = 1.5
+
+// 同时添加到场景
+scene.add(sphere, plane, torus)
+```
+
+这样我们就能同时在三个不同形状上看到材质的效果。
+
+---
+
+
+<LessonPreview lesson="11-materials" />
+
+## 通用材质属性
+
+在我们逐一介绍每种材质之前，先了解一些**大多数材质都支持的通用属性**。这些属性无论是在 `MeshBasicMaterial` 还是 `MeshStandardMaterial` 中都可以使用。
+
+### color（颜色）
+
+给材质设置一个均匀的颜色。注意 `color` 属性不是简单的字符串或数字，它是一个 `THREE.Color` 实例：
+
+```js
+// 方式一：在创建时设置
+const material = new THREE.MeshBasicMaterial({ color: '#ff0000' })
+
+// 方式二：创建后通过属性设置（需要 new THREE.Color）
+material.color = new THREE.Color('#ff0000')
+material.color = new THREE.Color('green')
+material.color = new THREE.Color(0xff0000)  // 十六进制
+material.color = new THREE.Color('salmon') // CSS 颜色名也支持！
+
+// 方式三：使用 .set() 方法
+material.color.set('#00ff00')
+```
+
+:::tip map 和 color 可以同时使用
+如果你同时设置了 `map`（纹理贴图）和 `color`，颜色会对纹理进行**染色（Tint）**。也就是说纹理不会完全被覆盖，而是会和颜色混合。
+:::
+
+### map（纹理贴图）
+
+将一张图片作为材质的表面贴图：
+
+```js
+const textureLoader = new THREE.TextureLoader()
+const colorTexture = textureLoader.load('/textures/door/color.jpg')
+colorTexture.colorSpace = THREE.SRGBColorSpace // 颜色贴图需要设置色彩空间
+
+// 方式一：创建时指定
+const material = new THREE.MeshBasicMaterial({ map: colorTexture })
+
+// 方式二：创建后指定
+material.map = colorTexture
+```
+
+:::warning colorSpace 不要忘记
+对于 `map` 和 `matcap` 类型的贴图，需要将 `colorSpace` 设置为 `THREE.SRGBColorSpace`，否则颜色看起来会不对。其他类型的贴图（如 normalMap、roughnessMap 等）则不需要。
+:::
+
+### wireframe（线框模式）
+
+将材质渲染为线框，只显示三角形的边：
+
+```js
+material.wireframe = true
+```
+
+线框的线条**默认粗细为 1 像素**，且大多数设备上无法修改。线框模式主要用于**调试**——帮助你查看几何体的三角形结构。在生产环境中使用时要注意锯齿问题。
+
+### opacity 和 transparent（透明度）
+
+```js
+material.opacity = 0.5      // 设置透明度（0 = 完全透明，1 = 完全不透明）
+material.transparent = true // 必须同时设置为 true！
+```
+
+:::danger 常见错误
+单独设置 `opacity` 不会生效！你必须同时将 `transparent` 设为 `true`。这是因为 Three.js 默认假设材质是不透明的，可以跳过透明度计算以提升性能。设置 `transparent: true` 就是告诉 Three.js："这个材质需要计算透明度。"
+:::
+
+### alphaMap（透明贴图）
+
+用一张黑白图片来控制哪些区域可见、哪些区域隐藏：
+
+```js
+const alphaTexture = textureLoader.load('/textures/door/alpha.jpg')
+material.transparent = true
+material.alphaMap = alphaTexture
+```
+
+规则很简单：
+- **白色区域** = 完全可见
+- **黑色区域** = 完全隐藏
+- **灰色区域** = 半透明
+
+这在制作树叶、栅栏等不规则形状时非常有用。
+
+### side（渲染面）
+
+控制几何体的哪一面会被渲染：
+
+```js
+material.side = THREE.FrontSide  // 默认值：只渲染正面
+material.side = THREE.BackSide   // 只渲染背面
+material.side = THREE.DoubleSide // 双面都渲染
+```
+
+:::info 什么是"正面"和"背面"？
+在 3D 中，每个三角形面都有正反两面。默认情况下，Three.js 只渲染"正面"（顶点按逆时针排列的那一面）。如果你从球的内部看，或者翻转了一个平面，可能会看到物体"消失"了——这就是因为你看到的是背面。
+:::
+
+:::warning 双面渲染有性能代价
+使用 `DoubleSide` 会让 GPU 需要测试并渲染两倍的像素，影响性能。如果不需要双面就不要开启。
+:::
+
+---
+
+## 所有材质详解
+
+下面是 Three.js 中最重要的内置材质，从最简单到最复杂逐一讲解。
+
+### 1. MeshBasicMaterial — 最基础的材质
+
+:::info 官方文档
+[MeshBasicMaterial](https://threejs.org/docs/#api/en/materials/MeshBasicMaterial)
+:::
+
+这是最简单的材质，**完全不受光照影响**。不管场景里有没有灯光，不管物体朝向哪里，它始终显示相同的颜色/纹理。
+
+```js
+const material = new THREE.MeshBasicMaterial({
+    map: colorTexture,
+    color: '#ff0000',
+    wireframe: true,
+    transparent: true,
+    opacity: 0.5,
+    side: THREE.DoubleSide
+})
+```
+
+**适用场景：**
+- UI 元素、标签、HUD（不需要受光照影响）
+- 线框调试，查看几何体的三角形结构
+- 不需要光照的简单演示
+
+**不适用场景：**
+- 任何需要看起来"真实"的物体
+
+---
+
+### 2. MeshNormalMaterial — 法线可视化材质
+
+:::info 官方文档
+[MeshNormalMaterial](https://threejs.org/docs/#api/en/materials/MeshNormalMaterial)
+:::
+
+这个材质会根据每个面的**法线方向**来显示颜色。法线（Normal）是指垂直于表面的方向向量，每个三角形的每个顶点都存储了法线信息。
+
+```js
+const material = new THREE.MeshNormalMaterial({
+    flatShading: true  // 启用平面着色
+})
+```
+
+你会看到物体呈现出紫蓝色调的彩虹渐变效果。当物体旋转时，颜色会随之变化，因为法线方向相对于相机的角度在改变。
+
+**适用场景：**
+- **调试法线**：快速检查模型的法线是否正确。如果某个面颜色异常，说明法线可能反了
+- **后期处理效果**：在shader特效中利用法线信息
+- **艺术风格**：它的彩虹色调本身就很漂亮，可以直接用于生产环境（比如 Elithia 的作品集就用了这个材质）
+
+---
+
+### 3. MeshMatcapMaterial — Matcap 材质
+
+:::info 官方文档
+[MeshMatcapMaterial](https://threejs.org/docs/#api/en/materials/MeshMatcapMaterial)
+:::
+
+Matcap（Material Capture）材质使用一张特殊的球体参考图片来模拟光照效果。这张图片包含了预渲染好的光照、阴影和反射信息。
+
+```js
+const matcapTexture = textureLoader.load('/textures/matcaps/1.png')
+matcapTexture.colorSpace = THREE.SRGBColorSpace
+
+const material = new THREE.MeshMatcapMaterial()
+material.matcap = matcapTexture // 注意：是 .matcap 不是 .map！
+```
+
+:::danger 常见错误
+很多初学者会把 `matcap` 写成 `map`，导致出现奇怪的"轮子"纹理。记住：`material.matcap = texture`，不是 `material.map = texture`。
+:::
+
+**Matcap 的工作原理：**
+着色器会根据每个面法线相对于相机的朝向，从 matcap 图片中采样颜色。简单来说，它会"把球体的外观贴到你的物体上"。
+
+**优点：**
+- 看起来像有真实光照和反射，但**不需要任何灯光**
+- 性能非常好（比 PBR 材质快得多）
+- 效果可以非常漂亮
+
+**缺点：**
+- 光照是"假的"——固定跟随相机，无法移动光源
+- 旋转相机时阴影和反射会跟着移动，穿帮时会很明显
+- 无法动态调整光照强度
+
+**如何获取 Matcap 纹理：**
+1. 在线 Matcap 库：搜索 "matcap library"，有数百个免费的 matcap 纹理可供下载
+2. 用 Blender 自己制作：在场景中放置一个球体，打好灯光，设置相机进行方形渲染
+3. 用 Photoshop 等绘画软件手绘：用大号柔和画笔在正方形画布上随意涂抹
+4. 在线生成工具：如 Matcap Generator（由 Kevin Shap 创建），可以交互式调整参数并导出
+
+---
+
+### 4. MeshDepthMaterial — 深度材质
+
+:::info 官方文档
+[MeshDepthMaterial](https://threejs.org/docs/#api/en/materials/MeshDepthMaterial)
+:::
+
+这个材质根据**物体到相机的距离**来渲染颜色：离相机近的部分是**白色**，离相机远的部分是**黑色**。
+
+```js
+const material = new THREE.MeshDepthMaterial()
+```
+
+**适用场景：**
+- 主要被 Three.js **内部使用**（如阴影计算、后期处理效果）
+- 创建雾效果或深度相关的视觉效果
+- 在自定义着色器中处理深度信息
+
+在普通项目中很少直接使用，但理解它的概念对后续学习很有帮助。
+
+---
+
+### 5. MeshLambertMaterial — Lambert 漫反射材质
+
+:::info 官方文档
+[MeshLambertMaterial](https://threejs.org/docs/#api/en/materials/MeshLambertMaterial)
+:::
+
+这是 Three.js 中**第一个需要灯光**的材质。它实现了 **Lambert 漫反射**光照模型，只计算光照射到表面的基本亮度。
+
+```js
+// 必须添加灯光！
+const ambientLight = new THREE.AmbientLight(0xffffff, 1)
+scene.add(ambientLight)
+
+const pointLight = new THREE.PointLight(0xffffff, 30)
+pointLight.position.set(2, 3, 4)
+scene.add(pointLight)
+
+// 然后使用 Lambert 材质
+const material = new THREE.MeshLambertMaterial()
+```
+
+:::warning 不添加灯光会怎样？
+使用需要灯光的材质时，如果没有添加任何灯光，物体会完全**看不见**（黑色）。这不是 bug，是因为没有光就没有颜色。
+:::
+
+**特点：**
+- **使用灯光的材质中性能最好**的
+- 只有漫反射，没有高光（不会看到闪亮的光斑）
+- 在某些几何体上可能出现**奇怪的条纹伪影**（artifacts）
+
+**适用场景：**
+- 对性能要求高的移动端项目
+- 低多边形风格的项目
+- 不需要高光反射的表面（如墙壁、地面、布料）
+
+---
+
+### 6. MeshPhongMaterial — Phong 高光材质
+
+:::info 官方文档
+[MeshPhongMaterial](https://threejs.org/docs/#api/en/materials/MeshPhongMaterial)
+:::
+
+在 Lambert 的基础上增加了**高光反射（Specular Highlight）**，让你可以控制物体表面闪亮光斑的颜色和强度。
+
+```js
+const material = new THREE.MeshPhongMaterial()
+material.shininess = 100       // 高光锐度（值越大光斑越小越锐利）
+material.specular = new THREE.Color(0x1188ff) // 高光颜色
+```
+
+**与 Lambert 的对比：**
+- 修复了 Lambert 的条纹伪影问题
+- 增加了高光反射（可以看到点光源在物体上的反光点）
+- 性能比 Lambert 稍差，但在现代设备上影响不大
+
+**适用场景：**
+- 需要高光但没有真实 PBR 需求的项目
+- 中等质量的渲染
+- 塑料、陶瓷等有明确高光的材质
+
+---
+
+### 7. MeshToonMaterial — 卡通材质
+
+:::info 官方文档
+[MeshToonMaterial](https://threejs.org/docs/#api/en/materials/MeshToonMaterial)
+:::
+
+实现**卡通着色（Cel Shading / Cell Shading）**效果，将光照分成几个离散的色阶，而不是平滑过渡。这种风格在《塞尔达传说：风之之杖》等游戏中被广泛使用。
+
+```js
+// 默认效果：只有明暗两个色阶
+const material = new THREE.MeshToonMaterial()
+
+// 自定义色阶：使用渐变纹理
+const gradientTexture = textureLoader.load('/textures/gradients/3.jpg')
+
+// 重要：禁用纹理混合以保持清晰的色阶边界
+gradientTexture.minFilter = THREE.NearestFilter
+gradientTexture.magFilter = THREE.NearestFilter
+gradientTexture.generateMipmaps = false
+
+material.gradientMap = gradientTexture
+```
+
+:::info 为什么需要设置 NearestFilter？
+默认情况下，GPU 会对小纹理进行**混合**处理（类似抗锯齿），让色阶之间的过渡变得平滑，这恰好是我们不想要的——卡通风格需要**清晰锐利**的色阶边界。设置 `NearestFilter` 告诉 GPU "不要混合像素，取最近的那个"，这样就能得到清晰的色带效果。
+:::
+
+**关于渐变纹理：**
+- 使用一个 3 像素宽的纹理 = 3 个色阶（亮、中、暗）
+- 使用一个 5 像素宽的纹理 = 5 个色阶
+- 像素越多，色阶越细腻；像素越少，卡通感越强
+
+**适用场景：**
+- 卡通、漫画风格的 3D 作品
+- 非真实渲染（NPR）
+- 风格化的游戏和应用
+
+---
+
+### 8. MeshStandardMaterial — PBR 标准材质（最常用）
+
+:::info 官方文档
+[MeshStandardMaterial](https://threejs.org/docs/#api/en/materials/MeshStandardMaterial)
+:::
+
+这是 Three.js 中**最常用的材质**，实现了**基于物理的渲染（PBR，Physically Based Rendering）**。它使用真实世界的物理参数（粗糙度、金属度）来计算光照，能够在不同软件间获得一致的效果。
+
+```js
+const material = new THREE.MeshStandardMaterial()
+material.roughness = 0.65   // 粗糙度（0 = 光滑如镜，1 = 完全粗糙）
+material.metalness = 0.45   // 金属度（0 = 非金属/绝缘体，1 = 纯金属）
+```
+
+**为什么叫"标准"？**
+因为 PBR 已经成为游戏引擎和 3D 软件的行业标准。Unity、Unreal Engine、Blender 等都使用相同的 PBR 算法，这意味着你在 Blender 中调整好的材质参数，放到 Three.js 中会得到几乎相同的效果。
+
+**核心参数：**
+
+| 参数 | 说明 | 范围 |
+|------|------|------|
+| `roughness` | 表面粗糙程度。0 = 像镜子一样光滑，1 = 像石头一样粗糙 | 0 ~ 1 |
+| `metalness` | 金属程度。0 = 非金属（塑料、木材），1 = 纯金属（金、铁） | 0 ~ 1 |
+| `map` | 基础颜色贴图 | Texture |
+| `normalMap` | 法线贴图（模拟表面凹凸细节，不增加几何体面数） | Texture |
+| `roughnessMap` | 粗糙度贴图（不同区域可以有不同的粗糙度） | Texture |
+| `metalnessMap` | 金属度贴图 | Texture |
+| `aoMap` | 环境遮蔽贴图（模拟物体角落和缝隙的阴影） | Texture |
+| `displacementMap` | 位移贴图（真正移动顶点，改变几何形状） | Texture |
+| `alphaMap` | 透明贴图 | Texture |
+
+**配合纹理贴图的完整示例：**
+
+```js
+const material = new THREE.MeshStandardMaterial()
+material.map = doorColorTexture           // 基础颜色
+material.aoMap = doorAmbientOcclusionTexture // 环境遮蔽
+material.aoMapIntensity = 1
+material.displacementMap = doorHeightTexture // 位移
+material.displacementScale = 0.05
+material.metalnessMap = doorMetalnessTexture
+material.roughnessMap = doorRoughnessTexture
+material.normalMap = doorNormalTexture     // 法线贴图
+material.normalScale.set(0.5, 0.5)
+material.transparent = true
+material.alphaMap = doorAlphaTexture
+```
+
+:::tip 选择什么值合适？
+粗糙度和金属度的值可以通过 `lil-gui` 调试面板实时调节来找到最佳效果。一般经验：
+- **金属**：metalness = 1, roughness = 0.2~0.5
+- **塑料**：metalness = 0, roughness = 0.3~0.7
+- **木材**：metalness = 0, roughness = 0.6~0.9
+- **橡胶**：metalness = 0, roughness = 0.9~1.0
+:::
+
+---
+
+### 9. MeshPhysicalMaterial — 高级 PBR 材质
+
+:::info 官方文档
+[MeshPhysicalMaterial](https://threejs.org/docs/#api/en/materials/MeshPhysicalMaterial)
+:::
+
+`MeshPhysicalMaterial` 继承自 `MeshStandardMaterial`，在 PBR 基础上增加了更多高级物理效果。
+
+```js
+const material = new THREE.MeshPhysicalMaterial()
+material.roughness = 0.15
+material.metalness = 0
+```
+
+**清漆效果（Clearcoat）——模拟汽车漆面：**
+```js
+material.clearcoat = 1           // 清漆强度（0~1）
+material.clearcoatRoughness = 0  // 清漆粗糙度
+```
+就像在物体表面多加了一层透明的亮漆，适合汽车、钢琴等有光泽涂层的表面。
+
+**光泽效果（Sheen）——模拟织物、天鹅绒：**
+```js
+material.sheen = 1               // 光泽强度
+material.sheenRoughness = 0.25   // 光泽粗糙度
+material.sheenColor.set(1, 1, 1) // 光泽颜色
+```
+用来模拟布料、天鹅绒等柔软表面的边缘光泽。
+
+**透射效果（Transmission）——模拟玻璃、水：**
+```js
+material.transmission = 1   // 透射率（0 = 不透明，1 = 完全透明）
+material.ior = 1.5          // 折射率（Index of Refraction），玻璃 ≈ 1.5
+material.thickness = 0.5    // 透射厚度（影响折射程度）
+```
+:::info 折射率（IOR）参考值
+- 空气：1.0
+- 水：1.33
+- 玻璃：1.5
+- 钻石：2.42
+:::
+
+**虹彩效果（Iridescence）——模拟肥皂泡、珍珠：**
+```js
+material.iridescence = 1                        // 虹彩强度
+material.iridescenceIOR = 1                     // 虹彩折射率
+material.iridescenceThicknessRange = [100, 800] // 虹彩厚度范围
+```
+
+---
+
+### 10. PointsMaterial — 粒子材质
+
+:::info 官方文档
+[PointsMaterial](https://threejs.org/docs/#api/en/materials/PointsMaterial)
+:::
+
+专门用于粒子系统（`THREE.Points`），将每个顶点渲染为一个点/粒子，而不是三角形面。
+
+```js
+const material = new THREE.PointsMaterial({
+    size: 0.02,             // 粒子大小
+    sizeAttenuation: true,  // 是否根据距离缩小（true = 真实感，false = 固定像素大小）
+    color: 0xff0000
+})
+```
+
+**适用场景：**
+- 粒子效果（火焰、烟雾、星星、雨滴等）
+- 大量小物体的渲染（比逐个创建 Mesh 高效得多）
+
+---
+
+## FlatShading vs SmoothShading（平面着色 vs 平滑着色）
+
+大多数材质都支持 `flatShading` 属性，这是一个非常重要的视觉概念：
+
+```js
+material.flatShading = true  // 启用平面着色
+```
+
+**SmoothShading（默认）：**
+每个三角形的颜色会在顶点之间**平滑过渡**（插值），让球体看起来是圆滑的。
+
+**FlatShading（平面着色）：**
+每个三角形显示**一个均匀的颜色**，你能清楚地看到每个三角形的边界，产生一种"低多边形"（Low Poly）的美术风格。
+
+:::tip 什么时候用 FlatShading？
+- 低多边形（Low Poly）艺术风格
+- 建筑可视化中的概念模型
+- 调试几何体的三角形结构
+- 风格化游戏
+
+:::
+
+---
+
+## 材质选择速查表
+
+| 材质 | 需要灯光 | 性能 | 视觉质量 | 适用场景 |
+|------|---------|------|---------|---------|
+| **MeshBasicMaterial** | 否 | 最好 | 基础 | UI、调试、线框 |
+| **MeshNormalMaterial** | 否 | 好 | 特殊 | 调试法线、彩虹风格 |
+| **MeshMatcapMaterial** | 否 | 好 | 优秀 | 快速原型、艺术作品 |
+| **MeshDepthMaterial** | 否 | 好 | 特殊 | 后期处理、深度效果 |
+| **MeshLambertMaterial** | 是 | 好 | 一般 | 低端设备、简单场景 |
+| **MeshPhongMaterial** | 是 | 中等 | 中等 | 带高光的中等质量 |
+| **MeshToonMaterial** | 是 | 中等 | 卡通 | 卡通风格、NPR |
+| **MeshStandardMaterial** | 是 | 中等 | 优秀 | **通用首选** |
+| **MeshPhysicalMaterial** | 是 | 较低 | 极致 | 玻璃、布料、汽车漆等特殊效果 |
+| **PointsMaterial** | 否 | 视情况 | 视情况 | 粒子系统 |
+
+:::tip 实用建议
+- **90% 的项目用 `MeshStandardMaterial` 就够了**
+- 只在需要特殊物理效果（玻璃、清漆、布料）时才升级到 `MeshPhysicalMaterial`
+- 性能紧张或不需要光照时，`MeshMatcapMaterial` 是性价比最高的选择
+- 如果你在寻找 Bruno Simon 个人网站（bruno-simon.com）的风格，那个几乎全是用 Matcap 实现的
+:::

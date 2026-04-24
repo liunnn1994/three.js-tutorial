@@ -1,0 +1,64 @@
+---
+import fs from 'node:fs';
+import path from 'node:path';
+import { codeToHtml } from 'shiki';
+
+interface Props {
+  lesson: string;
+}
+
+const { lesson } = Astro.props;
+
+const codeDir = path.join(process.cwd(), 'src/lesson-code', lesson, 'src');
+
+if (!fs.existsSync(codeDir)) {
+  throw new Error(`Lesson code not found: ${codeDir}`);
+}
+
+const sourceFiles: { name: string; content: string; lang: string }[] = [];
+
+function collectFiles(dir: string, basePath: string = '/') {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name);
+    const relPath = basePath + entry.name;
+    if (entry.isDirectory()) {
+      collectFiles(fullPath, relPath + '/');
+    } else if (entry.name.match(/\.(js|ts)$/)) {
+      sourceFiles.push({ name: relPath.replace(/^\//, ''), content: fs.readFileSync(fullPath, 'utf-8'), lang: 'javascript' });
+    } else if (entry.name.match(/\.(glsl|vert|frag)$/)) {
+      sourceFiles.push({ name: relPath.replace(/^\//, ''), content: fs.readFileSync(fullPath, 'utf-8'), lang: 'glsl' });
+    } else if (entry.name.match(/\.css$/)) {
+      sourceFiles.push({ name: relPath.replace(/^\//, ''), content: fs.readFileSync(fullPath, 'utf-8'), lang: 'css' });
+    }
+  }
+}
+
+collectFiles(codeDir);
+
+const highlightedFiles: { name: string; html: string }[] = [];
+
+for (const file of sourceFiles) {
+  const html = await codeToHtml(file.content, {
+    lang: file.lang,
+    theme: 'dark-plus',
+  });
+  highlightedFiles.push({ name: file.name, html });
+}
+---
+
+<div class="lesson-preview" data-lesson={lesson}>
+  <div class="lesson-preview-frame">
+    <iframe src={`/previews/${lesson}.html`} title={`Preview: ${lesson}`}></iframe>
+  </div>
+  <details class="lesson-code-details">
+    <summary>查看源码</summary>
+    <div class="lesson-code-tabs">
+      {highlightedFiles.map((file) => (
+        <div class="lesson-code-file">
+          <div class="lesson-code-filename">{file.name}</div>
+          <div class="lesson-code-content" set:html={file.html} />
+        </div>
+      ))}
+    </div>
+  </details>
+</div>

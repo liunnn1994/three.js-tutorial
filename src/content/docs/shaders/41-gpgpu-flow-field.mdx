@@ -1,0 +1,350 @@
+---
+title: 41 GPGPU 流场粒子着色器
+description: 使用 GPU 计算纹理实现大规模粒子流场模拟
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## GPGPU 概念
+
+GPGPU（General Purpose computing on Graphics Processing Units，图形处理单元上的通用计算）是一种利用 GPU 的并行计算能力进行通用数据处理的技术。通常，GPU 的职责是在屏幕上渲染三角形和像素，但 GPGPU 将 GPU 视为一个庞大的并行处理器，用来执行科学计算、物理模拟、粒子系统等非图形任务。
+
+在 Three.js 中，GPGPU 的核心思想是**渲染到纹理（Render To Texture）**：我们不把渲染结果输出到屏幕上，而是输出到一张纹理（通过 FBO，即 Frame Buffer Object 实现）。这张纹理的每一个像素不再是颜色，而是被当作数据存储单元来使用。
+
+### 数据即纹理
+
+这是理解 GPGPU 最关键的概念。我们创建一张特殊的纹理（通常是 Float 类型的 RGBA 纹理），其中：
+
+- **每个像素** 代表一个粒子
+- **R、G、B 通道** 存储粒子的 x、y、z 坐标
+- **A 通道** 可以存储粒子的生命值、速度或其他属性
+
+这张纹理对用户是不可见的——它只存在于 GPU 显存中，作为数据的"容器"。
+
+
+<LessonPreview lesson="41-gpgpu-flow-field-particles-shaders" />
+
+## 为什么用 GPGPU
+
+对于 100 万+ 粒子的流场模拟，CPU 无法在每帧计算所有粒子位置。假设每个粒子需要执行一次噪声函数计算来获取运动方向，100 万粒子就意味着 100 万次独立的相同计算——这正是 GPU 擅长的场景。
+
+GPU 拥有数千个核心，可以同时处理大量并行的相同计算任务。在 GPGPU 中，每个像素的计算彼此独立，天然适合 GPU 的 SIMD（单指令多数据）架构。
+
+:::caution
+GPGPU 不是万能的。如果你的粒子数量很少（比如几千个），CPU 计算可能反而更快，因为 GPU 有数据传输的开销。GPGPU 的优势体现在万级以上的粒子系统中。
+:::
+
+## 流场的概念
+
+流场（Flow Field）是空间中的一个向量场：对于空间中的任意一点，流场可以计算出一个方向向量。你可以把它想象成空气中的气流——每个点都有一个风向，粒子被这些"风"推动着运动。
+
+具体实现上，我们使用噪声函数（如 curl noise）作为流场公式。给定一个 3D 坐标，噪声函数返回一个 3D 方向向量，粒子沿着这个方向移动。由于噪声函数在空间中是连续平滑变化的，所以粒子的运动会看起来非常自然流畅。
+
+## 基本架构
+
+整个 GPGPU 粒子系统的核心是一个"乒乓（Ping-Pong）"机制：
+
+```
+帧 N：
+[位置纹理 A] → [计算着色器读取纹理 A，计算新位置] → [位置纹理 B]
+                                                        ↓
+                                              [渲染着色器读取纹理 B，绘制粒子到屏幕]
+
+帧 N+1：
+[位置纹理 B] → [计算着色器读取纹理 B，计算新位置] → [位置纹理 A]
+                                                        ↓
+                                              [渲染着色器读取纹理 A，绘制粒子到屏幕]
+```
+
+每一帧，我们交替读取和写入两张纹理。读和写不能发生在同一张纹理上（否则会产生数据竞争），所以需要两张纹理来回切换。这就是"乒乓缓冲（Ping-Pong Buffer）"的由来。
+
+### FBO（帧缓冲对象）
+
+在 Three.js 中，我们使用 `WebGLRenderTarget` 来创建 FBO。FBO 允许我们将渲染结果保存到纹理中，而不是输出到屏幕。在 GPGPU 中，我们需要两个 FBO，分别对应纹理 A 和纹理 B。
+
+## 使用 GPUComputationRenderer
+
+Three.js 社区提供了一个非常有用的工具类 `GPUComputationRenderer`，它封装了乒乓缓冲的所有复杂逻辑。你不需要手动管理 FBO 的切换，只需要调用它的 API：
+
+```js
+// 导入 GPUComputationRenderer
+import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRenderer.js'
+
+// 纹理尺寸（必须是 2 的幂）
+const size = 128  // 128x128 = 16384 粒子
+
+// 创建计算渲染器
+const gpuCompute = new GPUComputationRenderer(size, size, renderer)
+```
+
+### 为什么纹理尺寸必须是 2 的幂？
+
+WebGL 对非 2 的幂（NPOT）纹理有许多限制。2 的幂纹理在 GPU 上有更好的内存对齐和采样性能。常见的尺寸选择有 64、128、256、512 等。
+
+- 64x64 = 4,096 粒子
+- 128x128 = 16,384 粒子
+- 256x256 = 65,536 粒子
+- 512x512 = 262,144 粒子
+
+## 创建 GPU 纹理和初始数据
+
+我们需要为粒子提供初始位置。数据以 Float32Array 的形式传入：
+
+```js
+const size = 128
+const count = size * size  // 16384 粒子
+const data = new Float32Array(count * 4)  // 每个粒子 4 个通道 (RGBA)
+
+for (let i = 0; i < count; i++) {
+    const i4 = i * 4
+    // 在模型表面随机分布（假设模型已经被处理为粒子的目标位置）
+    data[i4]     = (Math.random() - 0.5) * 10  // x 位置
+    data[i4 + 1] = (Math.random() - 0.5) * 10  // y 位置
+    data[i4 + 2] = (Math.random() - 0.5) * 10  // z 位置
+    data[i4 + 3] = Math.random()                // 随机生命值，用于淡入淡出
+}
+
+// 使用 DataTexture 创建初始纹理
+const texture = new THREE.DataTexture(
+    data, size, size,
+    THREE.RGBAFormat,
+    THREE.FloatType
+)
+texture.needsUpdate = true
+
+// 将纹理传入 GPUComputationRenderer
+const positionTexture = gpuCompute.createTexture()
+gpuCompute.setTextureAt(0, positionTexture)
+```
+
+:::tip
+纹理的每个像素对应一个粒子。像素在纹理中的 UV 坐标就是粒子的"ID"。第 i 个粒子对应的 UV 坐标为 `(i % size) / size, Math.floor(i / size) / size`。这个对应关系在后续采样时至关重要。
+:::
+
+## 计算着色器（Compute Shader / 更新着色器）
+
+计算着色器是 GPGPU 的核心。它读取当前帧的位置纹理，利用流场公式计算每个粒子的新位置，然后将结果写入下一帧的位置纹理：
+
+```glsl
+// computePosition.glsl — 计算着色器
+uniform sampler2D uPositionTexture;
+uniform float uTime;
+uniform float uDelta;
+
+// 这里需要包含噪声函数（如 simplex noise 或 curl noise）
+// #include <noise>
+
+void main() {
+    // 获取当前像素对应的 UV（即粒子的 ID）
+    vec2 uv = gl_FragCoord.xy / resolution.xy;
+
+    // 从纹理中读取粒子的当前位置和生命值
+    vec4 positionData = texture2D(uPositionTexture, uv);
+    vec3 position = positionData.xyz;
+    float life = positionData.w;
+
+    // 使用噪声函数计算流场方向
+    // curl noise 能生成无散度的流场，粒子运动更自然
+    float noiseScale = 0.15;
+    float timeScale = 0.1;
+    float angle = curl(position.xy * noiseScale + uTime * timeScale) * 6.28318;
+
+    // 根据流场方向计算速度
+    float speed = 0.02;
+    vec3 velocity = vec3(cos(angle), sin(angle), 0.0) * speed;
+
+    // 更新位置
+    position += velocity * uDelta;
+
+    // 更新生命值
+    life -= uDelta * 0.05;
+
+    // 粒子死亡后重生
+    if (life <= 0.0) {
+        position = vec3(
+            (random(uv + uTime) - 0.5) * 10.0,
+            (random(uv * 2.0 + uTime) - 0.5) * 10.0,
+            0.0
+        );
+        life = 1.0;
+    }
+
+    // 将新位置和生命值写入纹理
+    gl_FragColor = vec4(position, life);
+}
+```
+
+### resolution 变量
+
+`GPUComputationRenderer` 会自动注入 `resolution` 这个 uniform，它的值就是纹理的尺寸（如 `vec2(128.0, 128.0)`）。我们用它将 `gl_FragCoord`（像素坐标）转换为 UV 坐标（0 到 1 之间）。
+
+### 速度与 dt 的关系
+
+注意速度计算中乘以了 `uDelta`（帧间隔时间）。这确保了无论帧率如何变化，粒子的运动速度都是一致的。这是一种标准的游戏开发技巧——帧率无关运动。
+
+## 生命周期管理
+
+粒子不是永久的。每个粒子有一个"生命值"（存储在纹理的 Alpha 通道中），随时间递减。当生命值降到 0 以下时，粒子"死亡"并在随机位置"重生"，生命值重置为 1.0。
+
+这个机制实现了两个效果：
+1. **持续的视觉更新**——粒子不断消失和出现，保持动态感
+2. **渐变过渡**——可以在渲染着色器中用生命值控制粒子的大小和透明度，实现自然的淡入淡出
+
+## 渲染着色器
+
+渲染着色器负责从位置纹理中读取粒子位置，并绘制到屏幕上。关键在于如何将纹理数据映射到粒子几何体上：
+
+```glsl
+// vertex.glsl — 渲染着色器的顶点部分
+uniform sampler2D uPositionTexture;
+uniform float uSize;
+uniform float uTime;
+
+attribute vec2 aReference;  // 每个顶点存储对应粒子的 UV 坐标
+
+void main() {
+    // 使用 aReference 从纹理中采样，获取粒子位置
+    vec4 positionData = texture2D(uPositionTexture, aReference);
+    vec3 position = positionData.xyz;
+    float life = positionData.w;
+
+    // 变换到世界空间 → 视图空间 → 裁剪空间
+    vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+    vec4 viewPosition = viewMatrix * modelPosition;
+    gl_Position = projectionMatrix * viewPosition;
+
+    // 粒子大小：基于生命值和透视缩放
+    gl_PointSize = uSize * life * (1.0 / -viewPosition.z);
+
+    // 将颜色传递给片元着色器
+    vColor = vec3(life);
+}
+```
+
+```glsl
+// fragment.glsl — 渲染着色器的片元部分
+varying vec3 vColor;
+
+void main() {
+    // 将点精灵裁剪为圆形
+    float dist = length(gl_PointCoord - vec2(0.5));
+    if (dist > 0.5) discard;
+
+    // 基于生命值的颜色
+    gl_FragColor = vec4(vColor, 1.0);
+}
+```
+
+## 参考 UV Attribute（aReference）
+
+`aReference` 是连接粒子和纹理数据的桥梁。每个粒子的顶点都携带一个 `vec2` 属性，指向纹理中存储该粒子数据的像素：
+
+```js
+const references = new Float32Array(count * 2)
+for (let i = 0; i < count; i++) {
+    // 计算第 i 个粒子在纹理中的 UV 坐标
+    const x = (i % size) / size
+    const y = Math.floor(i / size) / size
+    references[i * 2]     = x
+    references[i * 2 + 1] = y
+}
+
+geometry.setAttribute(
+    'aReference',
+    new THREE.BufferAttribute(references, 2)
+)
+```
+
+:::tip
+理解 `aReference` 的关键是：粒子几何体只是一个"空壳"——顶点的默认 position 属性并不重要（甚至可以全部设为 0）。真正的位置数据来自纹理，通过 `aReference` 这个 UV 坐标去查询。这就是 GPGPU 的精髓——将数据存储在纹理中，用 GPU 并行计算。
+:::
+
+## 在动画循环中更新
+
+每帧需要调用 GPUComputationRenderer 来更新粒子位置：
+
+```js
+// 创建时钟
+const clock = new THREE.Clock()
+
+function animate() {
+    const elapsedTime = clock.getElapsedTime()
+    const delta = clock.getDelta()
+
+    // 更新计算着色器的 uniforms
+    gpuCompute
+        .getVariable(0)
+        .material.uniforms.uTime.value = elapsedTime
+    gpuCompute
+        .getVariable(0)
+        .material.uniforms.uDelta.value = delta
+
+    // 执行 GPU 计算（内部自动切换乒乓缓冲）
+    gpuCompute.compute()
+
+    // 获取最新的位置纹理
+    const positionTexture = gpuCompute
+        .getCurrentRenderTarget(0)
+        .texture
+
+    // 更新渲染着色器的纹理 uniform
+    particlesMaterial.uniforms.uPositionTexture.value =
+        positionTexture
+
+    renderer.render(scene, camera)
+    requestAnimationFrame(animate)
+}
+```
+
+### compute() 方法的内部机制
+
+当你调用 `gpuCompute.compute()` 时，它内部执行了以下操作：
+
+1. 将当前帧的纹理绑定到计算着色器的输入
+2. 执行一次屏幕外的渲染（渲染到 FBO，不显示在屏幕上）
+3. 计算着色器对每个像素运行一次，输出新的粒子数据
+4. 内部交换读写纹理（这就是"乒乓"）
+
+你不需要手动管理这个交换过程，GPUComputationRenderer 已经为你处理好了。
+
+## curl noise 与普通噪声的区别
+
+在流场中，通常使用 **curl noise** 而不是普通噪声来计算方向。原因在于：
+
+- **普通噪声**返回一个标量值（如 Perlin noise、Simplex noise），将其转换为方向时可能出现粒子汇聚在同一个点的情况（散度不为零）
+- **curl noise**对噪声场取旋度，生成的是**无散度（divergence-free）**的向量场。这意味着粒子不会聚集也不会消散，只会沿着流线运动，视觉效果更自然
+
+```glsl
+// curl noise 的简化实现
+vec3 curlNoise(vec3 p) {
+    float eps = 0.0001;
+    vec3 dx = vec3(eps, 0.0, 0.0);
+    vec3 dy = vec3(0.0, eps, 0.0);
+    vec3 dz = vec3(0.0, 0.0, eps);
+
+    // 分别在三个方向上对噪声取偏导
+    float x = noise(p + dy).z - noise(p - dy).z
+            - noise(p + dz).y + noise(p - dz).y;
+    float y = noise(p + dz).x - noise(p - dz).x
+            - noise(p + dx).z + noise(p - dx).z;
+    float z = noise(p + dx).y - noise(p - dx).y
+            - noise(p + dy).x + noise(p - dy).x;
+
+    return normalize(vec3(x, y, z) / (2.0 * eps));
+}
+```
+
+## 完整工作流程总结
+
+1. **初始化**：创建 Float32Array，填充粒子的初始位置数据
+2. **创建 DataTexture**：将初始数据编码为纹理
+3. **创建 GPUComputationRenderer**：传入纹理尺寸和 renderer
+4. **添加计算变量**：编写计算着色器，添加到 GPUComputationRenderer
+5. **创建粒子几何体**：设置 `aReference` attribute 和 `Points` 对象
+6. **创建渲染材质**：使用 ShaderMaterial，从位置纹理中读取粒子位置
+7. **动画循环**：每帧调用 `compute()` 更新数据，读取最新纹理渲染粒子
+
+:::tip
+GPGPU 技术可以轻松处理百万级粒子。核心要点是理解"数据即纹理"的概念——每个像素的 RGBA 存储一个粒子的位置和属性，GPU 通过乒乓缓冲在每帧更新这些数据。掌握这项技术后，你可以实现流体模拟、布料物理、大规模粒子效果等高级效果。调试时可以通过将数据纹理渲染到一个全屏四边形上来可视化纹理内容。
+:::

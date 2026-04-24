@@ -1,0 +1,658 @@
+---
+title: 13 部署上线
+description: 将 Three.js 项目构建并部署到线上，让全世界都能看到你的 3D 作品
+---
+
+## 为什么需要部署
+
+到目前为止，我们所有的 Three.js 项目都只在本地运行 -- 也就是说，只有你自己能在自己的电脑上看到这些酷炫的 3D 效果。但你创造这些东西的目的，肯定不只是给自己看。
+
+部署（Deployment）就是将你本地开发的项目发布到互联网上，让任何人通过一个网址就能访问你的 3D 作品。这有很多好处：
+
+- **分享作品** -- 把链接发给朋友、家人、同事，让他们也能欣赏你的 3D 创作
+- **展示能力** -- 将作品作为作品集的一部分，向雇主或客户展示你的技能
+- **获取反馈** -- 让更多用户体验你的作品，收集改进意见
+- **学习完整流程** -- 一个真实的项目不仅仅是写代码，还包含部署上线这一关键环节
+
+## 部署的核心概念：构建（Build）
+
+在讲解具体部署方案之前，你必须先理解一个重要概念：**你不能直接把项目源代码放到网上**。
+
+### 为什么不能直接部署源代码
+
+你目前的项目目录大概是这样的：
+
+```
+your-project/
+├── node_modules/        # 第三方依赖包（体积巨大）
+├── src/                 # 你的源代码
+│   ├── main.js          # 入口文件
+│   └── ...
+├── static/              # 静态资源（字体、纹理等）
+│   ├── fonts/
+│   └── textures/
+├── package.json         # 项目配置
+├── vite.config.js       # Vite 构建工具配置
+└── ...
+```
+
+这些文件中有大量的东西是开发时才需要的：
+- `node_modules/` 包含了 Three.js、Vite 等所有依赖，这些文件可能有好几百 MB
+- `src/` 里的代码使用了 ES Module 的 `import/export` 语法，浏览器虽然支持这种语法，但还需要网络请求一个一个去加载
+- `vite.config.js`、`package.json` 这些配置文件是给开发工具用的，和最终用户毫无关系
+
+### 构建命令做了什么
+
+构建命令的作用，就是将你臃肿的项目源代码"打包压缩"成一组精简的静态文件，这些文件可以直接被浏览器加载运行：
+
+```bash
+npm run build
+```
+
+在课程模板的 `package.json` 中，这个命令实际上执行的是 `vite build`。Vite 会做以下事情：
+
+1. **打包 JavaScript** -- 将你的代码和所有依赖（Three.js 等）打包成一个或少量几个 `.js` 文件。使用 Tree Shaking 技术移除你实际没有用到的代码
+2. **压缩代码** -- 去掉所有空格、注释，缩短变量名，大幅减小文件体积
+3. **代码分割（Code Splitting）** -- Three.js 库会被拆分为单独的 chunk 文件，这样用户第二次访问时可以从浏览器缓存中加载，无需重新下载
+4. **处理静态资源** -- 将 `static/` 目录中的纹理、字体等资源复制到输出目录
+5. **生成 HTML** -- 将 `src/` 中的 `index.html` 作为入口，并自动注入打包后的 JS/CSS 引用
+
+### 构建产物
+
+构建完成后，你会在项目根目录看到一个新的 `dist/` 文件夹：
+
+```
+dist/
+├── index.html           # 入口 HTML
+├── assets/
+│   ├── index-xxxxx.js   # 打包后的主 JS（已压缩）
+│   ├── vendor-xxxxx.js  # Three.js 等第三方库（单独 chunk）
+│   └── index-xxxxx.css  # 样式文件
+├── fonts/               # 字体文件
+└── textures/            # 纹理贴图
+```
+
+:::tip
+你甚至可以随时删除 `dist/` 文件夹。每次修改代码后，重新运行 `npm run build` 就会生成全新的构建产物。如果 `dist/` 已存在，Vite 会先清空它再重新生成（由 `vite.config.js` 中的 `emptyOutDir: true` 控制）。
+:::
+
+:::tip
+你可以忽略构建过程中出现的警告信息（如 "vulnerabilities" 等），这些通常不影响功能。
+:::
+
+### 本地预览构建结果
+
+部署之前，你应该先在本地预览一下构建后的结果，确保一切正常：
+
+```bash
+npm run preview
+```
+
+这个命令会启动一个本地服务器，加载 `dist/` 目录中的文件，模拟真实的线上环境。请在浏览器中仔细检查：
+- 页面是否正常加载
+- 3D 效果是否正确渲染
+- 纹理和字体是否正常显示
+- 交互（如鼠标旋转、缩放）是否正常工作
+
+:::warning
+`npm run preview` 和 `npm run dev` 不同。`dev` 是开发服务器，支持热更新；`preview` 是预览服务器，加载的是构建后的产物，更接近真实线上环境。一定要用 `preview` 来验证构建结果。
+:::
+
+## Vite 配置回顾
+
+在我们课程的模板中，`vite.config.js` 包含了以下关键配置：
+
+```js
+export default {
+    root: 'src/',             // 入口文件在 src/ 目录
+    publicDir: '../static/',  // 静态资源在 static/ 目录
+    base: './',               // 使用相对路径（重要！）
+    build:
+    {
+        outDir: '../dist',    // 构建输出到 dist/ 目录
+        emptyOutDir: true,    // 构建前清空 dist
+        sourcemap: true       // 生成 sourcemap（方便调试）
+    },
+}
+```
+
+其中 `base: './'` 非常重要，它告诉 Vite 使用**相对路径**来引用资源。这意味着无论你的网站部署在域名根目录（如 `https://example.com/`）还是子目录（如 `https://example.com/my-project/`），资源路径都能正确解析。
+
+## 传统部署方式
+
+最传统的方式是：构建完成后，手动将 `dist/` 文件夹里的所有文件上传到一台服务器上。这种方式需要你自己购买和配置服务器，适用于像 OVH、1&1 这类传统主机托管服务。
+
+步骤如下：
+1. 运行 `npm run build` 生成 `dist/` 文件夹
+2. 购买一台主机/服务器
+3. 通过 FTP 或控制面板将 `dist/` 中的文件上传到服务器
+4. 配置域名指向服务器
+
+**我们不推荐这种方式**，因为配置复杂、需要维护服务器、且对于静态网站来说是大材小用。接下来我们介绍更现代的方案。
+
+## Vercel（推荐方案）
+
+### 什么是 Vercel
+
+[Vercel](https://vercel.com) 是一个现代化的网站托管平台（由 Next.js 的开发团队创建）。它与传统的服务器托管不同，属于"无服务器"（Serverless）和"边缘计算"（Edge Computing）架构。
+
+Vercel 的核心特点：
+
+- **零配置部署** -- 自动检测你的项目框架和构建工具，几乎不需要手动配置
+- **持续集成（CI/CD）** -- 连接 Git 仓库后，每次推送代码都会自动触发构建和部署
+- **全球 CDN** -- 你的网站会被分发到全球各地的边缘节点，确保每个地区的访问者都能快速加载
+- **预览部署** -- 每次提交代码都会自动生成一个预览链接，方便你测试后再发布到正式环境
+- **自动 HTTPS** -- 免费提供 SSL 证书，你的网站自动支持 HTTPS
+- **对开发者友好** -- 设置简单、界面直观，非常适合个人项目
+
+### 持续集成是什么
+
+持续集成（Continuous Integration，简称 CI）是一种现代化的开发工作流。简单来说就是：
+
+1. 你在本地编写代码
+2. 将代码推送到 Git 仓库（如 GitHub）
+3. 自动化工具检测到更新，自动运行测试
+4. 测试通过后，自动构建并部署到预览环境
+5. 更多自动测试
+6. 确认无误后，自动发布到正式环境
+
+这个过程完全自动化，你只需要专注于编写代码，剩下的都交给工具完成。
+
+:::tip
+Vercel 对 Three.js 项目特别友好。我们的大多数项目只是一个简单的 WebGL 页面，Vercel 完美适配这种轻量级单页应用。不过 Vercel 同样支持复杂的全栈项目。
+:::
+
+### 方式一：通过 CLI 部署（适合不使用 Git 的用户）
+
+如果你还没有使用 Git/GitHub，可以通过 Vercel CLI 直接从命令行部署。
+
+#### 第一步：创建 Vercel 账号
+
+1. 打开 [vercel.com](https://vercel.com)，点击 **Sign Up**
+2. 注册时你有多种方式可以选择：
+   - **Continue with GitHub** -- 如果你有 GitHub 账号（推荐，后面可以自动部署）
+   - **Continue with GitLab** -- 类似 GitHub
+   - **Continue with Bitbucket** -- 类似 GitHub
+   - **Continue with Email** -- 使用邮箱注册（最简单，适合初学者）
+3. 如果用邮箱注册，Vercel 会发送一封验证邮件，点击邮件中的 **Verify** 按钮完成验证
+
+:::info
+关于 Git 和 GitHub 的简要说明：Git 是一个版本控制工具，它可以记录你的代码变更历史。GitHub 是一个托管 Git 仓库的在线平台。如果你还不熟悉 Git，不用着急，用邮箱注册 Vercel 完全可以。等以后学会了 Git，随时可以在 Vercel 设置中关联你的 GitHub 账号。
+:::
+
+#### 第二步：安装 Vercel CLI
+
+Vercel 提供了一个命令行工具（CLI），让你可以直接在终端中部署项目。
+
+回到你的项目目录，打开终端，运行：
+
+```bash
+npm install vercel --save-dev
+```
+
+这会将 Vercel CLI 安装为项目的开发依赖。它的好处是：如果你把项目分享给别人，对方只需要运行 `npm install` 就会自动安装 Vercel CLI，无需再单独安装。
+
+:::info
+你也可以选择全局安装：`npm install -g vercel`。全局安装后，在任意项目目录中都可以直接使用 `vercel` 命令。缺点是：如果你把项目分享给别人，对方不会自动获得这个依赖，需要自己单独安装。
+:::
+
+#### 第三步：添加部署脚本
+
+在 `package.json` 的 `scripts` 中添加一个 `deploy` 脚本：
+
+```json
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "deploy": "vercel --prod"
+  }
+}
+```
+
+`--prod` 参数表示部署到生产环境（正式版本），而不是预览环境。Vercel 支持两种环境：
+- **Production（生产环境）** -- 正式对外发布的版本，访问你的域名就是看到这个版本
+- **Preview（预览环境）** -- 用于测试的临时版本，每次部署都会生成一个临时的预览链接
+
+#### 第四步：登录并部署
+
+运行：
+
+```bash
+npm run deploy
+```
+
+首次使用时，Vercel CLI 会引导你完成以下步骤：
+
+1. **选择登录方式** -- 使用方向键选择你注册时使用的方式（如 Email），按回车确认
+2. **输入邮箱** -- 输入你注册 Vercel 时使用的邮箱地址，按回车
+3. **验证登录** -- Vercel 会向你发送一封验证邮件，点击邮件中的验证链接。此时终端看起来可能像是卡住了，这是正常的 -- 打开邮箱，点击验证链接即可
+4. **确认部署** -- 终端会问你 "Set up and deploy?"，输入 `Y` 确认
+5. **选择项目范围** -- 如果你有多个团队/组织，这里会让你选择。默认选项通常就是你的个人账号，直接按回车即可
+6. **是否链接到已有项目** -- 首次部署选择 `N`（No）
+7. **设置项目名称** -- 默认使用你的文件夹名，你可以修改（如 `my-3d-text`），这个名称会成为 URL 的一部分
+8. **选择项目目录** -- 默认就是 `./`（当前目录），直接按回车
+
+接下来 Vercel 会自动上传你的项目文件并在云端进行构建。上传过程中终端会显示进度。
+
+#### 第五步：修正构建配置
+
+Vercel 可能无法自动检测到正确的构建配置，此时会询问是否需要修改。你会看到类似这样的提示：
+
+```
+? Which settings do you want to configure?
+  Build Command
+> Output Directory   ← 用空格选中这个
+  Development Command
+```
+
+使用**方向键**上下移动，按**空格**选择你要修改的选项，然后按**回车**确认。
+
+关键配置项：
+- **Build Command** -- 构建命令，默认是 `npm run build`，通常不需要修改
+- **Output Directory** -- 输出目录，Vercel 默认值是 `public`，但我们的项目输出到 `dist`，所以需要改为 `dist`
+- **Development Command** -- 开发命令，我们不需要，直接跳过
+
+:::warning
+**Output Directory 必须改为 `dist`**！这是最容易出错的地方。如果不修改，Vercel 会找不到构建产物，导致部署失败或页面空白。
+:::
+
+#### 第六步：完成部署
+
+配置完成后，Vercel 开始自动构建和部署。整个过程大约需要 30-60 秒。完成后你会看到类似这样的输出：
+
+```
+> Production: https://your-project-name.vercel.app [4s]
+```
+
+恭喜你！你的 3D 项目已经上线了。复制这个 URL，在任何浏览器中打开，你就能看到你的作品。
+
+### 后续更新
+
+每次你修改了代码（比如改了文字、换了纹理、调整了颜色），只需要：
+
+```bash
+npm run deploy
+```
+
+等待几十秒，你的线上网站就会自动更新。非常简单！
+
+### 方式二：通过 GitHub 自动部署（推荐进阶用法）
+
+如果你已经熟悉 Git 和 GitHub，连接 GitHub 后可以实现真正的自动化部署：
+
+1. 将项目代码推送到 GitHub 仓库
+2. 在 [vercel.com](https://vercel.com) 仪表盘中点击 **Import Project**
+3. 选择你的 GitHub 仓库
+4. Vercel 会自动检测框架和构建配置
+5. 确认 Output Directory 为 `dist`，点击 **Deploy**
+
+连接 GitHub 后的好处：
+- **自动部署** -- 每次你向 GitHub 推送代码，Vercel 会自动检测更新并重新部署
+- **Pull Request 预览** -- 每次创建 PR 都会生成一个预览链接，方便团队审查
+- **版本回退** -- 可以一键回退到任意历史部署版本
+
+:::tip
+你可以在 Vercel 网站的 [Dashboard](https://vercel.com/dashboard) 中管理所有项目。点击你的名字 -> Dashboard 即可进入。在项目中你可以查看部署状态、错误日志、分析数据等。
+:::
+
+## Vercel 仪表板功能
+
+部署成功后，你可以在 Vercel 网站上管理你的项目：
+
+- **Deployments** -- 查看所有部署历史，包括每次部署的状态、时间和日志。如果某个版本出错，这里会显示错误信息
+- **Preview** -- 直接在 Vercel 网站上预览你的网站效果
+- **Settings** -- 各种项目设置，包括环境变量、域名等
+- **Analytics** -- 网站访问数据分析
+
+### 自定义域名
+
+默认情况下，Vercel 会给你一个类似 `your-project.vercel.app` 的域名。如果你有自己的域名（比如 `mycool3d.com`），可以：
+
+1. 在项目设置中找到 **Domains** 选项
+2. 添加你的自定义域名
+3. 按照提示在域名注册商那里配置 DNS 记录（通常是将 A 记录或 CNAME 记录指向 Vercel）
+4. Vercel 会自动配置 HTTPS
+
+你可以在任何域名注册商（如 GoDaddy、Namecheap、Cloudflare、阿里云等）购买域名，然后在 Vercel 上使用。
+
+:::tip
+Vercel 对自定义域名的支持非常友好，提供了详细的配置指南。即使是免费计划也支持自定义域名。
+:::
+
+## Vercel 的费用
+
+### 免费计划（Hobby）
+
+对于分享 WebGL 实验项目来说，Vercel 的 **Hobby（爱好）** 免费计划完全够用。你可以：
+
+- 部署任意数量的项目
+- 使用免费的 `*.vercel.app` 域名
+- 自动 HTTPS
+- 全球 CDN 分发
+
+### 免费计划的限制
+
+需要注意的是，Hobby 计划有以下限制：
+
+- **带宽限制** -- 如果你的网站突然火了，成千上万的人来访问，尤其是当你有大量高分辨率纹理和 3D 模型资源时，带宽消耗会很快。超出限制后 Vercel 会发送警告邮件，如果持续超限，网站可能会暂时不可用
+- **构建时间限制** -- 每个月的构建总时间有限制。每次 `npm run deploy` 都会消耗构建时间。对于个人项目每天部署几次完全没问题，但如果一天部署上百次，或者整个团队频繁部署，可能会遇到限制
+
+### 付费计划
+
+如果你有以下需求，可以考虑升级到 [Pro](https://vercel.com/pricing) 或 Enterprise 计划：
+
+- 商业项目（有商业用途）
+- 需要更高的带宽和构建时间
+- 需要团队协作功能
+- 需要更高的性能保障
+
+Pro 计划提供免费试用，你可以先试用再决定是否升级。
+
+:::info
+顺便说一下，Three.js Journey 课程与 Vercel 没有任何商业合作关系。推荐 Vercel 仅仅是因为它确实好用、免费、适合我们的 Three.js 项目。
+:::
+
+## 其他部署方案
+
+### Netlify
+
+[Netlify](https://www.netlify.com/) 是 Vercel 的最大竞争对手，功能几乎完全相同：
+
+1. 将代码推送到 GitHub
+2. 在 Netlify 控制面板中点击 **Add new site** -> **Import an existing project**
+3. 选择你的 GitHub 仓库
+4. 构建命令设为 `npm run build`
+5. 发布目录设为 `dist`
+6. 点击 **Deploy site**
+
+Netlify 同样提供免费计划、自动 HTTPS、全球 CDN 和 CI/CD 功能。
+
+:::tip
+Netlify 还有一个特色功能：你可以直接把 `dist/` 文件夹**拖拽**到 Netlify 网站的部署区域，无需 Git 仓库就能部署。这对于简单的实验项目非常方便。
+:::
+
+### GitHub Pages
+
+[GitHub Pages](https://pages.github.com/) 是 GitHub 提供的免费静态网站托管服务。如果你已经在使用 GitHub，这是一个很好的选择。
+
+#### 基本设置
+
+如果你使用 Astro、Vite 等框架，它们通常内置了 GitHub Pages 部署支持，参考框架文档即可。
+
+#### 手动配置
+
+如果你使用纯 Vite 项目，需要在 `vite.config.js` 中设置 `base` 为你的仓库名：
+
+```js
+export default {
+    base: '/your-repo-name/',
+    build: {
+        outDir: 'dist'
+    }
+}
+```
+
+然后使用 [GitHub Actions](https://docs.github.com/en/actions) 自动部署：
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy to GitHub Pages
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - uses: actions/deploy-pages@v4
+```
+
+:::warning
+GitHub Pages 部署后，网站的 URL 会是 `https://your-username.github.io/your-repo-name/`。注意末尾的仓库名路径，这就是为什么需要在 `vite.config.js` 中设置 `base` 的原因。如果不设置，所有资源的引用路径都会出错。
+:::
+
+### Cloudflare Pages
+
+[Cloudflare Pages](https://pages.cloudflare.com/) 是 Cloudflare 提供的免费静态网站托管服务，优势是：
+- 极快的全球 CDN（Cloudflare 的网络遍布全球）
+- 无限带宽（对静态资源）
+- 构建命令设为 `npm run build`，输出目录设为 `dist`
+
+### 各方案对比
+
+| 特性 | Vercel | Netlify | GitHub Pages | Cloudflare Pages |
+|------|--------|---------|--------------|------------------|
+| 免费计划 | 有（Hobby） | 有（Starter） | 有 | 有 |
+| 自定义域名 | 支持 | 支持 | 支持 | 支持 |
+| 自动 HTTPS | 支持 | 支持 | 支持 | 支持 |
+| CI/CD 自动部署 | 支持 | 支持 | 支持（需配置 Actions） | 支持 |
+| 全球 CDN | 支持 | 支持 | 有限 | 非常快 |
+| 带宽限制 | 有 | 有 | 100GB/月 | 无限 |
+| 构建时间限制 | 有 | 有 | 无限制 | 无限 |
+| 拖拽部署 | 不支持 | 支持 | 不支持 | 不支持 |
+| 学习曲线 | 低 | 低 | 中 | 低 |
+
+## 处理静态资源
+
+### 资源存放位置
+
+在我们的项目模板中，静态资源（纹理、字体、模型等）放在 `static/` 目录下。Vite 的 `publicDir` 配置指向了这个目录：
+
+```js
+// vite.config.js
+publicDir: '../static/'
+```
+
+构建时，Vite 会将 `static/` 目录中的所有文件原封不动地复制到 `dist/` 的对应位置。
+
+### 资源引用路径
+
+在代码中引用这些资源时，使用以 `/` 开头的绝对路径：
+
+```js
+// 纹理
+const textureLoader = new THREE.TextureLoader()
+const texture = textureLoader.load('/textures/door/color.jpg')
+
+// 字体
+const fontLoader = new FontLoader()
+fontLoader.load('/fonts/helvetiker_regular.typeface.json', (font) => {
+    // ...
+})
+```
+
+由于我们在 `vite.config.js` 中设置了 `base: './'`，构建后这些路径会自动转换为相对路径，确保在任何部署环境中都能正确工作。
+
+### 资源优化建议
+
+3D 项目中，静态资源往往是体积最大的部分，直接影响到网站的加载速度：
+
+- **纹理压缩** -- 将大尺寸纹理转换为 `.webp` 或 `.avif` 格式，可以大幅减小文件体积。使用 [Squoosh](https://squoosh.app/) 等在线工具进行压缩
+- **纹理尺寸** -- 纹理尺寸不要超过实际需要。2K (2048x2048) 对于大多数网页 3D 场景已经足够
+- **模型优化** -- 使用 [glTF-Transform](https://gltf-transform.donmccurdy.com/) 或 [gltf.report](https://gltf.report/) 优化 GLTF/GLB 模型文件
+- **字体文件** -- 只保留需要的字体样式（Regular、Bold），删除不需要的字体变体
+
+## 环境变量
+
+有些情况下你可能需要在代码中使用一些配置值（如 API 密钥、不同的 API 地址），这些值在不同环境中可能不同（开发环境 vs 生产环境）。
+
+### 在 Vercel 中设置环境变量
+
+1. 在 Vercel 仪表盘中进入项目设置
+2. 找到 **Environment Variables** 选项
+3. 添加变量名和值，选择适用的环境（Production / Preview / Development）
+
+### 在代码中使用
+
+```js
+// Vite 通过 import.meta.env 访问环境变量
+const apiUrl = import.meta.env.VITE_API_URL
+console.log('API 地址:', apiUrl)
+```
+
+:::warning
+Vite 要求自定义环境变量必须以 `VITE_` 开头才能在客户端代码中访问。这是为了防止意外将服务器端的敏感信息（如数据库密码）暴露到前端代码中。
+:::
+
+## 生产环境性能注意事项
+
+当你的 3D 项目上线后，用户通过各种设备和网络访问它。你需要特别注意以下几点：
+
+### 限制像素比
+
+在高分辨率设备上，WebGL 的渲染分辨率可能非常高，导致性能下降：
+
+```js
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+```
+
+将像素比限制为 2，在大多数设备上都能获得清晰的视觉效果，同时避免在 3x、4x 设备上浪费性能。
+
+### 响应式设计
+
+确保你的 3D 画布能正确适配不同的屏幕尺寸。这部分我们在 [全屏与自适应](/docs/basics/fullscreen-resizing) 课程中已经讲过了：
+
+```js
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight
+    camera.updateProjectionMatrix()
+    renderer.setSize(window.innerWidth, window.innerHeight)
+})
+```
+
+### 加载体验
+
+3D 项目的资源文件通常较大（纹理、模型、字体），用户可能需要等待较长时间。建议添加一个加载界面：
+
+```js
+const loadingManager = new THREE.LoadingManager()
+loadingManager.onLoad = () => {
+    // 隐藏加载界面，显示 3D 场景
+    document.querySelector('.loading-screen').style.display = 'none'
+}
+loadingManager.onProgress = (url, loaded, total) => {
+    // 更新加载进度
+    const progress = (loaded / total) * 100
+    document.querySelector('.progress-bar').style.width = progress + '%'
+}
+
+const textureLoader = new THREE.TextureLoader(loadingManager)
+```
+
+### WebGL 兼容性
+
+并非所有浏览器都支持 WebGL。对于不支持 WebGL 的浏览器，你应该提供一个友好的提示：
+
+```js
+if (!renderer.capabilities.isWebGL2) {
+    // 回退方案或提示信息
+    document.body.innerHTML = '<h1>您的浏览器不支持 WebGL，请使用现代浏览器访问。</h1>'
+}
+```
+
+### 资源懒加载
+
+如果你的场景很复杂，可以考虑分步加载资源：先显示一个基础场景，再逐步加载高分辨率纹理和细节模型。
+
+## SEO 基础知识
+
+搜索引擎优化（SEO）对于 3D 网站来说比较具有挑战性，因为大多数内容是通过 Canvas/WebGL 渲染的，搜索引擎无法直接读取。但以下几点可以让你的网站更容易被发现：
+
+### HTML 标题和描述
+
+修改 `index.html` 中的 `<head>` 部分：
+
+```html
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的 3D 作品 - Three.js 交互体验</title>
+    <meta name="description" content="一个使用 Three.js 创建的交互式 3D 网页体验，展示酷炫的 3D 文字和动画效果。">
+    <meta property="og:title" content="我的 3D 作品">
+    <meta property="og:description" content="Three.js 交互式 3D 网页体验">
+    <meta property="og:image" content="https://your-domain.com/preview-image.jpg">
+</head>
+```
+
+- **`<title>`** -- 网页标题，会显示在搜索结果和浏览器标签中
+- **`meta description`** -- 网页描述，搜索引擎会展示这段文字
+- **Open Graph 标签** -- 当你在社交媒体（Twitter、微信等）分享链接时，会显示预览图片和描述
+
+### 添加语义化 HTML
+
+在 Canvas 之外添加一些 HTML 内容，帮助搜索引擎理解你的页面：
+
+```html
+<canvas id="webgl-canvas"></canvas>
+<noscript>
+    <h1>我的 3D 作品</h1>
+    <p>一个使用 Three.js 创建的交互式 3D 网页体验。请启用 JavaScript 以查看完整效果。</p>
+</noscript>
+```
+
+### 截图预览
+
+在社交媒体分享链接时，一个好的预览图片非常重要。你可以：
+- 在项目中放一张高质量的 3D 效果截图（如 `preview.jpg`）
+- 在 Open Graph 标签中引用这张图片
+
+## 部署前的检查清单
+
+在正式部署之前，请逐项检查：
+
+- [ ] 运行 `npm run build` 确认构建成功，没有报错
+- [ ] 运行 `npm run preview` 在本地测试构建结果
+- [ ] 所有纹理和字体正确加载
+- [ ] 在不同浏览器中测试（Chrome、Firefox、Safari、Edge）
+- [ ] 在手机浏览器中测试（触摸交互是否正常）
+- [ ] 检查 `vite.config.js` 中的 `base` 配置是否正确
+- [ ] 确认 Output Directory 设置为 `dist`（Vercel/Netlify）
+- [ ] 更新 `index.html` 中的标题和描述
+- [ ] 确认 `renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))` 已设置
+- [ ] 添加了基本的加载状态提示
+- [ ] 如果使用 GitHub Pages，确认 `base` 设置为 `/仓库名/`
+
+## 完整部署流程总结
+
+以下是从零开始部署一个 Three.js 项目的完整流程：
+
+```
+1. 本地开发
+   └── npm run dev（编写和调试代码）
+
+2. 构建项目
+   └── npm run build（生成 dist/ 目录）
+
+3. 本地预览
+   └── npm run preview（确认构建结果正确）
+
+4. 安装 Vercel CLI
+   └── npm install vercel --save-dev
+
+5. 首次部署
+   └── npm run deploy
+       ├── 登录 Vercel 账号
+       ├── 配置项目名称
+       └── 设置 Output Directory 为 dist
+
+6. 后续更新
+   └── 修改代码 → npm run deploy → 自动更新线上版本
+```
+
+:::tip
+恭喜你完成了基础入门部分！你已经学会了从零开始创建 Three.js 3D 场景、添加几何体和材质、使用纹理、创建 3D 文字、添加动画和交互，以及最终的部署上线。接下来我们将学习光照、阴影和更多高级技巧。
+:::

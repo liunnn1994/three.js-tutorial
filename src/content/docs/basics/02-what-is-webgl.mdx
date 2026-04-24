@@ -1,0 +1,363 @@
+---
+title: 02 什么是 WebGL 与 Three.js
+description: 深入了解 WebGL 的工作原理、GPU 与 CPU 的区别、为什么原生 WebGL 难以使用，以及 Three.js 如何简化整个 3D 开发流程
+---
+
+## WebGL 是什么
+
+### 基本定义
+
+**WebGL**（Web Graphics Library）是一种 JavaScript API，它让你可以直接在浏览器中渲染高性能的 2D 和 3D 图形，**无需安装任何插件**。它由 Khronos Group 维护，基于 OpenGL ES 2.0（以及后续的 OpenGL ES 3.0）标准，是 OpenGL 在 Web 平台上的实现。
+
+简单来说，WebGL 就是浏览器暴露给你的一组 JavaScript 接口（属性和方法），你可以通过这些接口与计算机的 **GPU（图形处理单元）** 进行通信，让 GPU 帮你以惊人的速度在屏幕上绘制图形。
+
+:::info 参考资料
+- [WebGL 规范（Khronos Group）](https://www.khronos.org/webgl/)
+- [MDN WebGL 文档](https://developer.mozilla.org/zh-CN/docs/Web/API/WebGL_API)
+- [OpenGL ES 2.0 规范](https://www.khronos.org/registry/OpenGL/specs/es/2.0/es_full_spec_2.0.pdf)
+:::
+
+### WebGL 与 OpenGL 的关系
+
+你可能听说过 OpenGL 这个名字。OpenGL 是一个跨平台的 2D/3D 图形渲染 API，已经被使用了数十年，广泛应用于桌面应用程序、游戏引擎（如 Unity 早期版本）和 CAD 软件中。
+
+**WebGL 与 OpenGL 的关系如下：**
+
+- OpenGL ES（Embedded Systems）是 OpenGL 的精简版本，专为手机、平板等嵌入式设备设计
+- WebGL 本质上是 **OpenGL ES 在 Web 浏览器中的 JavaScript 绑定**
+- WebGL 1.0 基于 OpenGL ES 2.0；WebGL 2.0 基于 OpenGL ES 3.0
+- 也就是说，WebGL 把 C/C++ 级别的 OpenGL ES 能力，通过 JavaScript 暴露给了 Web 开发者
+
+这意味着你在浏览器里能做的图形操作，和原生 OpenGL 能做的事情是同一个级别的——这在 Web 技术中是一件非常了不起的事。
+
+### WebGL 的核心能力：渲染三角形
+
+WebGL 能做的事情，归根结底就是一件：**以极快的速度绘制三角形**。
+
+你可能觉得"只是画三角形"有什么了不起的？但实际上，3D 世界中的一切——立方体、球体、人物角色、山脉地形——都是由三角形组成的。这是一种叫做**三角形光栅化**（Triangle Rasterization）的技术。
+
+想象一下，你有一个立方体。一个立方体有 6 个面，每个面是一个正方形，而每个正方形由 2 个三角形组成。所以一个简单的立方体就需要 12 个三角形。再想象一个逼真的人物 3D 模型，它可能由**数十万个甚至数百万个三角形**组成。WebGL 的 GPU 加速能力让它能够以每秒数十亿像素的速度渲染这些三角形。
+
+WebGL 渲染的结果通常会绘制在 HTML 的 `<canvas>` 元素上，但也不一定——你也可以将渲染结果绘制到其他目标上（比如一个纹理或一个帧缓冲区），在后面的课程中我们也会这样做。
+
+:::tip 核心概念
+WebGL 可以用于 2D 也可以用于 3D。虽然本课程主要关注 3D，但用 WebGL 做 2D 也很酷——你可以像使用 Canvas 2D API 一样画图，但利用 GPU 获得更高的性能。有一些专门的库（如 [PixiJS](https://pixijs.com/)）就是用 WebGL 来做高性能 2D 渲染的。
+:::
+
+### Three.js 也可以运行在其他渲染器上
+
+值得一提的是，Three.js 主要使用 WebGL 渲染，但它也支持其他渲染方式：
+
+- **SVG** — 你完全可以用 SVG 和 CSS 来让 Three.js 工作。大多数使用 Three.js 的人并不知道这一点，因为他们通常不需要。虽然你可以做到，但结果不会那么好看，并且会面临性能问题
+- **CSS3D** — 使用 CSS 3D Transform 来渲染
+
+不过在实际项目中，我们几乎总是使用 WebGL 渲染器，因为它提供了最好的性能和视觉效果。
+
+## CPU 与 GPU 的区别
+
+要理解为什么 WebGL（以及 Three.js）能如此高效地渲染 3D 图形，你需要了解 CPU 和 GPU 的根本区别。
+
+### CPU（中央处理器）
+
+**CPU**（Central Processing Unit）是你计算机的"大脑"。当你用 JavaScript 做计算时——比如 `2 + 2`、处理用户输入、运行逻辑判断——这些都是 CPU 在工作。
+
+CPU 的特点是：
+
+- **非常聪明**，能处理各种复杂的逻辑和任务
+- **速度很快**，每个核心的时钟频率很高
+- **一次只能串行处理**（大多数情况下）：必须完成第一个计算，才能进入下一个计算
+- 可以在多个进程之间切换，但本质上还是逐个处理
+
+:::info 补充说明
+现代 CPU 确实有多核架构，每个核心可以并行处理不同任务。但即使如此，每个核心本身仍然是串行处理的。你可以把它想象成一个非常聪明的数学教授——他解题速度极快，但一次只能解一道题。
+:::
+
+### GPU（图形处理单元）
+
+**GPU**（Graphics Processing Unit）是你计算机中的"图形芯片"。当你绘制那些三角形、给像素上色时，这是 GPU 在工作。
+
+GPU 的特点是：
+
+- **没有 CPU 聪明**，不能处理复杂的逻辑判断
+- **单个核心速度不如 CPU**
+- 但是它拥有**成千上万个核心**，能够**同时并行处理大量简单计算**
+- 可以一次性同时完成数千甚至数万个计算任务
+
+:::tip 核心比喻
+你可以这样理解：
+
+- **CPU** = 一个天才数学家，能解任何数学难题，但一次只能解一道题
+- **GPU** = 一万个普通小学生，每个只能做简单的加减法，但他们可以同时做一万道加法题
+
+绘制 3D 图形正好需要的是后者的能力——不需要高智商的复杂判断，而是需要同时对海量像素和顶点做简单运算。
+:::
+
+### GPU 如何渲染 3D 图形
+
+让我们用一个立方体来理解 GPU 的渲染过程：
+
+**第一步：放置顶点（Vertices Positioning）**
+
+首先，我们需要在空间中定位一个立方体的所有顶点（点）。一个立方体有 8 个顶点。GPU 会根据以下信息，**同时**把所有顶点放到正确的位置：
+
+- 模型本身的几何数据（每个顶点在哪里）
+- 模型的变换（位移、旋转、缩放）
+- 相机的位置和朝向（从哪个角度看）
+- 投影方式（透视投影还是正交投影）
+
+对于简单的几何体（如立方体）可能只有几个顶点，但复杂的 3D 模型（如人脸、山脉）可能有**成千上万甚至上百万个顶点**。GPU 的并行计算能力让这一切变得非常高效。
+
+**第二步：绘制像素（Pixel Rasterization）**
+
+顶点放置完成后，GPU 会根据这些顶点形成的三角形，**同时填充所有可见像素**。
+
+你的屏幕由像素组成（比如 1920x1080 就是约 200 万个像素）。GPU 知道每个三角形的顶点在哪里，然后会同时为所有需要填充的像素计算颜色。因为它有成千上万个核心，即使需要填充数百万个像素，它也能在极短的时间内完成——可能只需要一两次迭代。
+
+**第三步：着色（Shading）**
+
+那些"在这里放一个点"、"用这个方式给像素上色"的指令，都是写在一种叫做**着色器（Shader）** 的程序中的。着色器直接运行在 GPU 上，使用一种叫做 **GLSL**（OpenGL Shading Language）的语言编写。我们会在课程后面的章节中深入学习着色器。
+
+有两种主要的着色器：
+
+- **顶点着色器（Vertex Shader）** — 负责决定每个顶点应该放在哪里
+- **片元着色器（Fragment Shader）** — 负责决定每个像素应该是什么颜色
+
+:::info 延伸阅读
+如果你想深入了解 GPU 渲染管线的工作原理，可以参考以下资源：
+- [WebGL Fundamentals 教程](https://webglfundamentals.org/webgl/lessons/zh_cn/)
+- [The Book of Shaders（着色器入门）](https://thebookofshaders.com/?lan=zh)
+- [LearnOpenGL（英文，OpenGL 教程但概念相通）](https://learnopengl.com/)
+:::
+
+## 为什么原生 WebGL 难以使用
+
+虽然 WebGL 的 GPU 加速能力非常强大，但直接使用原生 WebGL API 编程**非常困难**。这也是为什么我们需要 Three.js 的根本原因。
+
+### 原生 WebGL 的复杂性
+
+即使用原生 WebGL 在画布上画一个**最简单的三角形**，你也至少需要：
+
+1. **获取 WebGL 上下文** — 从 `<canvas>` 元素获取 `WebGLRenderingContext`
+2. **编写顶点着色器** — 用 GLSL 语言编写运行在 GPU 上的程序
+3. **编写片元着色器** — 用 GLSL 语言编写像素着色程序
+4. **编译着色器** — 将 GLSL 源码编译为 GPU 可执行代码
+5. **创建着色器程序** — 将顶点着色器和片元着色器链接到一个程序
+6. **创建顶点缓冲区（VBO）** — 将顶点数据上传到 GPU
+7. **设置顶点属性指针** — 告诉 GPU 如何读取缓冲区中的数据
+8. **设置矩阵变换** — 手动计算和传递模型矩阵、视图矩阵、投影矩阵
+9. **启用属性** — 开启顶点属性数组
+10. **绘制调用** — 使用 `gl.drawArrays()` 或 `gl.drawElements()` 发起绘制
+11. **处理渲染循环** — 使用 `requestAnimationFrame` 实现持续渲染
+
+以上步骤需要**超过 100 行代码**，仅仅是为了画一个三角形。当你尝试学习原生 WebGL 时，你很可能会遇到下面一些情况：
+
+> "当我尝试学习原生 WebGL 时，我花了超过 100 行代码才画出一个三角形。这太难了。我当时想，不，我绝对不可能做出那种 WebGL 体验，不可能。"
+
+### WebGL 处于非常低的抽象层次
+
+WebGL 的设计理念是让你直接与 GPU 对话——定位顶点、给像素上色。这带来两个好处：
+
+- **完全的控制力** — 你可以精确控制每一个像素和顶点
+- **极致的优化** — 没有任何中间层的开销，性能可以优化到极致
+
+但同时也有一个巨大的缺点：**太底层了**。你不能说"我要一个立方体"或者"我要一个光源"，你必须自己从三角形开始构建一切。
+
+:::tip 对比
+以下是画一个立方体的代码量对比：
+
+**原生 WebGL：** 数百行代码（手动定义每个顶点、每个面的三角形、编写着色器、设置矩阵...）
+
+**Three.js：** 大约 10-20 行代码
+```javascript
+const geometry = new THREE.BoxGeometry(1, 1, 1);
+const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const cube = new THREE.Mesh(geometry, material);
+scene.add(cube);
+```
+:::
+
+## Three.js 如何解决这些问题
+
+### Three.js 的定位
+
+[Three.js](https://threejs.org/) 是一个开源的 JavaScript 3D 库，它恰好位于 WebGL 之上，提供了一个友好的抽象层。
+
+**技术架构关系：**
+
+```
+你的代码（JavaScript）
+    ↓
+Three.js（封装层）
+    ↓
+WebGL（浏览器 API）
+    ↓
+GPU（图形硬件）
+```
+
+Three.js 使用 [MIT 许可证](https://opensource.org/licenses/MIT)，这意味着你可以自由地在任何项目中使用它，包括商业项目。
+
+### Three.js 的创造者
+
+Three.js 由 **Ricardo Cabello**（网名 **Mr.doob**）创建。他是一位来自西班牙的创意开发者，目前也是 Google Creative Lab 的成员。
+
+- 个人网站：[mrdoob.com](https://mrdoob.com/)
+- Twitter/X：[@mrdoob](https://twitter.com/mrdoob)
+
+如果你对 Three.js 感兴趣，建议关注 Mr.doob 的社交账号，了解 Three.js 的最新动态。
+
+### Three.js 如何简化开发
+
+使用 Three.js，你不需要：
+
+- 手动编写着色器（虽然你仍然可以在需要时编写自定义着色器）
+- 手动定义每个顶点位置（Three.js 提供了大量内置几何体）
+- 手动计算矩阵变换（Three.js 自动处理模型矩阵、视图矩阵和投影矩阵）
+- 手动管理 WebGL 状态（Three.js 封装了所有的 WebGL 调用）
+
+你只需要用简单直观的方式描述你想要的场景：一个立方体、一盏灯、一个相机，Three.js 就会帮你处理所有底层细节。
+
+:::info 关于着色器
+Three.js 会自动生成着色器，你不需要手写。但 Three.js 仍然足够接近 WebGL 底层，当你需要更高阶的效果时（比如自定义材质、粒子效果、后处理），你完全可以编写自己的着色器并与 Three.js 集成。课程后面的章节会详细讲解着色器。
+:::
+
+## Three.js 的生态系统与优势
+
+### 庞大的社区
+
+Three.js 拥有一个活跃且庞大的开发者社区。你可以在 [GitHub 仓库](https://github.com/mrdoob/three.js) 中看到数百位贡献者在持续开发和维护 Three.js。
+
+- [Three.js GitHub 仓库](https://github.com/mrdoob/three.js)
+- [贡献者列表](https://github.com/mrdoob/three.js/graphs/contributors)
+
+### 持续更新与稳定性
+
+Three.js 每个月都会发布更新。你可以在 [Releases 页面](https://github.com/mrdoob/three.js/releases) 查看每次更新的变更日志（Changelog）。更新内容包括：
+
+- Bug 修复
+- 性能优化
+- 新功能添加
+- API 改进
+
+目前 Three.js 已经非常成熟和稳定，更新通常不会引入破坏性变更（breaking changes）。你的代码在不同版本之间基本可以无缝迁移。
+
+### 完善的文档
+
+Three.js 拥有非常完善的[官方文档](https://threejs.org/docs/)，包含：
+
+- **API 参考** — 每个类、每个方法、每个属性的详细说明
+- **示例（Examples）** — 数百个交互式示例，涵盖几乎所有功能
+- **搜索功能** — 当你不知道怎么做某件事时，在示例页面搜索，往往能直接找到答案
+
+如果你需要做某件事但不知道该怎么做，先去[示例页面](https://threejs.org/examples/)搜一搜，很可能已经有现成的解决方案。
+
+### 推荐关注
+
+- Mr.doob 的 Twitter：[@mrdoob](https://twitter.com/mrdoob)
+- Three.js 官方 Twitter：[@threejs](https://twitter.com/threejs)
+
+## Three.js 能做什么：精彩案例展示
+
+以下是一些用 Three.js（或 WebGL）实现的优秀网站项目，展示了 WebGL 的无限可能性：
+
+### 个人作品集
+
+- **[Bruno Simon 的个人网站](https://bruno-simon.com/)** — 用 WebGL 实现了一个可以控制的 3D 汽车，非常有趣。制作 WebGL 作品集是练习 Three.js 的好方式，既能展示你的能力，又能让访问者享受互动体验
+- **[Richard Mattka 作品集](https://richardmattka.com/)** — 使用 WebGL 制作背景，页面上的几何形状会持续变化，效果非常出色
+- **[Lusion](https://lusion.co/)** — Edan 的创意工作室作品集，可以说是 Three.js 和 WebGL 极限能力的巨大展示平台，每一页都有令人惊叹的效果
+
+### 游戏体验
+
+- **[荣誉勋章：Above and Beyond](https://www.oculus.com/medal-of-honor/)** — 一款 VR 游戏的宣传网站。他们在 3D 模型上绘制了精美的画面，你可以穿越整个村庄、发现故事，音效设计也非常出色。这个案例展示了 WebGL 如何在浏览器中实现接近游戏品质的 3D 体验
+- **[Let's Play — Ouigo](http://letsplay.ouigo.com/)** — 法国火车公司 Wego 的弹珠台小游戏，直接在浏览器中就能玩游戏。他们甚至在游戏中融入了物理引擎（Physics），让弹珠的碰撞和运动更加真实
+- **[Heracles Game](https://heraclosgame.com/)** — 法国 Gobelins 学校学生制作的游戏，展示了平台跳跃游戏的玩法，视觉效果出色
+
+### 产品展示
+
+- **[VanMoof](https://live.vanmoof.com/site)** — 电动自行车产品展示网站。这不是简单的图片展示——用户可以旋转模型、放大查看细节、切换不同配置。这展示了 WebGL 在电商产品展示中的巨大潜力：逼真的渲染效果加上交互能力，远胜于传统的图片和视频
+
+### 沉浸式体验
+
+- **[Corn Revolution](https://cornrevolution.resn.global/)** — 某品牌宣传网站，视觉效果令人惊叹，甚至文字动画也是用 WebGL 制作的
+- **[Zenly](https://zen.ly/)** — 社交应用的宣传网站，展示不同的 3D 世界，用户可以穿梭其中，观看不同的城市。模型细节非常精细（连香肠上的小细节都有），性能表现出色
+- **[Prior](https://prior.co.jp/discover/)** — 日本餐饮服务商的网站，非常诗意和沉浸式。丝带的物理形态、材质质感和上面出现的图案都非常精致
+- **[Midwam](https://www.midwam.com/)** — Immersive Garden 作品，采用了类似《创：战纪》的霓虹风格，巨大的城市从远景逐渐拉近。地面上有逼真的倒影效果
+
+### 艺术与品牌
+
+- **[Chartogne-Taillet](https://chartogne-taillet.com/)** — 一家法国酿酒商的网站，用 WebGL 还原了真实的酿酒村庄。街道、房屋、森林——全部用 3D 模型重建，细节极其丰富。当你走进田野并放大时，会看到流场粒子效果（Flow Field），展示了 WebGL 在品牌叙事中的艺术潜力
+
+:::warning 注意
+网站链接可能随时发生变化或失效。如果你发现某个链接打不开，可以在搜索引擎中搜索相关项目名称来找到最新地址。
+:::
+
+## 其他 WebGL 库
+
+虽然 Three.js 是目前最流行的 WebGL 库，但还有许多其他选择。每个库都有自己的设计哲学和适用场景：
+
+### Babylon.js
+
+- 官网：[babylonjs.com](https://www.babylonjs.com/)
+- 由微软支持的开源 3D 引擎
+- 更接近一个完整的**游戏引擎**，而不仅仅是一个库
+- 内置物理引擎、GUI 系统、粒子系统等
+- 自带 [Playground](https://playground.babylonjs.com/)，可以在浏览器中直接编写和测试代码
+- 适合需要完整游戏开发功能的场景
+
+### PlayCanvas
+
+- 官网：[playcanvas.com](https://playcanvas.com/)
+- 同样是开源的 WebGL 引擎
+- 拥有在线编辑器，适合团队协作
+- 在移动端 WebGL 性能优化方面表现出色
+- 被很多商业项目采用
+
+### A-Frame
+
+- 官网：[aframe.io](https://aframe.io/)
+- Mozilla 开发的 WebXR 框架
+- 使用类似 HTML 的标记语法来定义 3D 场景
+- 底层使用 Three.js
+- 专注于 VR/AR 体验的快速原型开发
+
+### Cannon.js / Ammo.js / Rapier
+
+这些不是渲染库，而是 **物理引擎**，可以与 Three.js 配合使用来模拟真实的物理效果（如重力、碰撞、弹性等）。课程后面的章节会讲解物理引擎的集成。
+
+:::info 如何选择
+
+- **学习和通用 3D Web 开发** — 推荐 Three.js（本课程的选择）
+- **需要完整游戏引擎功能** — 可以考虑 Babylon.js
+- **需要团队协作编辑器** — 可以考虑 PlayCanvas
+- **需要快速搭建 VR/AR 原型** — 可以考虑 A-Frame
+
+保持好奇心，去了解这些库，选择最适合你需求的工具。大多数情况下，Three.js 是最好的起点。
+:::
+
+## 浏览器支持
+
+Three.js 支持所有支持 WebGL 的现代浏览器：
+
+- **Chrome**（推荐）— WebGL 支持最好，开发者工具对 WebGL 的调试支持最完善
+- **Firefox** — WebGL 支持同样出色
+- **Safari** — 支持 WebGL，但在某些高级特性上可能有限制
+- **Edge** — 基于 Chromium，与 Chrome 的表现基本一致
+
+:::tip 开发建议
+推荐使用 Chrome 或 Firefox 进行 Three.js 开发。它们内置的 DevTools 提供了 WebGL Inspector 等工具，可以帮助你调试 GPU 渲染问题、检查着色器程序和纹理资源。
+:::
+
+## 总结
+
+本课的核心知识点：
+
+1. **WebGL** 是浏览器中的 JavaScript 图形 API，基于 OpenGL ES，直接利用 GPU 进行高性能渲染
+2. **WebGL 本质上就是在画三角形**——而 3D 世界中的一切都由三角形组成
+3. **GPU 的强大之处在于并行计算**——虽然单个核心不如 CPU 快，但成千上万个核心同时工作，让它能高效处理海量顶点和像素
+4. **原生 WebGL 非常困难**——画一个三角形就需要超过 100 行代码
+5. **Three.js 在 WebGL 之上提供了友好的抽象层**——用 10 行代码就能创建一个立方体
+6. **Three.js 拥有庞大的社区、完善的文档和持续的更新**——是最成熟、最流行的 WebGL 库
+7. **Three.js 仍然足够接近底层**——当你需要自定义着色器和优化时，完全可以做到
+
+## 下一步
+
+现在你已经了解了 WebGL 和 Three.js 的基本概念。在下一课中，我们将正式开始编程——创建你的第一个 Three.js 项目！

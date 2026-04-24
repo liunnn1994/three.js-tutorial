@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animations</title>
+    
+<style></style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.184.0/+esm","three/":"https://cdn.jsdelivr.net/npm/three@0.184.0/","lil-gui":"https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm","gsap":"https://cdn.jsdelivr.net/npm/gsap@3.12/+esm"}}</script></head>
+<body>
+    <canvas class="webgl"></canvas>
+    
+<script type="module">
+import * as THREE from 'three'
+
+// Canvas
+const canvas = document.querySelector('canvas.webgl')
+
+// Scene
+const scene = new THREE.Scene()
+
+// Object
+const geometry = new THREE.BoxGeometry(1, 1, 1)
+const material = new THREE.MeshBasicMaterial({ color: 0xff0000 })
+const mesh = new THREE.Mesh(geometry, material)
+scene.add(mesh)
+
+// Sizes
+const sizes = {
+    width: 800,
+    height: 600
+}
+
+// Camera
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height)
+camera.position.z = 3
+scene.add(camera)
+
+// Renderer
+const renderer = new THREE.WebGLRenderer({
+    canvas: canvas
+})
+renderer.setSize(sizes.width, sizes.height)
+renderer.render(scene, camera)
+
+</script></body>
+</html>

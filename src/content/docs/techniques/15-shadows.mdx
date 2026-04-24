@@ -1,0 +1,630 @@
+---
+title: 15 阴影
+description: 从零开始学习 Three.js 中的阴影系统——阴影贴图的原理、三种投影光源的配置、优化技巧，以及烘焙阴影方案
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 为什么需要阴影？
+
+在上一课 [Lesson 14 - Lights](/docs/techniques/14-lights) 中，我们学习了如何为场景添加光照。光照让物体有了明暗对比（核心阴影 Core Shadow），但我们还缺少一种关键的视觉元素：**投影阴影（Drop Shadow）**——也就是物体投射到地面上的影子。
+
+投影阴影是让 3D 场景看起来"真实"的关键因素之一。没有阴影的 3D 场景看起来像是在太空里漂浮的物体，而有了阴影之后，物体就有了"接地感"和空间深度。
+
+---
+
+
+<LessonPreview lesson="15-shadows" />
+
+## 阴影贴图（Shadow Map）原理
+
+在深入代码之前，先理解 Three.js 是如何渲染阴影的。
+
+### 现实中的阴影 vs 实时渲染
+
+在 Blender 等 3D 软件中，你可以使用**光线追踪（Ray Tracing）** 来获得照片级的阴影效果。但光线追踪非常耗时，一帧画面可能需要渲染几个小时——而我们需要在普通电脑上达到**每秒 60 帧**的实时渲染。
+
+Three.js 使用的是一种折中方案：**阴影贴图（Shadow Map）**。
+
+### 阴影贴图的工作流程
+
+每次 Three.js 进行一帧渲染时，对于场景中**每个开启了阴影的光源**，会执行以下步骤：
+
+1. **从光源视角渲染一次场景**：Three.js 在光源的位置放一个"虚拟相机"，从光源的角度看场景。这个虚拟相机会看到什么？比如一盏聚光灯照向场景中心，它的视角中会看到球体、立方体等物体的轮廓。
+
+2. **用深度材质替代所有材质**：在这个"光源视角渲染"中，Three.js 不会渲染物体的颜色、纹理等信息，而是将所有材质替换为 `MeshDepthMaterial`（深度材质）。深度材质只记录每个像素"离光源有多远"。
+
+3. **生成阴影贴图纹理**：这个深度信息被保存为一张纹理图像，叫做**阴影贴图（Shadow Map）**。
+
+4. **在最终渲染中使用阴影贴图**：Three.js 用这张阴影贴图来判断场景中的哪些区域处于阴影中。如果某个像素在阴影贴图中对应的深度值表示"有物体挡住了光线"，那么这个像素就会被渲染为阴影（变暗）。
+
+:::info 一句话总结
+阴影贴图 = 从光源视角拍摄的"深度照片"，Three.js 用这张照片来判断哪里该有阴影。
+:::
+
+### 多光源的性能影响
+
+如果你的场景中有 3 个开启了阴影的光源，那么每帧渲染时：
+- 普通渲染：1 次
+- 阴影贴图渲染：3 次（每个光源 1 次）
+- 总共：**4 次渲染**
+
+如果是 `PointLight`（点光源），情况更糟，因为它向四面八方发光，Three.js 需要**6 次**额外的渲染来生成完整的阴影贴图（相当于立方体贴图的 6 个面），再加上主渲染就是 **7 次渲染**。
+
+> 这就是为什么我们要尽量减少带阴影的光源数量。
+
+---
+
+## 启用阴影的三步流程
+
+### 第一步：开启渲染器阴影
+
+```js
+const renderer = new THREE.WebGLRenderer({ canvas })
+renderer.shadowMap.enabled = true
+renderer.shadowMap.type = THREE.PCFSoftShadowMap
+```
+
+- `renderer.shadowMap.enabled = true`：告诉渲染器要处理阴影贴图。没有这一行，所有阴影相关代码都不会生效。
+- `renderer.shadowMap.type`：设置阴影算法类型（后文详述）。
+
+### 第二步：设置物体
+
+你需要对场景中的每个物体提出两个问题：
+
+1. **这个物体会投射阴影吗？**（`castShadow`）
+2. **这个物体会接收阴影吗？**（`receiveShadow`）
+
+```js
+// 球体投射阴影（比如它在地面上投下影子）
+sphere.castShadow = true
+
+// 地面接收阴影（球体的影子会落在地面上）
+plane.receiveShadow = true
+```
+
+- `castShadow = true`：这个物体**会在其他表面上产生影子**。
+- `receiveShadow = true`：这个物体**的表面上会显示出其他物体的影子**。
+- 两个属性默认都是 `false`。
+
+:::tip 思考方式
+在添加阴影之前，想清楚："哪些物体需要在其他物体上投下影子？" 和 "影子应该出现在哪些表面上？"。不是所有物体都需要同时开启两个属性。比如地面通常只需要 `receiveShadow`，不需要 `castShadow`。
+:::
+
+### 第三步：设置光源
+
+只有**三种光源**可以投射阴影：
+
+| 光源 | 支持阴影 | 阴影相机类型 |
+|------|---------|------------|
+| `DirectionalLight` | 是 | 正交相机（OrthographicCamera） |
+| `SpotLight` | 是 | 透视相机（PerspectiveCamera） |
+| `PointLight` | 是 | 透视相机（6 方向渲染） |
+| `AmbientLight` | 否 | - |
+| `HemisphereLight` | 否 | - |
+| `RectAreaLight` | 否 | - |
+
+环境光和半球光不支持阴影是合理的——环境光来自四面八方，无法产生有方向的投影；矩形面光目前还不支持阴影。
+
+```js
+directionalLight.castShadow = true
+```
+
+---
+
+## DirectionalLight 阴影
+
+### 阴影相机
+
+平行光使用的是**正交相机（OrthographicCamera）**来生成阴影贴图。这很合理，因为平行光的光线是平行的，正交相机看到的画面也是没有透视变形的。
+
+你可以通过以下方式访问这个阴影相机：
+
+```js
+directionalLight.shadow.camera
+```
+
+### 阴影贴图分辨率
+
+```js
+directionalLight.shadow.mapSize.width = 1024
+directionalLight.shadow.mapSize.height = 1024
+```
+
+阴影贴图的分辨率直接决定阴影的清晰度。默认值是 `512x512`。
+
+- **太低**（如 128）：阴影边缘锯齿严重，看起来像马赛克
+- **适中**（如 1024）：大多数场景的推荐值
+- **太高**（如 4096）：更清晰，但性能开销更大
+
+:::warning 必须使用 2 的幂值
+阴影贴图的分辨率必须是 2 的幂值（256、512、1024、2048...）。这是因为 GPU 对 2 的幂尺寸的纹理有优化的 MIP 映射处理。
+:::
+
+### 阴影相机范围（正交视锥体）
+
+正交相机有一个矩形视野范围（不像透视相机那样有锥形视野）。你可以通过 `top`、`right`、`bottom`、`left`、`near`、`far` 来控制它：
+
+```js
+directionalLight.shadow.camera.near = 1
+directionalLight.shadow.camera.far = 6
+
+directionalLight.shadow.camera.top = 2
+directionalLight.shadow.camera.right = 2
+directionalLight.shadow.camera.bottom = -2
+directionalLight.shadow.camera.left = -2
+```
+
+### 为什么要调整阴影相机范围？
+
+如果阴影相机的范围太大（比整个场景还大），那么阴影贴图中只有很小一部分像素覆盖了你的物体，导致阴影质量极差。就像你用一张 1024 像素的照片去拍整个城市，每栋建筑只有几个像素——阴影当然模糊。
+
+**把阴影相机的范围缩小到刚好覆盖你的场景**，能让有限的阴影贴图分辨率覆盖更多细节，显著提升阴影质量。
+
+### 调试阴影相机
+
+使用 `CameraHelper` 可以可视化阴影相机的范围：
+
+```js
+const directionalLightCameraHelper = new THREE.CameraHelper(
+    directionalLight.shadow.camera
+)
+scene.add(directionalLightCameraHelper)
+```
+
+你会看到一个线框盒子出现在光源位置，展示阴影相机的可视范围。调试完成后记得隐藏：
+
+```js
+directionalLightCameraHelper.visible = false
+```
+
+### 阴影偏差（Shadow Bias）
+
+如果阴影出现不正常的条纹或"阴影痤疮（Shadow Acne）"，可以通过调整 bias 来修复：
+
+```js
+directionalLight.shadow.bias = -0.0001
+```
+
+:::caution
+Bias 值需要非常小（通常在 `-0.0001 ~ -0.001` 之间）。如果 bias 值过大（比如 `-0.1`），会导致**阴影脱离物体**，出现"悬浮阴影"的伪影（Peter Panning）。调整时需要找到一个平衡点。
+:::
+
+### 完整配置示例
+
+```js
+// 创建平行光
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1.1)
+directionalLight.position.set(2, 2, -1)
+
+// 启用阴影
+directionalLight.castShadow = true
+
+// 阴影贴图分辨率
+directionalLight.shadow.mapSize.width = 1024
+directionalLight.shadow.mapSize.height = 1024
+
+// 阴影相机范围
+directionalLight.shadow.camera.near = 1
+directionalLight.shadow.camera.far = 6
+directionalLight.shadow.camera.top = 2
+directionalLight.shadow.camera.right = 2
+directionalLight.shadow.camera.bottom = -2
+directionalLight.shadow.camera.left = -2
+
+// 阴影偏差（可选）
+directionalLight.shadow.bias = -0.0001
+
+scene.add(directionalLight)
+```
+
+**参考文档**：[Three.js DirectionalLightShadow](https://threejs.org/docs/#api/en/lights/shadows/DirectionalLightShadow)
+
+---
+
+## SpotLight 阴影
+
+聚光灯的阴影配置与平行光类似，但有一个关键区别：**聚光灯使用的是透视相机（PerspectiveCamera）**。这也很合理，因为聚光灯的光束本身就是锥形的。
+
+### 配置示例
+
+```js
+const spotLight = new THREE.SpotLight(0xffffff, 2.4, 10, Math.PI * 0.3)
+spotLight.position.set(0, 2, 2)
+scene.add(spotLight)
+scene.add(spotLight.target)
+
+// 启用阴影
+spotLight.castShadow = true
+
+// 阴影贴图分辨率
+spotLight.shadow.mapSize.width = 1024
+spotLight.shadow.mapSize.height = 1024
+
+// 阴影相机参数（透视相机）
+spotLight.shadow.camera.near = 1
+spotLight.shadow.camera.far = 6
+spotLight.shadow.camera.fov = 30
+```
+
+### 透视相机的参数
+
+对于聚光灯的阴影相机，你可以控制：
+
+- `near`：近裁剪面距离
+- `far`：远裁剪面距离
+- `fov`（Field of View）：视场角
+
+`fov` 控制阴影覆盖的角度范围。值越小，阴影覆盖的区域越集中，阴影质量越高。
+
+:::tip
+与平行光不同，聚光灯阴影相机的范围主要通过光源自身的 `angle` 属性和 `distance` 属性来控制。`fov` 通常可以保持默认值。
+:::
+
+### 调试
+
+```js
+const spotLightCameraHelper = new THREE.CameraHelper(spotLight.shadow.camera)
+scene.add(spotLightCameraHelper)
+// 调试完成后
+spotLightCameraHelper.visible = false
+```
+
+**参考文档**：[Three.js SpotLightShadow](https://threejs.org/docs/#api/en/lights/shadows/SpotLightShadow)
+
+---
+
+## PointLight 阴影
+
+点光源的阴影是最"昂贵"的。因为点光源向所有方向发光，Three.js 需要**为每个方向都生成一张阴影贴图**，一共 **6 张**（对应立方体的 6 个面）。
+
+这意味着：**每增加一个带阴影的点光源，每帧就要多渲染 6 次**。
+
+### 配置示例
+
+```js
+const pointLight = new THREE.PointLight(0xffffff, 2.7)
+pointLight.position.set(-1, 1, 0)
+scene.add(pointLight)
+
+// 启用阴影
+pointLight.castShadow = true
+
+// 阴影贴图分辨率
+pointLight.shadow.mapSize.width = 1024
+pointLight.shadow.mapSize.height = 1024
+
+// 阴影相机参数（透视相机）
+pointLight.shadow.camera.near = 0.1
+pointLight.shadow.camera.far = 5
+```
+
+### 透视相机参数
+
+- `near`：近裁剪面
+- `far`：远裁剪面
+- **不要修改 `fov`**：点光源阴影相机的 `fov` 是固定的（90 度），用于正确渲染立方体贴图的 6 个面。修改 `fov` 会破坏阴影效果。
+
+### 调试
+
+```js
+const pointLightCameraHelper = new THREE.CameraHelper(pointLight.shadow.camera)
+scene.add(pointLightCameraHelper)
+// 调试完成后
+pointLightCameraHelper.visible = false
+```
+
+:::warning 性能警告
+点光源的阴影渲染成本极高（6 次额外渲染）。如果场景中有 3 个带阴影的点光源，就是 18 次额外的渲染。在性能敏感的场景中，尽量避免给点光源开启阴影。
+:::
+
+**参考文档**：[Three.js PointLightShadow](https://threejs.org/docs/#api/en/lights/shadows/PointLightShadow)
+
+---
+
+## 阴影贴图算法（Shadow Map Types）
+
+Three.js 提供了多种阴影渲染算法，通过 `renderer.shadowMap.type` 来设置：
+
+### BasicShadowMap
+
+```js
+renderer.shadowMap.type = THREE.BasicShadowMap
+```
+
+- **性能**：最快
+- **效果**：最差——阴影边缘有明显的锯齿
+- **适用场景**：对视觉效果要求不高的移动端项目
+
+### PCFShadowMap（默认）
+
+```js
+renderer.shadowMap.type = THREE.PCFShadowMap
+```
+
+- **性能**：中等
+- **效果**：不错——使用 Percentage-Closer Filtering 算法对阴影边缘进行模糊
+- **特殊**：**支持 `shadow.radius` 属性**来控制模糊程度
+- **适用场景**：大多数项目的默认选择
+
+### PCFSoftShadowMap（推荐）
+
+```js
+renderer.shadowMap.type = THREE.PCFSoftMap
+renderer.shadowMap.type = THREE.PCFSoftShadowMap
+```
+
+- **性能**：稍慢于 PCFShadowMap
+- **效果**：更好——阴影边缘更加柔和自然
+- **特殊**：**不支持 `shadow.radius`**（使用此类型时 `radius` 会被忽略）
+- **适用场景**：追求视觉质量的项目
+
+### VSMShadowMap
+
+```js
+renderer.shadowMap.type = THREE.VSMShadowMap
+```
+
+- **性能**：最慢
+- **效果**：与 PCFSoftShadowMap 类似，但可能有意外伪影
+- **适用场景**：不推荐初学者使用
+
+### shadow.radius 模糊控制
+
+```js
+directionalLight.shadow.radius = 4
+```
+
+`shadow.radius` 控制 PCFShadowMap 模式下阴影的模糊程度。值越大，阴影边缘越模糊。
+
+:::caution
+`shadow.radius` **只对 `PCFShadowMap` 有效**，在 `PCFSoftShadowMap` 下无效。如果你使用了 `PCFSoftShadowMap`，就不要设置 `shadow.radius`，因为它不会产生任何效果。
+:::
+
+### 算法对比总结
+
+| 算法 | 性能 | 阴影质量 | 支持 shadow.radius |
+|------|------|---------|-------------------|
+| `BasicShadowMap` | 最快 | 锯齿明显 | 否 |
+| `PCFShadowMap` | 中等 | 较好 | 是 |
+| `PCFSoftShadowMap` | 稍慢 | 柔和自然 | 否 |
+| `VSMShadowMap` | 最慢 | 不稳定 | 否 |
+
+:::tip 推荐
+大多数情况下，使用 `THREE.PCFSoftShadowMap` 就好了。如果你需要自定义阴影模糊度，则使用 `THREE.PCFShadowMap` + `shadow.radius`。
+:::
+
+**参考文档**：[Three.js WebGLShadowMap](https://threejs.org/docs/#api/en/renderers/webgl/WebGLShadowMap)
+
+---
+
+## 多光源阴影叠加
+
+当多个带阴影的光源同时照射同一个区域时，阴影会叠加混合。虽然技术上可行，但混合阴影**看起来并不自然**，通常会出现多重阴影、亮度不均匀等问题。
+
+:::warning
+尽量**只让一盏主要光源投射阴影**。比如户外场景中只让太阳（平行光）投射阴影，其他光源只负责照明。如果确实需要多光源阴影，注意控制各光源的强度，避免场景过亮。
+:::
+
+---
+
+## 性能优化清单
+
+### 1. 减少阴影光源数量
+
+这是最重要的优化。每个带阴影的光源都会增加额外的渲染负担：
+
+| 光源类型 | 每个光源的额外渲染次数 |
+|---------|---------------------|
+| DirectionalLight | 1 次 |
+| SpotLight | 1 次 |
+| PointLight | **6 次** |
+
+### 2. 缩小阴影相机范围
+
+让阴影相机的视锥体**刚好覆盖你的场景**，不要太大：
+
+```js
+// 只覆盖需要的区域
+directionalLight.shadow.camera.top = 2
+directionalLight.shadow.camera.right = 2
+directionalLight.shadow.camera.bottom = -2
+directionalLight.shadow.camera.left = -2
+```
+
+### 3. 合理设置阴影贴图分辨率
+
+不需要所有阴影都使用 2048 甚至 4096。对于次要的光源，`512` 或 `256` 就够了：
+
+```js
+// 主要光源 - 高分辨率
+directionalLight.shadow.mapSize.set(1024, 1024)
+
+// 次要光源 - 低分辨率
+spotLight.shadow.mapSize.set(512, 512)
+```
+
+### 4. 减少投射/接收阴影的物体
+
+不是所有物体都需要 `castShadow`。小物体、远处的物体通常不需要投射阴影。
+
+### 5. 使用 `CameraHelper` 进行调试
+
+在开发阶段使用 `CameraHelper` 确保阴影相机范围合理，避免"渲染了很大一片空白区域但阴影质量很差"的情况。
+
+---
+
+## 烘焙阴影（Baked Shadow）
+
+当场景中有很多物体和复杂的光照效果时，实时阴影可能无法满足视觉质量要求，同时性能也会成为瓶颈。这时候可以考虑**烘焙阴影**。
+
+### 什么是烘焙阴影？
+
+烘焙阴影是在 3D 软件（如 Blender、3ds Max、C4D）中，将光照和阴影的效果"渲染"进纹理贴图。然后在 Three.js 中，你只需要把这些纹理贴到对应的几何体上，不再需要实时光照。
+
+### 优点
+
+- **零运行时性能开销**：不需要额外的渲染
+- **极致的视觉质量**：可以使用光线追踪等高质量渲染
+- **支持无限多的光源**：不受 Three.js 光源数量限制
+- **光线弹射效果**：间接光照、色彩溢出等高级效果都能烘焙
+
+### 缺点
+
+- **阴影是静态的**：物体不能移动，光源不能变化（因为阴影已经"画死"在纹理上了）
+- **需要额外的纹理文件**：增加加载时间和内存占用
+- **需要 3D 软件**：需要使用 Blender 等工具进行烘焙
+
+### 基本用法
+
+```js
+// 1. 加载烘焙好的阴影纹理
+const textureLoader = new THREE.TextureLoader()
+const bakedShadow = textureLoader.load('/textures/bakedShadow.jpg')
+bakedShadow.colorSpace = THREE.SRGBColorSpace
+
+// 2. 使用 MeshBasicMaterial 显示纹理（不需要实时光照）
+const shadowPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(5, 5),
+    new THREE.MeshBasicMaterial({ map: bakedShadow })
+)
+```
+
+注意：使用烘焙阴影时，地面材质通常改为 `MeshBasicMaterial`，因为它不需要响应实时光照。
+
+**参考文档**：[Three.js TextureLoader](https://threejs.org/docs/#api/en/loaders/TextureLoader)
+
+---
+
+## 动态假阴影
+
+如果你需要一个"看起来像阴影"但可以随物体移动的效果，可以使用**假阴影（Fake Shadow）**技巧。
+
+### 原理
+
+在物体下方放一个半透明的平面，使用一个径向渐变的纹理（中心透明、边缘是黑色）。这个平面跟随物体一起移动，模拟"影子"的效果。当物体升高时，影子的透明度降低；当物体降低时，影子的透明度增大。
+
+### 实现代码
+
+```js
+// 加载假阴影纹理（中心白色=透明，边缘黑色=阴影）
+const simpleShadow = textureLoader.load('/textures/simpleShadow.jpg')
+
+// 创建假阴影平面
+const sphereShadow = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.5, 1.5),
+    new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        alphaMap: simpleShadow
+    })
+)
+sphereShadow.rotation.x = -Math.PI * 0.5
+// 稍微高于地面，避免 Z-fighting
+sphereShadow.position.y = plane.position.y + 0.01
+scene.add(sphereShadow)
+
+// 在动画循环中更新
+const tick = () => {
+    const elapsedTime = clock.getElapsedTime()
+
+    // 更新球体位置
+    sphere.position.x = Math.cos(elapsedTime) * 1.5
+    sphere.position.z = Math.sin(elapsedTime) * 1.5
+    sphere.position.y = Math.abs(Math.sin(elapsedTime * 3))
+
+    // 假阴影跟随球体
+    sphereShadow.position.x = sphere.position.x
+    sphereShadow.position.z = sphere.position.z
+
+    // 球体越高，阴影越淡
+    sphereShadow.material.opacity = (1 - sphere.position.y) * 0.3
+
+    renderer.render(scene, camera)
+    window.requestAnimationFrame(tick)
+}
+tick()
+```
+
+### Z-fighting 避坑
+
+当两个平面放在完全相同的位置时，GPU 无法判断哪个平面应该显示在上面，导致画面闪烁。这就是 **Z-fighting**。解决方法是将假阴影平面放在真实地面的**稍微上方一点**（比如 `+0.01`）：
+
+```js
+sphereShadow.position.y = plane.position.y + 0.01
+```
+
+:::tip 使用建议
+假阴影方案非常轻量（几乎零性能开销），效果也不错。虽然不像真正的实时阴影那样精确，但非常适合用在个人作品集、移动端项目、或者对性能要求极高的场景中。
+:::
+
+---
+
+## 完整代码示例
+
+```js
+import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+
+// 场景
+const scene = new THREE.Scene()
+
+// 渲染器 - 开启阴影
+const renderer = new THREE.WebGLRenderer({ canvas })
+renderer.shadowMap.enabled = true
+renderer.shadowMap.type = THREE.PCFSoftShadowMap
+
+// 材质
+const material = new THREE.MeshStandardMaterial({ roughness: 0.7 })
+
+// 球体 - 投射阴影
+const sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(0.5, 32, 32),
+    material
+)
+sphere.castShadow = true
+
+// 地面 - 接收阴影
+const plane = new THREE.Mesh(
+    new THREE.PlaneGeometry(5, 5),
+    material
+)
+plane.receiveShadow = true
+plane.rotation.x = -Math.PI * 0.5
+plane.position.y = -0.5
+
+scene.add(sphere, plane)
+
+// 环境光 - 不支持阴影
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
+scene.add(ambientLight)
+
+// 平行光 - 投射阴影
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1.1)
+directionalLight.position.set(2, 2, -1)
+directionalLight.castShadow = true
+
+// 阴影贴图分辨率
+directionalLight.shadow.mapSize.width = 1024
+directionalLight.shadow.mapSize.height = 1024
+
+// 阴影相机范围
+directionalLight.shadow.camera.near = 1
+directionalLight.shadow.camera.far = 6
+directionalLight.shadow.camera.top = 2
+directionalLight.shadow.camera.right = 2
+directionalLight.shadow.camera.bottom = -2
+directionalLight.shadow.camera.left = -2
+
+scene.add(directionalLight)
+
+// 阴影相机辅助工具（调试用）
+const directionalLightCameraHelper = new THREE.CameraHelper(
+    directionalLight.shadow.camera
+)
+directionalLightCameraHelper.visible = false
+scene.add(directionalLightCameraHelper)
+```
+
+**下一课预告**：我们将在后续课程中学习更多关于材质和纹理的高级技巧。

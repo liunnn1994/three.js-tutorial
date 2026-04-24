@@ -1,0 +1,293 @@
+---
+title: 42 摇晃球体着色器
+description: 使用 Simplex 噪声创建有机变形的球体效果
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 有机变形
+
+使用 3D 噪声函数对球体表面进行变形，可以创建像果冻、细胞、水滴或生物体一样的有机运动效果。这种技术在游戏和视觉特效中被广泛使用——角色身体的微微晃动、水面的涟漪、史莱姆的弹跳，都可以通过这种方式实现。
+
+本课的特殊之处在于：我们不从零开始编写 ShaderMaterial，而是**增强 Three.js 内置的 MeshPhysicalMaterial**。这样我们可以保留 PBR 材质的所有特性（金属度、粗糙度、透射、折射等），同时添加顶点变形的效果。这需要借助一个库——`CustomShaderMaterial`（即 `three-custom-shader-material`）。
+
+
+<LessonPreview lesson="42-wobbly-sphere-shader" />
+
+## CustomShaderMaterial 库
+
+`three-custom-shader-material` 是一个允许你将自定义着色器代码注入 Three.js 内置材质的库。它的优势在于：
+
+- **无需重写整个着色器**：你只需要提供想要修改的部分（如 `vertexHead`、`vertexMain`、`fragmentHead` 等）
+- **保留所有内置特性**：PBR 光照、阴影、环境贴图、透射等全部保留
+- **自动处理 uniforms 和 varying**：库会自动将你定义的 uniforms 和 varyings 注入到正确的位置
+
+安装方式：
+
+```bash
+npm install three-custom-shader-material@5.4
+```
+
+:::caution
+务必锁定版本号为 `5.4`，以避免与项目中 Three.js 版本的兼容性问题。不同版本的 `three-custom-shader-material` 可能对应不同的 Three.js 版本。
+:::
+
+## Simplex 噪声
+
+Simplex 噪声是 Perlin 噪声的改进版本，由 Ken Perlin 本人于 2001 年提出。它具有以下特点：
+
+- **计算效率更高**：在更高维度上比经典 Perlin 噪声更快
+- **更好的视觉效果**：减少了 Perlin 噪声中常见的方向性伪影
+- **连续且可微分**：输出值在空间中平滑过渡，非常适合用于有机动画
+
+在本课中，我们将使用一个预先准备好的 Simplex 噪声 GLSL 函数（通常放在 `shaders/includes/` 目录下），然后在着色器中通过 `#include` 指令引入。
+
+## 噪声与变形的关系
+
+变形的核心思路非常简单：对于球体表面的每一个顶点，我们计算该顶点位置处的噪声值，然后将顶点沿法线方向位移这个噪声值的大小。
+
+为什么沿法线方向？因为球体的法线指向"外面"。如果我们将顶点向外推，球体表面就会膨胀；向内拉，就会凹陷。噪声值的正负和大小决定了每个顶点是膨胀还是凹陷、膨胀/凹陷多少。
+
+## 顶点着色器
+
+```glsl
+uniform float uTime;
+uniform float uFrequency;
+uniform float uAmplitude;
+uniform float uSpeed;
+
+// varying 变量用于传递给片元着色器
+varying float vDisplacement;
+varying vec3 vNormal;
+varying vec3 vPosition;
+
+void main() {
+    vec3 pos = position;
+    vec3 norm = normal;
+
+    float displacement = 0.0;
+    float amplitude = uAmplitude;
+    float frequency = uFrequency;
+
+    // 多层噪声叠加（FBM - 分形布朗运动）
+    for (float i = 1.0; i <= 4.0; i++) {
+        displacement += snoise(
+            pos * frequency + uTime * uSpeed
+        ) * amplitude;
+        amplitude *= 0.5;
+        frequency *= 2.0;
+    }
+
+    // 沿法线方向位移顶点
+    pos += norm * displacement;
+
+    vec4 modelPosition = modelMatrix * vec4(pos, 1.0);
+    vec4 viewPosition = viewMatrix * modelPosition;
+    gl_Position = projectionMatrix * viewPosition;
+
+    vDisplacement = displacement;
+    vNormal = normalMatrix * norm;
+    vPosition = modelPosition.xyz;
+}
+```
+
+### 逐行解析
+
+1. **`uniform` 声明**：从 JavaScript 传入的可调参数
+   - `uTime`：时间，用于驱动动画
+   - `uFrequency`：噪声频率，控制变形的"密度"——值越大，变形越细碎
+   - `uAmplitude`：振幅，控制变形的"力度"——值越大，顶点位移越多
+   - `uSpeed`：速度，控制动画的快慢
+
+2. **FBM 循环**：叠加 4 层不同频率和振幅的噪声
+   - 每层频率翻倍（`frequency *= 2.0`），产生更细的细节
+   - 每层振幅减半（`amplitude *= 0.5`），保证细节层的影响逐渐递减
+   - 时间偏移（`uTime * uSpeed`）让变形随时间变化
+
+3. **顶点位移**：`pos += norm * displacement` 将顶点沿法线方向推出或拉入
+
+4. **Varying 传递**：将位移量、法线和世界坐标传递给片元着色器，用于着色
+
+:::tip
+如果你使用的是 `CustomShaderMaterial`，那么 `modelMatrix`、`viewMatrix`、`projectionMatrix`、`normalMatrix`、`position`、`normal` 等 Three.js 内置变量和 uniform 已经自动可用，无需手动声明。
+:::
+
+## 为什么需要重新计算法线
+
+当球体表面发生变形后，原始的法线就不再准确了。想象一个平滑的球面被噪声推挤成凹凸不平的形状——有些区域的法线应该指向不同的方向。如果继续使用原始法线，光照会出现不自然的明暗分布。
+
+在简单的变形中（如只在法线方向上位移），我们可以近似地认为法线方向不变。但如果变形幅度较大，或者需要精确的光照效果，就需要在着色器中重新计算法线。
+
+## 差分法计算法线
+
+一种常用的方法是**有限差分法**：在变形后的位置附近取几个采样点，用高度差来估算新的法线方向：
+
+```glsl
+// 差分法重新计算法线
+float eps = 0.001;
+
+// 在 X 和 Z 方向上各偏移一小段距离，计算变形后的高度差
+float hL = getDisplacement(vec3(pos.x - eps, pos.y, pos.z));
+float hR = getDisplacement(vec3(pos.x + eps, pos.y, pos.z));
+float hD = getDisplacement(vec3(pos.x, pos.y, pos.z - eps));
+float hU = getDisplacement(vec3(pos.x, pos.y, pos.z + eps));
+
+// 利用叉积的原理，从高度差构建新的法线向量
+vec3 computedNormal = normalize(vec3(hL - hR, 2.0 * eps, hD - hU));
+```
+
+:::caution
+差分法需要额外调用多次噪声函数（每个顶点额外 4 次），会增加 GPU 计算负担。在本课中，由于我们使用的是内置 PBR 材质，光照计算由 Three.js 内部处理，简单场景下使用原始法线（经过 normalMatrix 变换）通常已经能获得不错的效果。
+:::
+
+## 片元着色器
+
+```glsl
+uniform vec3 uColorA;
+uniform vec3 uColorB;
+uniform float uLightIntensity;
+
+varying float vDisplacement;
+varying vec3 vNormal;
+varying vec3 vPosition;
+
+void main() {
+    // 基于位移量混合两种颜色
+    float mixFactor = (vDisplacement + 0.5) * 2.0;
+    vec3 color = mix(uColorA, uColorB, clamp(mixFactor, 0.0, 1.0));
+
+    // 简单的漫反射光照
+    vec3 normal = normalize(vNormal);
+    vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
+    float light = max(dot(normal, lightDir), 0.0) * uLightIntensity;
+    light = clamp(light, 0.2, 1.0);
+
+    color *= light;
+
+    // 菲涅尔边缘高光
+    vec3 viewDir = normalize(cameraPosition - vPosition);
+    float fresnel = pow(1.0 - max(dot(viewDir, normal), 0.0), 2.0);
+    color += fresnel * vec3(0.3);
+
+    gl_FragColor = vec4(color, 1.0);
+}
+```
+
+### 颜色混合
+
+`mix(uColorA, uColorB, mixFactor)` 根据位移量在两种颜色之间插值。位移大的区域显示一种颜色，位移小的区域显示另一种颜色，产生丰富的视觉变化。
+
+### 菲涅尔效应
+
+菲涅尔效应描述了一个物理现象：当视线接近物体表面切线方向时，反射增强。在着色器中通过以下步骤计算：
+
+1. 计算视线方向 `viewDir = normalize(cameraPosition - vPosition)`
+2. 计算法线与视线的点积 `dot(viewDir, normal)`——值越接近 0 表示越接近切线
+3. 用 `pow(1.0 - dot(...), exponent)` 转换——点积越小，菲涅尔值越大
+4. 将菲涅尔值叠加到颜色上，产生边缘发光效果
+
+:::tip
+如果使用 `CustomShaderMaterial` + `MeshPhysicalMaterial`，你不需要手动编写光照代码。PBR 光照、菲涅尔、透射等全部由内置材质处理。你只需要在顶点着色器中做位移，然后在片元着色器中（如果需要的话）修改颜色即可。
+:::
+
+## FBM（分形布朗运动）
+
+FBM（Fractal Brownian Motion）是噪声叠加的核心技术。它的原理是将多个不同频率和振幅的噪声层叠加在一起，模拟自然界中的分形结构：
+
+```glsl
+float fbm(vec3 p) {
+    float value = 0.0;
+    float amplitude = 0.5;
+    float frequency = 1.0;
+
+    for (int i = 0; i < 4; i++) {
+        value += snoise(p * frequency) * amplitude;
+        amplitude *= 0.5;      // 持续度（Persistence）：每层振幅减半
+        frequency *= 2.0;       // 间隙度（Lacunarity）：每层频率翻倍
+    }
+    return value;
+}
+```
+
+### FBM 参数说明
+
+| 参数 | 含义 | 常用值 | 效果 |
+|------|------|--------|------|
+| 叠加层数（Octaves） | 噪声叠加的次数 | 3-8 | 层数越多细节越丰富，但性能越低 |
+| 持续度（Persistence） | 每层振幅的衰减系数 | 0.3-0.7 | 值越大，高频细节越明显 |
+| 间隙度（Lacunarity） | 每层频率的增长系数 | 1.5-2.5 | 值越大，层间频率跨度越大 |
+
+### 为什么 FBM 看起来更自然
+
+单一噪声层产生的变形看起来比较"平滑"和"均匀"，缺乏细节。FBM 通过叠加多个尺度（频率）的噪声，同时模拟了"大范围的起伏"和"小范围的细节"，最终结果更接近自然界中真实的不规则表面。
+
+## 参数控制
+
+使用 lil-gui 或 dat.gui 可以实时调整参数，方便调试和创作：
+
+```js
+const material = new THREE.ShaderMaterial({
+    uniforms: {
+        uTime: { value: 0 },
+        uFrequency: { value: 2.0 },     // 噪声频率（变形密度）
+        uAmplitude: { value: 0.3 },     // 位移幅度（变形力度）
+        uSpeed: { value: 0.4 },         // 动画速度
+        uColorA: { value: new THREE.Color('#ff6030') },
+        uColorB: { value: new THREE.Color('#1b3984') }
+    }
+})
+
+// GUI 控制
+gui.add(material.uniforms.uFrequency, 'value')
+    .min(0.1).max(10).step(0.01).name('频率')
+gui.add(material.uniforms.uAmplitude, 'value')
+    .min(0).max(2).step(0.01).name('振幅')
+gui.add(material.uniforms.uSpeed, 'value')
+    .min(0).max(2).step(0.01).name('速度')
+```
+
+## 球体细分的重要性
+
+球体需要足够高的细分度才能看到平滑的变形效果。一个只有 8 段的 IcosahedronGeometry 变形后会出现明显的棱角，而 128 段或更高细分度则会产生丝滑的有机形态。
+
+```js
+// 低细分：变形粗糙，可见多边形
+const lowSphere = new THREE.IcosahedronGeometry(1, 8)
+
+// 高细分：变形平滑，有机感强
+const highSphere = new THREE.IcosahedronGeometry(1, 128)
+```
+
+:::caution
+细分度越高，顶点数越多，GPU 计算负担越大。IcosahedronGeometry 的 `detail` 参数每增加 1，面数大约乘以 4。`detail=128` 意味着数百万个顶点。在实际项目中需要在视觉效果和性能之间找到平衡。对于 GPGPU 场景，通常不需要这么高的细分度。
+:::
+
+## 在模型上应用
+
+同样的技术可以应用在任何 3D 模型上（如 Suzanne 猴头、角色模型等），不仅仅限于球体。原理完全相同——读取顶点位置，计算噪声值，沿法线方向位移。唯一需要注意的是模型必须使用 `BufferGeometry`，并且有正确的法线数据。
+
+```js
+// 加载 GLTF 模型并应用 wobble 效果
+const loader = new GLTFLoader()
+loader.load('model.glb', (gltf) => {
+    const model = gltf.scene
+    model.traverse((child) => {
+        if (child.isMesh) {
+            // 替换为自定义着色器材质
+            child.material = new CustomShaderMaterial({
+                baseMaterial: THREE.MeshPhysicalMaterial,
+                vertexShader: {
+                    uniforms: { uTime: { value: 0 }, ... },
+                    main: wobbleVertexCode
+                }
+            })
+        }
+    })
+    scene.add(model)
+})
+```
+
+:::tip
+使用 `CustomShaderMaterial` 时，`normalMatrix` 变换法线确保光照在变形后仍然正确。此外，如果模型使用了骨骼动画（Skeletal Animation），顶点着色器中的 `position` 已经是动画变换后的位置，噪声变形会自动叠加在动画之上，实现更丰富的效果。
+:::

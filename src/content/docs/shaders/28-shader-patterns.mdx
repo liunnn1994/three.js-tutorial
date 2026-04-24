@@ -1,0 +1,271 @@
+---
+title: 28 着色器图案
+description: 使用 GLSL 数学函数创建程序化视觉效果图案 — 波浪、棋盘格、噪声等
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 什么是着色器图案
+
+着色器图案是纯粹用数学函数生成的视觉效果，不需要任何纹理图片。这种技术叫做**程序化生成**（Procedural Generation）。
+
+优势：文件大小几乎为零（只有数学公式）、可以无限缩放、可以动态变化。
+
+
+<LessonPreview lesson="28-shader-patterns" />
+
+## UV 坐标 — 图案的基础
+
+UV 坐标范围是 0 到 1，表示纹理/表面的归一化坐标。所有图案都以 UV 为基础生成。
+
+```glsl
+varying vec2 vUv;
+
+void main() {
+    // 简单的左到右渐变（黑色到白色）
+    float pattern = vUv.x;
+    gl_FragColor = vec4(vec3(pattern), 1.0);
+}
+```
+
+- `vUv.x` — 水平方向（左 0 → 右 1）
+- `vUv.y` — 垂直方向（下 0 → 上 1）
+- `vec2(0.5, 0.5)` — 中心点
+
+## 常用 GLSL 函数
+
+### 数学函数
+
+```glsl
+sin(x)       // 正弦波 — 创建波浪效果
+cos(x)       // 余弦波
+abs(x)       // 绝对值 — 创建 V 形图案
+pow(x, y)    // 幂运算 — 创建曲线
+sqrt(x)      // 平方根
+mod(x, y)    // 取模 — 创建重复
+```
+
+### 距离函数
+
+```glsl
+length(v)       // 向量长度 — 到原点的距离
+distance(a, b)  // 两点之间的距离
+dot(a, b)       // 点积 — 投影长度
+```
+
+### 阶梯和平滑函数
+
+```glsl
+step(edge, x)                  // x < edge → 0.0, 否则 → 1.0（硬边缘）
+smoothstep(edge0, edge1, x)    // 平滑过渡（软边缘）
+```
+
+`step` 和 `smoothstep` 是创建图案的核心函数：
+- `step(0.5, vUv.x)` — 屏幕左半黑色，右半白色
+- `smoothstep(0.4, 0.6, vUv.x)` — 中间有柔和过渡的分界
+
+### 取整和分形函数
+
+```glsl
+floor(x)   // 向下取整
+ceil(x)    // 向上取整
+fract(x)   // 取小数部分（相当于 x - floor(x)）
+```
+
+`fract` 是创建重复图案的关键 — 它将任何值映射回 0-1 范围。
+
+## 经典图案
+
+### 渐变
+
+```glsl
+// 水平渐变
+float h = vUv.x;
+
+// 垂直渐变
+float v = vUv.y;
+
+// 径向渐变（从中心向外）
+float radial = 1.0 - distance(vUv, vec2(0.5));
+```
+
+### 棋盘格
+
+```glsl
+// 创建 10x10 的棋盘格
+float gridX = step(0.5, fract(vUv.x * 10.0));
+float gridY = step(0.5, fract(vUv.y * 10.0));
+float checkerboard = mod(gridX + gridY, 2.0);
+```
+
+原理：`fract(vUv.x * 10.0)` 将 UV 坐标重复 10 次，`step(0.5, ...)` 将每格分为上下两半。
+
+### 条纹
+
+```glsl
+// 水平条纹
+float stripes = step(0.5, fract(vUv.y * 20.0));
+
+// 加上时间动画
+float animatedStripes = step(0.5, fract(vUv.y * 20.0 + uTime));
+```
+
+### 波浪
+
+```glsl
+// 正弦波浪
+float wave = sin(vUv.x * 10.0 + uTime) * 0.5 + 0.5;
+
+// 多重波浪叠加
+float wave1 = sin(vUv.x * 10.0 + uTime) * 0.5 + 0.5;
+float wave2 = sin(vUv.y * 8.0 + uTime * 0.8) * 0.5 + 0.5;
+float combinedWave = wave1 * wave2;
+```
+
+`* 0.5 + 0.5` 将 sin 的输出从 [-1, 1] 映射到 [0, 1]。
+
+### 圆形
+
+```glsl
+// 圆形（中心为白色，边缘为黑色）
+float dist = distance(vUv, vec2(0.5));
+float circle = 1.0 - step(0.3, dist);
+
+// 带柔和边缘的圆
+float softCircle = 1.0 - smoothstep(0.28, 0.32, dist);
+
+// 圆环
+float ring = smoothstep(0.28, 0.3, dist) - smoothstep(0.3, 0.32, dist);
+```
+
+### 随机
+
+GLSL 没有内置的随机函数，但可以用数学技巧模拟：
+
+```glsl
+float random(vec2 st) {
+    return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+}
+
+// 使用
+float noise = random(vUv);
+```
+
+原理：对 UV 坐标做点积后取 sin，再取 fract。结果是伪随机的，但对同一个输入总是返回同一个值。
+
+## 噪声函数
+
+随机值太"跳跃"了，真实世界的效果需要连续、平滑的随机值。这就是噪声函数的作用。
+
+### 值噪声（Value Noise）
+
+```glsl
+float noise(vec2 st) {
+    vec2 i = floor(st);     // 整数部分
+    vec2 f = fract(st);     // 小数部分
+
+    // 四个角的随机值
+    float a = random(i);
+    float b = random(i + vec2(1.0, 0.0));
+    float c = random(i + vec2(0.0, 1.0));
+    float d = random(i + vec2(1.0, 1.0));
+
+    // 平滑插值
+    vec2 u = smoothstep(0.0, 1.0, f);
+
+    // 双线性插值
+    return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+}
+
+// 使用
+float n = noise(vUv * 4.0); // 4.0 控制噪声的缩放
+```
+
+### 分形布朗运动（FBM）
+
+叠加多层不同频率的噪声，创建更自然的效果：
+
+```glsl
+float fbm(vec2 st) {
+    float value = 0.0;
+    float amplitude = 0.5;
+    float frequency = 1.0;
+
+    for (int i = 0; i < 6; i++) {
+        value += amplitude * noise(st * frequency);
+        frequency *= 2.0;
+        amplitude *= 0.5;
+    }
+
+    return value;
+}
+```
+
+每一层（octave）频率翻倍、振幅减半，模拟自然界中常见的分形结构。
+
+## 组合图案
+
+通过数学运算组合多个简单图案，创造复杂效果：
+
+```glsl
+void main() {
+    vec2 uv = vUv;
+
+    // 图案 1：条纹
+    float pattern1 = step(0.5, fract(uv.x * 20.0));
+
+    // 图案 2：径向渐变
+    float pattern2 = 1.0 - distance(uv, vec2(0.5));
+
+    // 图案 3：噪声
+    float pattern3 = noise(uv * 4.0 + uTime);
+
+    // 用乘法遮罩组合
+    float combined = pattern1 * pattern2 * pattern3;
+
+    gl_FragColor = vec4(vec3(combined), 1.0);
+}
+```
+
+## 顶点着色器中的图案
+
+图案不只能用在片元着色器中，也可以在顶点着色器中用来**位移顶点**：
+
+```glsl
+// 顶点着色器
+uniform float uTime;
+varying float vElevation;
+
+void main() {
+    vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+
+    // 用 sin 波位移顶点
+    float elevation = sin(modelPosition.x * 2.0 + uTime) * 0.3;
+    elevation += sin(modelPosition.z * 2.0 + uTime * 0.5) * 0.2;
+    modelPosition.y += elevation;
+
+    // 传递到片元着色器用于着色
+    vElevation = elevation;
+
+    gl_Position = projectionMatrix * viewMatrix * modelPosition;
+}
+```
+
+```glsl
+// 片元着色器
+varying float vElevation;
+
+void main() {
+    // 根据高度着色
+    vec3 color = mix(vec3(0.0, 0.3, 0.6), vec3(0.0, 0.8, 1.0), vElevation);
+    gl_FragColor = vec4(color, 1.0);
+}
+```
+
+## 参考链接
+
+- [The Book of Shaders](https://thebookofshaders.com/) — 最着色器图案入门教程
+- [Shadertoy](https://www.shadertoy.com/) — 在线着色器编辑器
+- [Patricio Gonzalez Vivo 的 GLSL 函数集](http://patriciogonzalezvivo.com/2015/thebookofshaders/)
+- [Inigo Quilez 的文章](https://iquilezles.org/articles/) — 高级着色器技术

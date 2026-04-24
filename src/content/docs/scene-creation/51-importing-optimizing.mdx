@@ -1,0 +1,762 @@
+---
+title: 51 导入与优化场景
+description: 将 glTF 模型导入 Three.js，替换为烘焙纹理，修复纹理 Bug，通过 Blender 合并几何体大幅优化渲染性能
+---
+
+## 课程概述
+
+在前两节课中，我们在 Blender 中创建了场景（第 49 课）并将光照烘焙为纹理（第 50 课）。现在来到了最关键的一步：**将烘焙好的模型导入 Three.js，让它在网页中正确显示**。
+
+这节课的内容非常实用，你会遇到一系列真实项目中常见的"坑"：场景全黑、纹理翻转、颜色偏暗、性能低下。我们逐一解决这些问题，最终将绘制调用从 173 次优化到仅仅 16 次。
+
+### 本课学习路线
+
+```
+加载 glTF 模型
+    ↓
+场景全黑？→ 替换为烘焙纹理（MeshBasicMaterial）
+    ↓
+纹理上下颠倒？→ 修复 flipY Bug
+    ↓
+颜色偏暗？→ 设置正确的色彩空间
+    ↓
+自发光物体怎么办？→ 单独处理发光材质
+    ↓
+绘制调用太多？→ 使用 Spector.js 分析性能
+    ↓
+在 Blender 中合并几何体 → 从 173 次降到 16 次
+```
+
+## 加载 glTF 模型
+
+### 基本加载代码
+
+我们使用 GLTFLoader 加载模型，配合 DRACOLoader 进行 Draco 解压缩（上一课已经导出为 Draco 格式的 .glb 文件）。
+
+```js
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
+
+// 创建 Draco 解码器
+const dracoLoader = new DRACOLoader()
+dracoLoader.setDecoderPath('/draco/')
+
+// 创建 GLTF 加载器并关联 Draco
+const gltfLoader = new GLTFLoader()
+gltfLoader.setDRACOLoader(dracoLoader)
+
+// 加载模型
+gltfLoader.load('/models/room.glb', (gltf) => {
+    const gltfScene = gltf.scene
+    scene.add(gltfScene)
+})
+```
+
+### 理解加载过程
+
+当 `gltfLoader.load()` 被调用时，发生了以下事情：
+
+1. **下载文件** -- 浏览器从服务器下载 `.glb` 文件
+2. **Draco 解压** -- DRACOLoader 将压缩的几何数据还原
+3. **解析 glTF** -- GLTFLoader 将数据解析为 Three.js 对象
+4. **触发回调** -- 加载完成后执行回调函数，你在回调中获取 `gltf` 对象
+
+`gltf.scene` 是一个 `THREE.Group`，包含了模型中所有的子对象（网格、灯光、相机等）。通过 `scene.add(gltfScene)` 将它添加到我们的 Three.js 场景中。
+
+### 加载后的第一个问题：场景全黑
+
+运行上面的代码后，你可能会看到...什么都没有。场景一片漆黑。
+
+**为什么会这样？** 回忆一下：glTF 模型使用的是 PBR 材质（在 Three.js 中被解析为 `MeshStandardMaterial`）。PBR 材质需要光照才能显示 -- 没有光线照射，MeshStandardMaterial 渲染出来的就是纯黑色。
+
+当然，我们可以给场景添加灯光来解决这个问题。但等一下 -- 我们在第 50 课已经花了大量时间**烘焙光照**。烘焙的目的就是**不需要实时光照**，所有光影信息都已经保存在那张烘焙纹理里了。如果我们再添加灯光，就失去了烘焙的意义。
+
+:::tip 核心理念
+烘焙纹理 = 预先计算好的光照照片。使用烘焙纹理时，我们不希望 Three.js 的实时光照干扰它。我们需要的不是 PBR 材质，而是一个能把烘焙纹理直接"贴上去"的材质。
+:::
+
+## 替换材质为烘焙纹理
+
+### 加载烘焙纹理
+
+首先，使用 TextureLoader 加载在 Blender 中烘焙好的那张纹理图片：
+
+```js
+import * as THREE from 'three'
+
+// 加载烘焙纹理
+const bakedTexture = new THREE.TextureLoader().load('/models/baked.jpg')
+```
+
+这张 `baked.jpg` 包含了场景中所有物体的颜色、光照、阴影、环境遮蔽等信息 -- 一张图包含了所有视觉内容。
+
+### 创建 MeshBasicMaterial
+
+`MeshBasicMaterial` 是一种不受光照影响的材质 -- 无论场景中有多少灯光，它都会按照纹理本身的颜色来显示。这正是我们需要的：
+
+```js
+// 使用烘焙纹理创建不受光照影响的材质
+const bakedMaterial = new THREE.MeshBasicMaterial({
+    map: bakedTexture
+})
+```
+
+| 材质类型 | 是否受光照影响 | 适用场景 |
+|---------|:-----------:|---------|
+| `MeshBasicMaterial` | 否 | 烘焙纹理、UI 元素、全纯色物体 |
+| `MeshStandardMaterial` | 是 | PBR 渲染、需要实时光照的场景 |
+| `MeshPhongMaterial` | 是 | 轻量级光照计算 |
+| `MeshLambertMaterial` | 是 | 最简单的光照模型 |
+
+### 遍历场景替换材质
+
+接下来需要把模型中每个子对象的材质都替换成烘焙材质。这里使用 `traverse()` 方法递归遍历整个场景树：
+
+```js
+gltfLoader.load('/models/room.glb', (gltf) => {
+    const gltfScene = gltf.scene
+
+    // 遍历所有子对象，替换材质
+    gltfScene.traverse((child) => {
+        if (child.isMesh) {
+            child.material = bakedMaterial
+        }
+    })
+
+    scene.add(gltfScene)
+})
+```
+
+**代码解析：**
+
+- `traverse()` -- 递归遍历场景树中的每一个节点（包括嵌套的子节点、孙节点等）
+- `child.isMesh` -- 检查当前节点是否是网格（Mesh），即包含几何体和材质的对象
+- `child.material = bakedMaterial` -- 将该网格的材质替换为我们的烘焙材质
+
+:::info traverse() 方法
+`traverse()` 是 Three.js 中 `Object3D` 的一个方法，它会对调用者以及它的所有后代（children、grandchildren、great-grandchildren...）执行回调函数。这是操作模型树中最常用的工具之一。在 glTF 模型中，对象通常是嵌套的（Group 嵌套 Group 嵌套 Mesh），所以 `traverse()` 比单纯的 `children.forEach()` 更可靠。
+:::
+
+## 第一个 Bug：纹理翻转（flipY）
+
+执行上面的代码后，你终于能看到场景了 -- 但烘焙纹理是**上下颠倒**的！地面的纹理出现在天花板上，天花板的纹理出现在地面上。整个场景看起来像是镜像翻转了。
+
+这是一个非常经典且令人头疼的 Bug。
+
+### 问题原因
+
+问题的根源在于 OpenGL/WebGL 和图像文件对 Y 轴方向的定义不同：
+
+- **图像文件（JPG/PNG）** -- 数据从**顶部**开始存储，第一行是图片最上面的一行像素
+- **OpenGL/WebGL** -- 纹理坐标的原点在**左下角**，Y 轴向上增长
+
+当 Three.js 加载一张纹理时，默认会执行 `flipY = true`（翻转 Y 轴），把图像从"顶部优先"转换为"底部优先"，以匹配 WebGL 的坐标系。这在我们之前使用普通纹理时都工作正常。
+
+**但是，Blender 烘焙导出的纹理已经被 Blender 翻转过一次了。** 所以 Three.js 再翻转一次，就等于翻回了原来的方向 -- 但这次是错误的。
+
+简单说：**翻转了两次 = 等于没有翻转 = 方向错了。**
+
+### 解决方案
+
+```js
+const bakedTexture = new THREE.TextureLoader().load('/models/baked.jpg')
+bakedTexture.flipY = false  // 关闭 Y 轴翻转，修复纹理颠倒问题
+```
+
+:::warning 经验教训
+这个 Bug 特别隐蔽，因为它只在你**使用烘焙纹理**时才会出现。普通的纹理贴图不会遇到这个问题（因为它们只需要翻转一次）。如果你从 Blender 烘焙纹理后看到方向不对，第一个要检查的就是 `flipY`。
+:::
+
+### flipY 速查表
+
+| 场景 | flipY 值 | 说明 |
+|------|:-------:|------|
+| 普通纹理贴图 | `true`（默认） | Three.js 自动处理，无需手动设置 |
+| Blender 烘焙纹理 | `false` | Blender 已经翻转过，不能再翻转 |
+| Canvas 作为纹理 | `false` | Canvas 坐标系与 WebGL 一致 |
+| 视频作为纹理 | `false` | 视频帧的坐标系与 WebGL 一致 |
+
+## 第二个 Bug：色彩空间（Color Space）
+
+修复了 flipY 之后，场景看起来正确了，但你可能注意到**颜色比 Blender 中的渲染结果要暗一些**，整体显得有些灰蒙蒙的。
+
+### 问题原因
+
+这是**色彩空间不匹配**导致的问题。回忆一下第 10 课学过的内容：
+
+- **sRGB 色彩空间** -- 显示器、JPG/PNG 图片使用的色彩空间，也是人眼感知颜色的方式
+- **线性色彩空间（Linear）** -- GPU 进行光照计算时使用的空间
+
+Three.js 默认假设纹理在线性空间中。但我们的烘焙纹理是一张 JPG 图片，它是 sRGB 编码的。如果我们告诉 Three.js "这张纹理在线性空间中"，Three.js 就不会做任何色彩空间转换，结果就是颜色偏暗 -- 因为 sRGB 的值被当作线性值来解读了。
+
+### 解决方案
+
+将烘焙纹理标记为 sRGB 色彩空间：
+
+```js
+const bakedTexture = new THREE.TextureLoader().load('/models/baked.jpg')
+bakedTexture.flipY = false
+bakedTexture.colorSpace = THREE.SRGBColorSpace
+```
+
+:::tip Three.js 版本差异
+在 Three.js r152 及更新版本中，使用 `colorSpace` 属性：
+```js
+texture.colorSpace = THREE.SRGBColorSpace
+```
+在更老的版本中，使用 `encoding` 属性：
+```js
+texture.encoding = THREE.sRGBEncoding
+```
+如果你在代码中看到 `encoding`，说明使用的是旧版本 API，功能完全相同。
+:::
+
+### 哪些纹理需要设置色彩空间？
+
+只有**颜色类纹理**需要标记为 sRGB，其他数据类纹理不需要：
+
+| 纹理类型 | 是否设置 sRGB | 原因 |
+|---------|:------------:|------|
+| 颜色贴图 / 烘焙纹理 | 是 | 包含人眼看到的颜色 |
+| 法线贴图 | 否 | 方向向量数据，不是颜色 |
+| 粗糙度贴图 | 否 | 数值数据 |
+| 金属度贴图 | 否 | 数值数据 |
+| AO 贴图 | 否 | 遮蔽数值数据 |
+| 高度贴图 | 否 | 位移数值数据 |
+
+## 处理自发光物体
+
+### 问题
+
+场景中有些物体是**发光**的 -- 比如路灯的灯泡、传送门的光芒等。这些物体在 Blender 中使用了自发光材质（Emission），它们的作用是发出亮光。
+
+但烘焙纹理已经把这些发光效果"拍"进去了。问题是：如果只是简单地把烘焙纹理贴上去，这些发光物体看起来就是一张静态的亮色图片 -- 无法进行后续的发光动画、后期处理泛光（Bloom）等效果。
+
+我们希望这些发光物体使用**独立的、纯色的 MeshBasicMaterial**，这样以后可以对它们做各种效果。
+
+### 在 Blender 中命名物体
+
+首先，在 Blender 中给需要特殊处理的物体起一个有意义的名字：
+
+1. 在 Blender 的 Outliner（大纲视图）中，**双击**物体名称来重命名
+2. 比如将两个路灯分别命名为 `poleLightA` 和 `poleLightB`
+3. 将传送门光源命名为 `PortalLight`
+
+**命名规范很重要。** 你会在 Three.js 的代码中用这些名字来查找对应的对象。推荐使用驼峰命名法（camelCase），保持和 JavaScript 一致。
+
+### 使用 .find() 查找物体
+
+在 JavaScript 中，使用数组的 `find()` 方法根据名称查找特定的子对象：
+
+```js
+gltfLoader.load('/models/room.glb', (gltf) => {
+    const gltfScene = gltf.scene
+
+    // 遍历所有子对象，替换为烘焙材质
+    gltfScene.traverse((child) => {
+        if (child.isMesh) {
+            child.material = bakedMaterial
+        }
+    })
+
+    // 查找特定的发光物体
+    const poleLightAMesh = gltfScene.children.find(
+        (child) => child.name === 'poleLightA'
+    )
+    const poleLightBMesh = gltfScene.children.find(
+        (child) => child.name === 'poleLightB'
+    )
+    const portalLightMesh = gltfScene.children.find(
+        (child) => child.name === 'PortalLight'
+    )
+
+    scene.add(gltfScene)
+})
+```
+
+:::info JavaScript .find() 方法
+`Array.prototype.find()` 接受一个回调函数，返回数组中**第一个**使回调函数返回 `true` 的元素。如果没有匹配的元素，则返回 `undefined`。
+
+```js
+// 语法
+const result = array.find((element) => {
+    return element.name === 'targetName'
+})
+```
+
+在本例中，`gltfScene.children` 是一个数组，包含了场景根节点的所有直接子对象。我们用它来找到名称匹配的特定网格。
+:::
+
+### 为发光物体创建独立材质
+
+找到发光物体后，给它们分配独立的 `MeshBasicMaterial`，使用明亮的纯色：
+
+```js
+// 发光物体的材质 -- 使用明亮的纯色
+const poleLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffcc })
+const portalLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff })
+
+// 替换材质
+if (poleLightAMesh) poleLightAMesh.material = poleLightMaterial
+if (poleLightBMesh) poleLightBMesh.material = poleLightMaterial
+if (portalLightMesh) portalLightMesh.material = portalLightMaterial
+```
+
+**为什么用 `if` 检查？** 因为 `.find()` 可能返回 `undefined`（如果 Blender 中没有这个名称的物体）。直接对 `undefined` 设置 `material` 会报错。加上 `if` 判断可以安全地处理这种情况。
+
+### 为什么用 MeshBasicMaterial 做发光效果？
+
+`MeshBasicMaterial` 不受光照影响，这意味着发光物体的颜色**始终是明亮纯净的**。配合后期处理中的泛光效果（UnrealBloomPass），这些明亮区域会产生漂亮的辉光扩散，模拟真实的光源。
+
+| 效果 | 需要的材质 | 原因 |
+|------|----------|------|
+| 静态烘焙场景 | MeshBasicMaterial + 烘焙纹理 | 不需要光照，直接显示烘焙结果 |
+| 发光物体 | MeshBasicMaterial + 亮色 | 不受光照影响，配合 Bloom 产生辉光 |
+| 实时光照物体 | MeshStandardMaterial | 需要 PBR 光照计算 |
+
+## 完整的模型加载代码
+
+将以上所有修复整合在一起，得到完整的加载代码：
+
+```js
+import * as THREE from 'three'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
+
+// === Draco 解码器 ===
+const dracoLoader = new DRACOLoader()
+dracoLoader.setDecoderPath('/draco/')
+
+// === GLTF 加载器 ===
+const gltfLoader = new GLTFLoader()
+gltfLoader.setDRACOLoader(dracoLoader)
+
+// === 加载烘焙纹理 ===
+const bakedTexture = new THREE.TextureLoader().load('/models/baked.jpg')
+bakedTexture.flipY = false              // 修复纹理翻转
+bakedTexture.colorSpace = THREE.SRGBColorSpace  // 修复颜色偏暗
+
+// === 创建材质 ===
+const bakedMaterial = new THREE.MeshBasicMaterial({ map: bakedTexture })
+const poleLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffcc })
+const portalLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff })
+
+// === 加载模型 ===
+gltfLoader.load('/models/room.glb', (gltf) => {
+    const gltfScene = gltf.scene
+
+    // 遍历所有子对象，默认使用烘焙材质
+    gltfScene.traverse((child) => {
+        if (child.isMesh) {
+            child.material = bakedMaterial
+        }
+    })
+
+    // 查找发光物体并替换为独立材质
+    const poleLightAMesh = gltfScene.children.find(
+        (child) => child.name === 'poleLightA'
+    )
+    const poleLightBMesh = gltfScene.children.find(
+        (child) => child.name === 'poleLightB'
+    )
+    const portalLightMesh = gltfScene.children.find(
+        (child) => child.name === 'PortalLight'
+    )
+
+    if (poleLightAMesh) poleLightAMesh.material = poleLightMaterial
+    if (poleLightBMesh) poleLightBMesh.material = poleLightMaterial
+    if (portalLightMesh) portalLightMesh.material = portalLightMaterial
+
+    scene.add(gltfScene)
+})
+```
+
+:::tip 材质替换的顺序
+注意我们先给所有 Mesh 分配了烘焙材质，然后再给发光物体分配独立的发光材质。这个顺序很重要 -- 如果反过来，发光物体会先拿到烘焙材质，然后被覆盖。虽然结果一样，但"先统一设置默认值，再对特殊情况做覆盖"是一种更清晰的编程模式。
+:::
+
+## 性能分析与 Spector.js
+
+### 为什么需要关注绘制调用？
+
+场景现在能正确显示了，但它运行得流畅吗？让我们用 Spector.js 来分析一下。
+
+**什么是绘制调用（Draw Call）？** 简单说，每次 GPU 从 CPU 接收一条"请渲染这个物体"的指令，就是一次绘制调用。绘制调用的数量直接影响性能：
+
+- 每个 Mesh = 1 次绘制调用（至少）
+- 如果材质不同，即使几何体合并了，也需要分别绘制
+- 如果纹理不同，也需要分别绘制
+
+**在现代 WebGL 中，减少绘制调用是性能优化的首要目标。** 对于简单的几个物体来说，100 次绘制调用不算什么。但当场景复杂时，几百次绘制调用会让帧率大幅下降，尤其在移动设备上。
+
+### 安装和使用 Spector.js
+
+Spector.js 是一个浏览器扩展，用于分析 WebGL 的渲染过程。
+
+**安装方式：**
+
+1. 打开 Chrome 网上应用店
+2. 搜索 "Spector.js"
+3. 安装扩展
+4. 在浏览器工具栏中点击 Spector.js 图标，选择 "Start Capture"
+5. 刷新页面或触发一帧渲染
+6. Spector.js 会记录这一帧中所有的 WebGL 调用
+
+**使用 Spector.js 分析我们的场景：**
+
+1. 点击 Spector.js 图标，然后点击相机图标开始捕获
+2. 触发一次渲染帧
+3. 在 Spector.js 的结果面板中，查看 **Draw Calls** 数量
+
+### 优化前的性能数据
+
+在合并几何体之前，场景有以下数据：
+
+| 指标 | 数值 |
+|------|------|
+| 绘制调用（Draw Calls） | **173 次** |
+| 三角形数量 | 约 32,000 |
+| 帧率（FPS） | 因设备而异 |
+
+**173 次绘制调用！** 对于一个静态的烘焙场景来说，这个数字太高了。每个独立的 Mesh、每个不同的材质都会产生额外的绘制调用。这意味着 GPU 要反复与 CPU 通信，造成大量的性能浪费。
+
+:::caution 绘制调用与三角形数量的区别
+绘制调用（Draw Call）和三角形数量是两个不同的性能指标。一个包含 100,000 个三角形的单个网格通常比 100 个各含 1,000 个三角形的网格渲染得更快。因为后者有 100 次绘制调用，每次调用都有 CPU-GPU 通信的开销。
+:::
+
+## Blender 中的几何体合并
+
+### 核心思想
+
+优化的核心思想非常简单：**将多个独立的 Mesh 合并为一个 Mesh。** 一个 Mesh 只需要一次绘制调用，所以合并后绘制调用会大幅减少。
+
+这需要在 Blender 中完成，因为合并操作需要修改几何体数据。
+
+### Blender 合并工作流
+
+#### 第一步：创建 "merged" 集合
+
+在 Blender 的 Outliner 中，创建一个新的集合（Collection），命名为 `merged`。这个集合专门用来存放合并后的物体。
+
+```
+Scene Collection
+├── 原始物体们（保持不动）
+├── 发光物体（poleLightA, poleLightB, PortalLight）
+└── merged（新建的集合）
+```
+
+#### 第二步：复制需要合并的物体
+
+将场景中**需要烘焙的普通物体**全部复制到 `merged` 集合中。
+
+**重要：不要复制发光物体。** 发光物体需要保持独立，因为它们在 Three.js 中使用不同的材质。
+
+操作步骤：
+1. 选中所有需要烘焙的普通物体
+2. 按 `Shift + D` 进行复制（不要用 `Alt + D` 关联复制）
+3. 将复制出的物体移动到 `merged` 集合中
+
+#### 第三步：合并所有复制的物体
+
+1. 在 Outliner 中展开 `merged` 集合
+2. 全选集合中的所有物体（`A` 键）
+3. 按 `Ctrl + J` 将它们合并为一个物体
+
+现在 `merged` 集合中只有一个物体了。
+
+#### 第四步：清理材质
+
+合并后的物体会携带原始物体的所有材质。因为我们使用烘焙纹理，这些材质在 Three.js 中不需要：
+
+1. 选中合并后的物体
+2. 在 Material Properties 面板中，点击每个材质旁的 `-` 按钮删除
+3. 确认所有材质都被移除
+
+:::warning 为什么可以移除材质？
+因为我们已经在 Three.js 中使用 `MeshBasicMaterial` 和烘焙纹理来替代了原始材质。导出时即使物体没有材质也没关系，我们会在代码中给它赋值。
+:::
+
+#### 第五步：重命名
+
+将合并后的物体重命名为 `baked`。这个名字将在 Three.js 代码中用来定位它。
+
+#### 第六步：导出
+
+1. 选择 `merged` 集合中的 `baked` 物体和发光物体
+2. File → Export → glTF 2.0
+3. 设置：
+   - Format: glTF Binary (.glb)
+   - Include: Selected Objects
+   - **不要勾选** Export Materials（我们不需要材质了）
+   - 开启 Draco mesh compression
+
+导出后会得到一个新的 `.glb` 文件，里面包含：
+- 一个名为 `baked` 的合并大网格（包含所有普通物体的几何体）
+- 独立的发光物体网格
+
+### 合并前后对比
+
+| 指标 | 合并前 | 合并后 |
+|------|--------|--------|
+| 绘制调用（Draw Calls） | **173 次** | **16 次** |
+| 网格数量 | 数十个 | 仅几个 |
+| 帧率 | 一般 | 显著提升 |
+| 可维护性 | 每个物体独立 | 烘焙物体为整体 |
+
+**从 173 次降到 16 次 -- 性能提升了超过 10 倍！** 这就是合并几何体的威力。
+
+:::tip 为什么是 16 次而不是 1 次？
+即使合并了大部分物体，仍然有一些独立的对象需要单独绘制（发光物体等）。16 次绘制调用对于这个场景来说是一个非常健康的数字。在一般的项目中，将绘制调用控制在 100 次以内（移动设备控制在 50 次以内）是比较好的目标。
+:::
+
+## 更新 Three.js 代码
+
+合并后，模型的结构发生了变化。我们需要更新 Three.js 中的代码来适配新的模型结构。
+
+### 新的加载逻辑
+
+之前我们是遍历所有子对象给它们分配烘焙材质。现在所有普通物体已经合并为一个名为 `baked` 的网格，所以我们可以直接找到它：
+
+```js
+gltfLoader.load('/models/room-merged.glb', (gltf) => {
+    const gltfScene = gltf.scene
+
+    // 找到合并后的烘焙网格
+    const bakedMesh = gltfScene.children.find(
+        (child) => child.name === 'baked'
+    )
+    if (bakedMesh) {
+        bakedMesh.material = bakedMaterial
+    }
+
+    // 找到发光物体
+    const poleLightAMesh = gltfScene.children.find(
+        (child) => child.name === 'poleLightA'
+    )
+    const poleLightBMesh = gltfScene.children.find(
+        (child) => child.name === 'poleLightB'
+    )
+    const portalLightMesh = gltfScene.children.find(
+        (child) => child.name === 'PortalLight'
+    )
+
+    if (poleLightAMesh) poleLightAMesh.material = poleLightMaterial
+    if (poleLightBMesh) poleLightBMesh.material = poleLightMaterial
+    if (portalLightMesh) portalLightMesh.material = portalLightMaterial
+
+    scene.add(gltfScene)
+})
+```
+
+### 合并前 vs 合并后的代码对比
+
+| 方面 | 合并前 | 合并后 |
+|------|--------|--------|
+| 定位烘焙物体 | `traverse()` 遍历所有 Mesh | `.find()` 直接找 `baked` |
+| 分配烘焙材质 | 在遍历中批量赋值 | 只赋值一次 |
+| 发光物体 | 同样用 `.find()` | 同样用 `.find()`（无变化） |
+| 绘制调用 | 173 次 | 16 次 |
+
+:::info 代码中的 find() 与 traverse()
+- `.find()` -- 在直接子对象数组中查找，**不会递归**搜索嵌套的子节点
+- `.traverse()` -- 递归遍历**所有层级的后代**
+
+如果模型结构扁平（目标对象都是根节点的直接子节点），用 `.find()` 更简单直接。如果目标对象嵌套在多层 Group 中，需要使用 `.traverse()` 或 `getObjectByName()`。
+:::
+
+## 路径问题：部署到子目录
+
+### 问题描述
+
+在本地开发时，你的项目通常运行在根路径下：
+
+```
+http://localhost:5173/
+```
+
+但如果部署到服务器的子目录下：
+
+```
+http://example.com/my-project/
+```
+
+之前代码中以 `/` 开头的路径（如 `/models/room.glb`、`/draco/`）会出问题。因为 `/models/room.glb` 会被解析为：
+
+```
+http://example.com/models/room.glb    ← 错误！
+```
+
+而不是你期望的：
+
+```
+http://example.com/my-project/models/room.glb    ← 正确
+```
+
+### 解决方案：使用相对路径
+
+去掉路径开头的 `/`，使用相对路径：
+
+```js
+// 错误 -- 绝对路径，在子目录部署时会断裂
+dracoLoader.setDecoderPath('/draco/')
+gltfLoader.load('/models/room.glb', ...)
+
+// 正确 -- 相对路径，在任何位置都能正常工作
+dracoLoader.setDecoderPath('draco/')
+gltfLoader.load('models/room.glb', ...)
+```
+
+| 路径类型 | 示例 | 根目录部署 | 子目录部署 |
+|---------|------|:--------:|:--------:|
+| 绝对路径 | `/models/room.glb` | 正常 | **断裂** |
+| 相对路径 | `models/room.glb` | 正常 | 正常 |
+
+:::caution 养成好习惯
+即使在本地开发时绝对路径能正常工作，也建议从项目一开始就使用相对路径。这样在部署时就不会遇到路径断裂的问题。这是一个容易忽略但非常重要的细节。
+:::
+
+## 常见问题排查
+
+### 问题：场景全黑
+
+**可能原因和解决方案：**
+
+| 原因 | 解决方案 |
+|------|---------|
+| 使用了 PBR 材质但没有灯光 | 替换为 `MeshBasicMaterial` |
+| 烘焙纹理路径错误 | 检查 `TextureLoader.load()` 的路径 |
+| 模型没有添加到场景 | 确认调用了 `scene.add()` |
+| 相机位置不对 | 检查相机是否在场景内部或背对场景 |
+
+### 问题：纹理方向不对
+
+| 原因 | 解决方案 |
+|------|---------|
+| 翻转了两次 | 设置 `bakedTexture.flipY = false` |
+| Blender 中烘焙方向设置 | 检查 Blender 的烘焙设置 |
+
+### 问题：颜色偏暗或不正确
+
+| 原因 | 解决方案 |
+|------|---------|
+| 色彩空间未设置 | 设置 `bakedTexture.colorSpace = THREE.SRGBColorSpace` |
+| 渲染器色彩空间未设置 | 设置 `renderer.outputColorSpace = THREE.SRGBColorSpace` |
+| 使用了旧版 API | 用 `encoding` 替代 `colorSpace`（旧版 Three.js） |
+
+### 问题：.find() 返回 undefined
+
+| 原因 | 解决方案 |
+|------|---------|
+| Blender 中名称不匹配 | 仔细检查 Blender 中物体的名称，注意大小写和空格 |
+| 物体嵌套在 Group 中 | `.find()` 只搜索直接子对象，改用 `traverse()` 或 `getObjectByName()` |
+| 没有导出该物体 | 检查 Blender 导出时是否选择了正确的物体 |
+
+### 问题：绘制调用过多
+
+| 原因 | 解决方案 |
+|------|---------|
+| 物体没有合并 | 在 Blender 中合并几何体 |
+| 使用了不同材质 | 尽量让更多物体共享同一材质 |
+| 有大量细小物体 | 考虑合并或使用 InstancedMesh |
+
+## 完整的最终代码
+
+```js
+import * as THREE from 'three'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
+
+// === 场景、相机、渲染器基础设置 ===
+const scene = new THREE.Scene()
+const camera = new THREE.PerspectiveCamera(
+    45,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    100
+)
+camera.position.set(4, 2, 5)
+
+const renderer = new THREE.WebGLRenderer({
+    canvas: document.querySelector('canvas'),
+    antialias: true
+})
+renderer.setSize(window.innerWidth, window.innerHeight)
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+renderer.outputColorSpace = THREE.SRGBColorSpace
+
+// === Draco 解码器 ===
+const dracoLoader = new DRACOLoader()
+dracoLoader.setDecoderPath('draco/')  // 使用相对路径
+
+// === GLTF 加载器 ===
+const gltfLoader = new GLTFLoader()
+gltfLoader.setDRACOLoader(dracoLoader)
+
+// === 加载烘焙纹理 ===
+const bakedTexture = new THREE.TextureLoader().load('models/baked.jpg')
+bakedTexture.flipY = false               // 修复纹理翻转 Bug
+bakedTexture.colorSpace = THREE.SRGBColorSpace  // 设置正确的色彩空间
+
+// === 创建材质 ===
+const bakedMaterial = new THREE.MeshBasicMaterial({
+    map: bakedTexture
+})
+
+const poleLightMaterial = new THREE.MeshBasicMaterial({
+    color: 0xffffcc
+})
+
+const portalLightMaterial = new THREE.MeshBasicMaterial({
+    color: 0xffffff
+})
+
+// === 加载模型 ===
+gltfLoader.load('models/room-merged.glb', (gltf) => {
+    const gltfScene = gltf.scene
+
+    // 找到合并后的烘焙网格，分配烘焙材质
+    const bakedMesh = gltfScene.children.find(
+        (child) => child.name === 'baked'
+    )
+    if (bakedMesh) {
+        bakedMesh.material = bakedMaterial
+    }
+
+    // 找到发光物体，分配独立的发光材质
+    const poleLightAMesh = gltfScene.children.find(
+        (child) => child.name === 'poleLightA'
+    )
+    const poleLightBMesh = gltfScene.children.find(
+        (child) => child.name === 'poleLightB'
+    )
+    const portalLightMesh = gltfScene.children.find(
+        (child) => child.name === 'PortalLight'
+    )
+
+    if (poleLightAMesh) poleLightAMesh.material = poleLightMaterial
+    if (poleLightBMesh) poleLightBMesh.material = poleLightMaterial
+    if (portalLightMesh) portalLightMesh.material = portalLightMaterial
+
+    scene.add(gltfScene)
+})
+```
+
+## 本课关键概念总结
+
+| 概念 | 关键点 |
+|------|--------|
+| GLTFLoader + DRACOLoader | 加载 Draco 压缩的 glTF 模型的标准方式 |
+| MeshBasicMaterial | 不受光照影响，适合配合烘焙纹理使用 |
+| `texture.flipY = false` | 修复 Blender 烘焙纹理的翻转 Bug |
+| `texture.colorSpace = THREE.SRGBColorSpace` | 确保烘焙纹理的颜色正确显示 |
+| `Array.find()` | 根据条件在数组中查找特定元素 |
+| `Object3D.traverse()` | 递归遍历场景树中的所有后代节点 |
+| 绘制调用（Draw Call） | GPU 渲染指令数量，直接影响性能 |
+| 几何体合并 | 在 Blender 中将多个 Mesh 合并为一个，大幅减少绘制调用 |
+| 相对路径 | 去掉开头的 `/`，确保子目录部署时路径正常 |
+
+## 下一课预告
+
+在第 52 课中，我们将在当前场景基础上添加更多细节：漂浮的粒子、发光物体的动画效果、相机运动等。这些细节会让一个静态的烘焙场景变得生动有趣。
+
+---

@@ -1,0 +1,271 @@
+---
+title: 27 着色器基础
+description: 从零开始学习 GPU 着色器编程：GLSL 语言、顶点/片元着色器、ShaderMaterial 使用
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 什么是着色器
+
+前面课程中我们使用的所有材质（MeshStandardMaterial、MeshBasicMaterial 等）内部都在使用**着色器**。着色器是运行在 **GPU**（显卡）上的小程序，用 **GLSL**（OpenGL Shading Language）编写。
+
+学习着色器意味着你不再受限于 Three.js 内置的材质效果，可以创造出任何你能想象的视觉效果。
+
+### 渲染管线
+
+当你渲染一帧画面时，数据经过以下步骤：
+
+```
+JavaScript 代码
+    ↓ (通过 uniform 和 attribute 传递数据)
+顶点着色器  ← 处理每个顶点的位置（运行 N 次，N = 顶点数量）
+    ↓ (通过 varying 传递数据到片元着色器)
+片元着色器  ← 处理每个像素的颜色（运行 M 次，M = 像素数量）
+    ↓
+屏幕上的像素
+```
+
+- **顶点着色器**：决定每个顶点在屏幕上的位置。输入是一个顶点的 3D 坐标，输出是它在屏幕上的 2D 坐标。
+- **片元着色器**：决定每个像素的颜色。输入是插值后的数据，输出是一个 RGBA 颜色值。
+
+### GPU vs CPU
+
+为什么用 GPU？因为 GPU 有数千个核心，可以**同时**处理大量顶点和像素。一个拥有 200 万个三角面的模型，GPU 可以在瞬间完成所有顶点和像素的计算。
+
+
+<LessonPreview lesson="27-shaders" />
+
+## ShaderMaterial
+
+Three.js 提供了 `ShaderMaterial` 让你编写自定义着色器：
+
+```js
+import testVertexShader from './shaders/test/vertex.glsl'
+import testFragmentShader from './shaders/test/fragment.glsl'
+
+const material = new THREE.ShaderMaterial({
+    vertexShader: testVertexShader,
+    fragmentShader: testFragmentShader,
+    uniforms: {
+        uTime: { value: 0 },
+        uColor: { value: new THREE.Color('orange') }
+    }
+})
+```
+
+### 为什么用单独的 .glsl 文件
+
+将着色器代码放在独立的 `.glsl` 文件中，比写在 JS 字符串中更好：
+- 语法高亮（VS Code 安装 "Shader languages support" 扩展）
+- 代码可读性
+- 便于维护
+
+Vite 原生支持导入 `.glsl` 文件作为字符串。
+
+## Uniforms（统一变量）
+
+Uniform 是从 JavaScript 传递到着色器的**全局变量**，所有顶点和片元共享同一个值。
+
+### 命名约定
+
+自定义 uniform 以 `u` 前缀开头（如 `uTime`、`uColor`），这是 Three.js 社区的约定，帮助你区分自定义变量和 Three.js 内置变量。
+
+### 支持的数据类型
+
+```js
+uniforms: {
+    uFloat:   { value: 1.0 },                          // float
+    uInt:     { value: 1 },                              // int
+    uVector2: { value: new THREE.Vector2(10, 5) },      // vec2
+    uVector3: { value: new THREE.Vector3(1, 0, 0) },    // vec3
+    uColor:   { value: new THREE.Color('orange') },      // vec3 (颜色)
+    uTexture: { value: flagTexture },                    // sampler2D
+}
+```
+
+### 在动画循环中更新
+
+```js
+const tick = () => {
+    const elapsedTime = clock.getElapsedTime()
+    material.uniforms.uTime.value = elapsedTime
+    // ...
+}
+```
+
+## Attributes（属性）
+
+Attribute 是**每个顶点**的数据。Three.js 内置了三个 attribute：
+
+| 名称 | 类型 | 说明 |
+|------|------|------|
+| `position` | vec3 | 顶点的 3D 坐标 |
+| `uv` | vec2 | 纹理坐标（0-1 范围） |
+| `normal` | vec3 | 顶点法线方向 |
+
+### 自定义 Attribute
+
+以 `a` 前缀命名（如 `aRandom`、`aScale`）：
+
+```js
+// JavaScript 端 — 创建自定义 attribute
+const count = geometry.attributes.position.count
+const randoms = new Float32Array(count)
+for (let i = 0; i < count; i++) {
+    randoms[i] = Math.random()
+}
+geometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1))
+```
+
+```glsl
+// GLSL 端 — 声明 attribute
+attribute float aRandom;
+```
+
+:::caution
+不要重用 Three.js 内置的 attribute 名称（`color`、`uv`、`normal`）。如果需要自定义的顶点颜色，用 `aColor` 而不是 `color`。
+:::
+
+## Varyings（变量传递）
+
+Varying 用于从顶点着色器向片元着色器传递数据。GPU 会自动在顶点之间**插值** varying 的值。
+
+```glsl
+// 顶点着色器
+varying float vElevation;
+varying vec2 vUv;
+
+void main() {
+    vElevation = elevation;   // 设置值
+    vUv = uv;
+}
+
+// 片元着色器（同名声明，自动接收插值后的值）
+varying float vElevation;
+varying vec2 vUv;
+
+void main() {
+    // vElevation 已被 GPU 插值
+    gl_FragColor = vec4(vElevation, 0.0, 0.0, 1.0);
+}
+```
+
+以 `v` 前缀命名 varying 变量（如 `vUv`、`vElevation`）。
+
+## 顶点着色器详解
+
+```glsl
+uniform float uTime;
+uniform vec2 uFrequency;
+
+// Three.js 自动提供的矩阵
+// modelMatrix      — 模型变换矩阵
+// viewMatrix       — 视图变换矩阵
+// projectionMatrix — 投影矩阵
+
+void main() {
+    // 1. 将顶点从模型空间变换到世界空间
+    vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+
+    // 2. 修改顶点位置（如波浪效果）
+    float elevation = sin(modelPosition.x * uFrequency.x + uTime) * 0.1;
+    modelPosition.z += elevation;
+
+    // 3. 变换到视图空间
+    vec4 viewPosition = viewMatrix * modelPosition;
+
+    // 4. 投影到屏幕空间
+    vec4 projectedPosition = projectionMatrix * viewPosition;
+
+    // 5. 设置最终位置
+    gl_Position = projectedPosition;
+}
+```
+
+也可以简化为：
+
+```glsl
+void main() {
+    vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+    modelPosition.z += sin(modelPosition.x * uFrequency.x + uTime) * 0.1;
+
+    gl_Position = projectionMatrix * viewMatrix * modelPosition;
+}
+```
+
+## 片元着色器详解
+
+```glsl
+uniform float uTime;
+uniform vec3 uColor;
+uniform sampler2D uTexture;
+
+varying vec2 vUv;
+
+void main() {
+    // 采样纹理颜色
+    vec4 textureColor = texture2D(uTexture, vUv);
+
+    // 输出最终颜色 (RGBA)
+    gl_FragColor = textureColor;
+}
+```
+
+`gl_FragColor` 是片元着色器的输出变量，表示这个像素的最终颜色。`vec4(r, g, b, a)` 中每个分量范围 0.0-1.0。
+
+## GLSL 数据类型速查
+
+| 类型 | 说明 | 示例 |
+|------|------|------|
+| `float` | 浮点数 | `1.0`, `0.5`, `3.14` |
+| `int` | 整数 | `1`, `42` |
+| `bool` | 布尔值 | `true`, `false` |
+| `vec2` | 二维向量 | `vec2(1.0, 0.5)` |
+| `vec3` | 三维向量 | `vec3(1.0, 0.0, 0.5)` |
+| `vec4` | 四维向量 | `vec4(1.0, 0.0, 0.5, 1.0)` |
+| `mat2/3/4` | 矩阵 | `mat4(1.0)` |
+| `sampler2D` | 纹理采样器 | `texture2D(sampler, uv)` |
+
+### 向量操作
+
+```glsl
+vec3 color = vec3(1.0, 0.5, 0.0);
+
+// 访问分量（xyzw 或 rgba 或 stpq）
+float r = color.r;    // 1.0
+float x = color.x;    // 1.0 (等价)
+
+// 向量数学
+vec3 a = vec3(1.0, 2.0, 3.0);
+vec3 b = vec3(0.5, 0.5, 0.5);
+vec3 sum = a + b;           // 逐分量相加
+vec3 scaled = a * 2.0;      // 逐分量缩放
+```
+
+:::tip
+GLSL 中 `1` 是整数，`1.0` 是浮点数。大部分 GLSL 函数要求浮点参数。写 `1` 而不是 `1.0` 会导致编译错误。
+:::
+
+## 调试着色器
+
+着色器在 GPU 上运行，无法用 `console.log` 调试。常用技巧：
+
+1. **用颜色可视化值** — 将数值映射到颜色通道
+   ```glsl
+   gl_FragColor = vec4(vec3(someValue), 1.0);
+   ```
+
+2. **检查编译错误** — 查看浏览器控制台中的 WebGL 错误信息
+
+3. **从简单开始** — 先确保能渲染纯色，再逐步添加效果
+
+4. **使用 ShaderMaterial 的 `wireframe: true`** — 查看顶点布局
+
+## 参考链接
+
+- [The Book of Shaders](https://thebookofshaders.com/) — GLSL 着色器入门教程（强烈推荐）
+- [Three.js ShaderMaterial 文档](https://threejs.org/docs/#api/en/materials/ShaderMaterial)
+- [GLSL 参考](https://www.khronos.org/opengl/wiki/Core_Language_(GLSL))
+- [Shaderific — GLSL 函数参考](https://shaderific.blogspot.com/p/list-of-glsl-functions.html)
+- [Shadertoy](https://www.shadertoy.com/) — 在线着色器编辑器和社区

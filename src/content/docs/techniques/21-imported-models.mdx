@@ -1,0 +1,771 @@
+---
+title: 21 导入模型
+description: 使用 GLTFLoader 和 DRACOLoader 加载外部 3D 模型到 Three.js 场景
+---
+
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+
+## 为什么要导入模型？
+
+到目前为止，我们使用的都是 Three.js 内置的几何体 -- 方块、球体、圆柱体、平面。用这些基本形状确实可以搭建一些简单的场景，比如一个小房子。
+
+但如果你想创建更复杂的东西呢？
+
+- 一个**人物角色**（有脸、手、衣服褶皱）
+- 一架**宇宙飞船**（有复杂的曲面和细节）
+- 一辆**汽车**（有轮子、车灯、后视镜）
+
+用代码一个顶点一个顶点地去定义这些形状，几乎是不可能的。这就是为什么我们需要从专业的 3D 建模软件（如 [Blender](https://www.blender.org/)、Cinema 4D、3ds Max、Maya）中导入模型。
+
+### 工作流程
+
+```
+3D 设计师 (Blender)  →  导出模型文件 (.glb/.gltf)  →  Three.js (GLTFLoader)  →  显示在网页上
+```
+
+通常的团队分工是：
+1. **3D 设计师**在 Blender 等软件中创建模型
+2. 导出为标准格式文件
+3. **前端开发者**用 Three.js 加载并显示这个文件
+
+如果你一个人做，也可以自己学习 Blender 来创建模型。Three.js Journey 课程后面也会有 Blender 的专门课程。
+
+
+<LessonPreview lesson="21-imported-models" />
+
+## 3D 模型格式概览
+
+3D 文件格式非常多，因为不同的需求催生了不同的解决方案：
+
+| 格式 | 特点 | 推荐程度 |
+|------|------|----------|
+| **glTF / GLB** | Web 3D 标准，Khronos Group 制定 | ★★★★★ 强烈推荐 |
+| FBX | Autodesk 系列软件常用，功能丰富 | ★★★ 可用但不推荐 |
+| OBJ | 非常古老，简单但不支持动画 | ★★ 仅简单场景 |
+| STL | 3D 打印常用，只有几何没有材质 | ★ 仅 3D 打印 |
+| PLY | 点云数据，常用于粒子系统 | ★★ 特定场景 |
+| Collada (.dae) | 开源标准，已被 glTF 取代 | ★ 已过时 |
+| 3DS | 3ds Max 专用，较老旧 | ★ 已过时 |
+
+选择格式时需要考虑以下因素：
+
+- **你需要什么数据？** 只需要几何体？还是也需要材质、动画、骨骼？
+- **文件大小**：你的网站能承受多大的文件？加载时间有多关键？
+- **是否需要编辑？** 你是否需要修改模型内部的纹理或参数？
+- **兼容性**：格式是否被主流 3D 软件和引擎支持？
+
+:::tip
+实际上你甚至可以自己发明一个格式。格式本质上只是一组约定好的数据导出方式。比如作者曾经因为需要精确的贝塞尔曲线数据，自己用 Python 在 Blender 中写了一个自定义导出器。但除非有特殊需求，推荐使用现有的标准格式。
+:::
+
+## glTF 格式详解
+
+[glTF](https://www.khronos.org/gltf/)（GL Transmission Format）被称为 **"3D 界的 JPEG"**，是 Khronos Group 制定的开放标准。这个组织也是 OpenGL、WebGL、Vulkan 背后的推动者，成员包括 NVIDIA、AMD、Google、Apple、Epic Games 等行业巨头。
+
+### 为什么选择 glTF？
+
+1. **开放标准**：不是某个公司的私有格式，任何人都可以使用
+2. **广泛支持**：Blender、Unity、Unreal Engine、Babylon.js、Three.js 等都原生支持
+3. **数据完整**：支持几何体、材质、动画、骨骼、变形、相机、灯光、场景层级
+4. **跨平台一致**：同一个文件在 Blender、Unity、Three.js 中渲染结果非常接近
+5. **正在成为实时 3D 的事实标准**
+
+### glTF 支持的数据类型
+
+- **几何体和材质**：PBR（基于物理的渲染）材质，看起来很真实
+- **场景图（Scene Graph）**：对象可以嵌套包含，就像 Three.js 中的 Group
+- **动画和骨骼**：角色走路、跑步等动画
+- **变形目标（Morph Targets）**：面部表情等
+- **相机和灯光**：甚至可以导出相机位置和灯光设置
+
+### glTF 的四种文件形式
+
+以一只鸭子模型为例：
+
+#### 1. glTF Default（默认格式）
+
+多个文件组成：
+
+```
+Duck/
+├── Duck.gltf        ← JSON 文件（模型描述信息）
+├── Duck0.bin        ← 二进制文件（顶点、UV、法线等几何数据）
+└── DuckCM.png       ← 纹理图片
+```
+
+- `.gltf` 文件是 JSON 格式，你可以在编辑器中打开查看和修改
+- `.gltf` 中引用了 `.bin`（几何数据）和 `.png`（纹理）
+- 加载 `.gltf` 文件时，加载器会自动加载它引用的其他文件
+- **优点**：可以单独修改纹理图片（用 GIMP/Photoshop 替换颜色）
+- **缺点**：多个文件，部署时容易遗漏
+
+#### 2. glTF Binary（.glb）
+
+所有数据打包在**一个二进制文件**中：
+
+```
+Duck.glb    ← 单个文件，包含所有数据
+```
+
+- 通常与默认格式大小相近
+- **优点**：只有一个文件，部署简单
+- **缺点**：无法直接修改内部的纹理
+
+#### 3. glTF Draco（Draco 压缩版）
+
+使用 Google 的 [Draco](https://google.github.io/draco/) 算法压缩几何数据：
+
+```
+Duck/
+├── Duck.gltf        ← JSON 文件
+├── Duck0.bin        ← 经过 Draco 压缩的二进制数据（体积更小！）
+└── DuckCM.png       ← 纹理图片
+```
+
+- 文件体积可以缩小 **60% 以上**
+- 比如鸭子模型：未压缩 123KB → Draco 压缩后 45KB
+- **缺点**：需要额外的 Draco 解码器库，加载时需要额外设置
+
+#### 4. glTF Embedded（嵌入式）
+
+所有数据（包括纹理和几何体的 base64 编码）嵌入在**一个 JSON 文件**中：
+
+```
+Duck.gltf    ← 单个 JSON 文件，内部嵌入了所有数据
+```
+
+- **优点**：只有一个文件，可以阅读和编辑 JSON 内容
+- **缺点**：文件最大（base64 编码会增加约 33% 的体积）
+
+### 各格式对比
+
+| 格式 | 文件数 | 文件大小 | 可编辑纹理 | 推荐场景 |
+|------|--------|----------|-----------|----------|
+| glTF Default | 多个 | 中等 | 可以 | 需要经常修改纹理 |
+| glTF Binary (.glb) | 1个 | 中等 | 不行 | 生产环境部署 |
+| glTF Draco | 多个 | 最小 | 可以 | 网络带宽受限 |
+| glTF Embedded | 1个 | 最大 | 可以 | 快速原型测试 |
+
+:::tip
+**生产环境推荐使用 `.glb` 格式** -- 单个文件，加载简单，部署不容易出错。如果文件太大，再考虑 Draco 压缩。
+:::
+
+## GLTFLoader 使用
+
+### 安装和导入
+
+GLTFLoader 不是 Three.js 核心库的一部分（因为加载器代码很多，会让核心库太臃肿），需要从扩展目录导入：
+
+```js
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+```
+
+Three.js 的 `examples/jsm/loaders/` 目录中有很多加载器：
+
+| 加载器 | 用途 |
+|--------|------|
+| `GLTFLoader` | 加载 glTF/GLB 模型 |
+| `DRACOLoader` | Draco 压缩模型解码 |
+| `FBXLoader` | 加载 FBX 模型 |
+| `OBJLoader` | 加载 OBJ 模型 |
+| `RGBELoader` | 加载 HDR 环境贴图 |
+| `SVGLoader` | 加载 SVG 矢量图 |
+| `TextureLoader` | 加载纹理图片 |
+
+### 基本加载方式
+
+```js
+const gltfLoader = new GLTFLoader()
+
+gltfLoader.load(
+    '/models/Duck/glTF-Binary/Duck.glb',  // 模型文件路径
+    (gltf) => {
+        // 加载成功回调
+        console.log('模型加载成功！')
+        console.log(gltf)
+        scene.add(gltf.scene)
+    },
+    (progress) => {
+        // 加载进度回调
+        console.log('加载进度：', (progress.loaded / progress.total * 100) + '%')
+    },
+    (error) => {
+        // 加载错误回调
+        console.error('模型加载失败：', error)
+    }
+)
+```
+
+三个回调函数：
+
+1. **成功回调**：接收 `gltf` 对象，包含加载的模型数据
+2. **进度回调**：接收 `progress` 对象，可以用来显示加载进度条
+3. **错误回调**：加载失败时触发
+
+:::warning 注意路径
+模型文件路径从 `static/`（或 `public/`）目录开始算，**不要**在路径前面加 `static/`。比如文件在 `static/models/Duck.glb`，路径就写 `/models/Duck.glb`。
+:::
+
+### 加载的结果对象（gltf）
+
+当你打印 `gltf` 对象时，会看到以下属性：
+
+```
+gltf = {
+    animations: [...],     // 动画剪辑数组
+    scene: Group,           // 场景（Three.js Group 对象）
+    scenes: [...],          // 所有场景（数组，可以有多个场景）
+    cameras: [...],         // 相机数组
+    assets: {...},          // 元数据
+    parser: {...},          // 解析器内部对象
+    userData: {...}         // 用户自定义数据
+}
+```
+
+最常用的属性是：
+
+- **`gltf.scene`**：模型的根节点，是一个 `THREE.Group` 对象
+- **`gltf.animations`**：动画剪辑数组（如果模型包含动画）
+
+## 模型结构：场景层级树
+
+加载的模型通常有一个嵌套的层级结构，类似这样：
+
+```
+gltf.scene (Group)                    ← 根 Group
+├── name: "Sketchfab_Scene"           ← 根节点名称
+├── children: [                        ← 子节点数组
+│   ├── Object3D (Group)              ← 包含缩放信息的父级 Group
+│   │   ├── scale: {x: 0.01, y: 0.01, z: 0.01}  ← 非常小的缩放！
+│   │   └── children: [
+│   │       ├── PerspectiveCamera       ← 模型自带的相机（通常不需要）
+│   │       └── Mesh (name: "mesh_0")  ← 我们真正想要的网格！
+│   │           ├── geometry: BufferGeometry
+│   │           └── material: MeshStandardMaterial (PBR 材质)
+│   └── ...
+│ ]
+```
+
+### 模型不会自动出现在场景中
+
+**重要**：加载模型只是获取了数据，你必须手动将模型添加到场景中：
+
+```js
+gltfLoader.load('/models/Duck.glb', (gltf) => {
+    scene.add(gltf.scene)  // 必须手动添加到场景！
+})
+```
+
+### 添加模型的几种方式
+
+#### 方式 1：添加整个 scene（推荐）
+
+```js
+scene.add(gltf.scene)
+```
+
+这是最简单的方式。整个场景（包括相机、网格等）都被添加进来。
+
+#### 方式 2：遍历并添加子元素
+
+```js
+gltf.scene.children.forEach(child => {
+    scene.add(child)
+})
+```
+
+这样可以跳过根 Group，把子元素直接放到场景中。注意这会**保留原始缩放**。
+
+#### 方式 3：只添加特定 Mesh
+
+```js
+// 遍历找到你想要的 Mesh
+gltf.scene.traverse((child) => {
+    if (child.isMesh) {
+        scene.add(child)
+    }
+})
+```
+
+`traverse()` 方法会递归遍历整个模型树，可以用来查找特定类型的子对象。
+
+:::warning 关于缩放的陷阱
+很多从 Blender 等软件导出的模型有一个非常小的缩放值（比如 `0.01`），这是因为 Blender 使用米作为单位，而模型可能很小。如果你只添加了内部的 Mesh 而跳过了包含缩放的父级 Group，模型会变得 100 倍大！
+
+**建议**：先添加 `gltf.scene`，观察效果，再根据需要调整。
+:::
+
+## 处理模型的位置和缩放
+
+加载模型后，你可能需要调整它的位置和大小：
+
+```js
+gltfLoader.load('/models/Duck.glb', (gltf) => {
+    const model = gltf.scene
+
+    // 调整缩放（如果模型太大或太小）
+    model.scale.set(0.5, 0.5, 0.5)
+
+    // 调整位置（让模型站在地面上而不是陷入地下）
+    model.position.y = -1.2
+
+    // 调整旋转（如果模型朝向不对）
+    model.rotation.y = Math.PI  // 旋转 180 度
+
+    scene.add(model)
+})
+```
+
+:::tip 调试技巧
+加载模型后，第一时间检查三件事：
+1. **位置**：模型在场景的哪个位置？可能需要调整 `position.y` 让它站在地面上
+2. **缩放**：模型的大小是否合适？使用 `model.scale` 调整
+3. **旋转**：模型是否面向正确的方向？可能需要调整 `rotation.y`
+:::
+
+## 访问模型的不同部分
+
+使用 `traverse()` 方法可以遍历模型的所有子对象，对每个部分进行不同的处理：
+
+```js
+gltfLoader.load('/models/Duck.glb', (gltf) => {
+    gltf.scene.traverse((child) => {
+        // 给所有 Mesh 开启阴影
+        if (child.isMesh) {
+            child.castShadow = true
+            child.receiveShadow = true
+        }
+
+        // 打印所有子节点的名称
+        console.log(child.name, child.type)
+    })
+
+    scene.add(gltf.scene)
+})
+```
+
+常见操作：
+
+```js
+// 查找特定名称的子对象
+const wheel = gltf.scene.getObjectByName('front_wheel')
+if (wheel) {
+    wheel.rotation.x += 0.01  // 旋转轮子
+}
+
+// 修改特定材质的颜色
+gltf.scene.traverse((child) => {
+    if (child.isMesh && child.name === 'body') {
+        child.material.color.set('#ff0000')  // 改成红色
+    }
+})
+
+// 替换材质
+gltf.scene.traverse((child) => {
+    if (child.isMesh) {
+        child.material = new THREE.MeshStandardMaterial({
+            color: '#00ff00',
+            metalness: 0.5,
+            roughness: 0.3
+        })
+    }
+})
+```
+
+## DRACOLoader 压缩模型
+
+当模型文件很大时（几 MB 到几十 MB），加载时间会成为问题。Google 的 [Draco](https://google.github.io/draco/) 压缩算法可以将几何数据压缩到原来的 30-40%。
+
+### 设置 DRACOLoader
+
+```js
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+
+// 1. 创建 DRACOLoader 并设置解码器路径
+const dracoLoader = new DRACOLoader()
+dracoLoader.setDecoderPath('/draco/')  // Draco 解码器文件所在的路径
+
+// 2. 将 DRACOLoader 传给 GLTFLoader
+const gltfLoader = new GLTFLoader()
+gltfLoader.setDRACOLoader(dracoLoader)
+
+// 3. 正常加载模型
+gltfLoader.load('/models/model-draco.glb', (gltf) => {
+    scene.add(gltf.scene)
+})
+```
+
+### Draco 解码器文件
+
+Draco 解码器需要额外的 JavaScript 文件。你需要：
+
+1. 从 [three.js GitHub 仓库](https://github.com/mrdoob/three.js/tree/dev/examples/jsm/libs/draco) 下载解码器文件
+2. 将以下文件放入项目的 `static/draco/` 目录：
+
+```
+static/
+└── draco/
+    ├── draco_decoder.js
+    ├── draco_decoder.wasm
+    └── draco_wasm_wrapper.js
+```
+
+或者使用 CDN：
+
+```js
+dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/')
+dracoLoader.setDecoderConfig({ type: 'js' })  // 使用 JS 解码器（兼容性更好）
+```
+
+:::tip 何时使用 Draco？
+- 模型文件 > 1MB 时，建议使用 Draco 压缩
+- 模型文件 < 500KB 时，Draco 压缩的收益不明显，可能不值得增加复杂度
+- Draco 只压缩**几何数据**（顶点、法线等），不压缩纹理。纹理优化需要另外处理
+:::
+
+## 模型动画
+
+如果模型包含骨骼动画（比如一个走路的人物），可以使用 Three.js 的 `AnimationMixer` 来播放：
+
+```js
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+
+const gltfLoader = new GLTFLoader()
+let mixer = null
+
+gltfLoader.load('/models/Fox/glTF/Fox.gltf', (gltf) => {
+    // 缩放模型到合适大小
+    gltf.scene.scale.set(0.025, 0.025, 0.025)
+
+    // 添加到场景
+    scene.add(gltf.scene)
+
+    // 创建动画混合器（AnimationMixer）
+    mixer = new THREE.AnimationMixer(gltf.scene)
+
+    // 获取动画剪辑并播放
+    // gltf.animations 是一个数组，可能包含多个动画
+    // 例如：[Walk, Run, Idle, Survey]
+    const action = mixer.clipAction(gltf.animations[2])
+    action.play()
+})
+
+// 在动画循环中更新混合器
+const clock = new THREE.Clock()
+let previousTime = 0
+
+const tick = () => {
+    const elapsedTime = clock.getElapsedTime()
+    const deltaTime = elapsedTime - previousTime
+    previousTime = elapsedTime
+
+    // 更新动画（必须在每帧调用！）
+    if (mixer) {
+        mixer.update(deltaTime)
+    }
+
+    controls.update()
+    renderer.render(scene, camera)
+    window.requestAnimationFrame(tick)
+}
+```
+
+### 动画相关概念
+
+- **`AnimationMixer`**：动画播放器，类似于音乐播放器。一个模型对应一个 Mixer
+- **`AnimationClip`**：一段动画数据（比如"走路"或"跑步"）。一个模型可以有多个 Clip
+- **`AnimationAction`**：Clip 的一个实例，控制播放、暂停、循环等
+
+### 动画操作
+
+```js
+const mixer = new THREE.AnimationMixer(gltf.scene)
+
+// 播放不同的动画
+const walkAction = mixer.clipAction(gltf.animations[0])
+const runAction = mixer.clipAction(gltf.animations[1])
+const idleAction = mixer.clipAction(gltf.animations[2])
+
+// 播放动画
+walkAction.play()
+
+// 平滑过渡到另一个动画
+walkAction.crossFadeTo(runAction, 0.5, true)  // 0.5 秒过渡
+runAction.play()
+
+// 暂停/恢复
+action.paused = true
+action.paused = false
+
+// 调整播放速度
+action.timeScale = 2  // 两倍速
+```
+
+:::tip
+在 Three.js Journey 后面的课程中会有专门讲解动画的章节，这里只是基础入门。
+:::
+
+## PBR 材质和灯光
+
+glTF 模型通常使用 PBR（基于物理的渲染）材质，这在导出时由 3D 软件自动生成。在 Three.js 中，这些材质会被解析为 `MeshStandardMaterial`。
+
+**这意味着如果没有灯光，你什么都看不到！**
+
+```js
+// 至少需要环境光和方向光
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
+scene.add(ambientLight)
+
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
+directionalLight.position.set(5, 5, 5)
+scene.add(directionalLight)
+```
+
+## 兼容旧版本的导入路径
+
+如果你看到一些旧代码使用这样的导入方式：
+
+```js
+// 旧版（可能已不工作）
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+
+// 新版（推荐）
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+```
+
+注意最后的 `.js` 后缀。根据你的构建工具（Vite、Webpack 等），可能需要也可能不需要。如果遇到导入错误，尝试加上或去掉 `.js`。
+
+## 常见问题与解决
+
+### 模型加载成功但看不到
+
+1. **模型太小**：尝试 `model.scale.set(10, 10, 10)` 放大
+2. **模型太大**：摄像机可能在模型内部，拉远摄像机
+3. **没有灯光**：PBR 材质需要灯光才能看到
+4. **模型位置不对**：检查 `model.position`
+5. **材质问题**：模型可能使用了不兼容的材质类型
+
+### 模型颜色不对
+
+glTF 使用 sRGB 色彩空间，Three.js 可能需要设置：
+
+```js
+renderer.outputColorSpace = THREE.SRGBColorSpace
+```
+
+### 模型方向不对
+
+不同 3D 软件使用不同的坐标系：
+- **Blender**：Y 轴朝上
+- **Three.js**：Y 轴朝上（一致）
+- **3ds Max / Unity**：Z 轴朝上
+
+如果模型朝向不对，通常需要旋转：
+
+```js
+model.rotation.y = Math.PI  // 翻转 180 度
+// 或者交换轴
+model.rotation.x = -Math.PI * 0.5
+```
+
+### 文件路径错误
+
+- 路径区分大小写！`models/Duck.glb` 和 `models/duck.glb` 是不同的
+- 检查文件扩展名（你的操作系统可能隐藏了扩展名，建议在编辑器中查看）
+- 不要在路径中包含 `static/` 前缀
+
+### 加载进度
+
+使用 `LoadingManager` 可以在加载过程中显示进度条：
+
+```js
+import { LoadingManager } from 'three'
+
+const loadingManager = new LoadingManager()
+
+loadingManager.onProgress = (url, loaded, total) => {
+    const percent = (loaded / total * 100).toFixed(0)
+    console.log(`加载进度：${percent}%`)
+}
+
+loadingManager.onLoad = () => {
+    console.log('所有资源加载完成！')
+}
+
+const gltfLoader = new GLTFLoader(loadingManager)
+```
+
+## 免费模型资源
+
+以下是一些可以免费下载 3D 模型的网站：
+
+### 测试用模型
+
+- [glTF Sample Models](https://github.com/KhronosGroup/glTF-Sample-Models) -- glTF 官方提供的测试模型集合，包含鸭子、头盔、卡车等
+- [three.js 官方示例模型](https://github.com/mrdoob/three.js/tree/dev/examples/models/glTF) -- Three.js 仓库自带的模型
+
+### 免费模型网站
+
+| 网站 | 说明 | 链接 |
+|------|------|------|
+| **Sketchfab** | 最大的 3D 模型分享平台，筛选 "Downloadable" 可找到免费模型 | [sketchfab.com](https://sketchfab.com) |
+| **Poly Pizza** | 免费低多边形模型，适合卡通风格项目 | [poly.pizza](https://poly.pizza) |
+| **Quaternius** | 免费低多边形资产包，有角色、环境、道具 | [quaternius.com](https://quaternius.com) |
+| **ambientCG** | 免费高质量 PBR 材质和模型（CC0 协议） | [ambientcg.com](https://ambientcg.com) |
+| **Turbosquid** | 大量免费和付费模型（需要筛选 Free） | [sketchfab.com](https://www.turbosquid.com) |
+
+:::tip 许可证注意
+使用免费模型时，务必检查其**使用许可证**：
+- **CC0**：可以商用，无需署名
+- **CC BY**：可以商用，需要署名
+- **自定义许可证**：可能有使用限制
+:::
+
+## 模型优化建议
+
+### 在 3D 软件中优化（导出前）
+
+1. **减少多边形数量**：使用 Decimate（减面）修改器，在视觉质量可接受的前提下减少面数
+2. **合并网格**：将不需要独立移动的多个 Mesh 合并为一个，减少 Draw Call
+3. **烘焙纹理**：将多个纹理合并成一张大图（Texture Atlas）
+4. **使用 Draco 压缩**：在导出时选择 Draco 压缩
+5. **删除隐藏的面**：删除用户看不到的内部面
+6. **减少材质数量**：不同材质之间切换需要额外的 Draw Call
+
+### 在代码中优化
+
+1. **使用 InstancedMesh**：如果同一个模型需要渲染多次（比如一片树林），使用实例化渲染
+2. **按需加载**：不要一次性加载所有模型，等用户需要时再加载
+3. **使用压缩格式**：.glb + Draco
+4. **使用 CDN**：模型文件放在 CDN 上，加载更快
+5. **添加加载指示器**：让用户知道正在加载，而不是面对白屏
+
+### 纹理优化
+
+1. **压缩纹理**：使用 Basis Universal 或 KTX2 格式
+2. **调整纹理尺寸**：手机上 1024x1024 通常足够，不需要 4096x4096
+3. **使用 mipmap**：Three.js 默认启用，不要关闭
+4. **合并纹理**：将多个小纹理合并为一张大的纹理图集
+
+## 完整示例代码
+
+```js
+import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
+
+// --- 基础设置 ---
+const scene = new THREE.Scene()
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100)
+camera.position.set(2, 2, 2)
+
+const renderer = new THREE.WebGLRenderer({ antialias: true })
+renderer.setSize(window.innerWidth, window.innerHeight)
+renderer.shadowMap.enabled = true
+document.body.appendChild(renderer.domElement)
+
+const controls = new OrbitControls(camera, renderer.domElement)
+controls.target.set(0, 0.75, 0)
+controls.enableDamping = true
+
+// --- Draco 压缩支持 ---
+const dracoLoader = new DRACOLoader()
+dracoLoader.setDecoderPath('/draco/')
+
+const gltfLoader = new GLTFLoader()
+gltfLoader.setDRACOLoader(dracoLoader)
+
+// --- 加载模型 ---
+let mixer = null
+
+gltfLoader.load(
+    '/models/Fox/glTF/Fox.gltf',
+    (gltf) => {
+        // 缩放到合适大小
+        gltf.scene.scale.set(0.025, 0.025, 0.025)
+
+        // 添加到场景
+        scene.add(gltf.scene)
+
+        // 开启阴影
+        gltf.scene.traverse((child) => {
+            if (child.isMesh) {
+                child.castShadow = true
+                child.receiveShadow = true
+            }
+        })
+
+        // 播放动画
+        mixer = new THREE.AnimationMixer(gltf.scene)
+        const action = mixer.clipAction(gltf.animations[2])
+        action.play()
+    },
+    (progress) => {
+        if (progress.total > 0) {
+            console.log('加载进度：', Math.round(progress.loaded / progress.total * 100) + '%')
+        }
+    },
+    (error) => {
+        console.error('模型加载失败：', error)
+    }
+)
+
+// --- 地面 ---
+const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(10, 10),
+    new THREE.MeshStandardMaterial({ color: '#444444' })
+)
+floor.receiveShadow = true
+floor.rotation.x = -Math.PI * 0.5
+scene.add(floor)
+
+// --- 灯光 ---
+scene.add(new THREE.AmbientLight(0xffffff, 2.4))
+
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8)
+directionalLight.castShadow = true
+directionalLight.shadow.mapSize.set(1024, 1024)
+directionalLight.shadow.camera.far = 15
+directionalLight.shadow.camera.left = -7
+directionalLight.shadow.camera.top = 7
+directionalLight.shadow.camera.right = 7
+directionalLight.shadow.camera.bottom = -7
+directionalLight.position.set(-5, 5, 0)
+scene.add(directionalLight)
+
+// --- 动画循环 ---
+const clock = new THREE.Clock()
+let previousTime = 0
+
+const tick = () => {
+    const elapsedTime = clock.getElapsedTime()
+    const deltaTime = elapsedTime - previousTime
+    previousTime = elapsedTime
+
+    // 更新模型动画
+    if (mixer) {
+        mixer.update(deltaTime)
+    }
+
+    controls.update()
+    renderer.render(scene, camera)
+    window.requestAnimationFrame(tick)
+}
+tick()
+```
+
+## 参考链接
+
+- [glTF 规范官方文档](https://www.khronos.org/gltf/) -- glTF 格式的完整规范
+- [glTF Sample Models](https://github.com/KhronosGroup/glTF-Sample-Models) -- glTF 官方测试模型
+- [Three.js GLTFLoader 文档](https://threejs.org/docs/#examples/en/loaders/GLTFLoader.html) -- API 文档
+- [Three.js DRACOLoader 文档](https://threejs.org/docs/#examples/en/loaders/DRACOLoader.html) -- Draco 加载器文档
+- [Google Draco](https://google.github.io/draco/) -- Draco 压缩算法
+- [Blender](https://www.blender.org/) -- 免费 3D 建模软件
+- [Sketchfab](https://sketchfab.com) -- 3D 模型分享平台
+- [Poly Pizza](https://poly.pizza) -- 免费低多边形模型
+- [ambientCG](https://ambientcg.com) -- 免费 PBR 材质和模型
+- [glTF 格式对比（维基百科）](https://en.wikipedia.org/wiki/GlTF) -- 了解各种 3D 文件格式

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particles Morphing</title>
+    
+<style>*
+{
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body
+{
+    overflow: hidden;
+}
+
+.webgl
+{
+    position: fixed;
+    top: 0;
+    left: 0;
+    outline: none;
+}
+</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.184.0/+esm","three/":"https://cdn.jsdelivr.net/npm/three@0.184.0/","lil-gui":"https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm","gsap":"https://cdn.jsdelivr.net/npm/gsap@3.12/+esm"}}</script></head>
+<body>
+    <canvas class="webgl"></canvas>
+    
+<script type="module">
+import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
+import GUI from 'lil-gui'
+import gsap from 'gsap'
+const particlesVertexShader = "uniform vec2 uResolution;\nuniform float uSize;\n\nvoid main()\n{\n    // Final position\n    vec4 modelPosition = modelMatrix * vec4(position, 1.0);\n    vec4 viewPosition = viewMatrix * modelPosition;\n    vec4 projectedPosition = projectionMatrix * viewPosition;\n    gl_Position = projectedPosition;\n\n    // Point size\n    gl_PointSize = uSize * uResolution.y;\n    gl_PointSize *= (1.0 / - viewPosition.z);\n}"
+const particlesFragmentShader = "void main()\n{\n    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n    #include <tonemapping_fragment>\n    #include <colorspace_fragment>\n}"
+
+/**
+ * Base
+ */
+// Debug
+const gui = new GUI({ width: 340 })
+const debugObject = {}
+
+// Canvas
+const canvas = document.querySelector('canvas.webgl')
+
+// Scene
+const scene = new THREE.Scene()
+
+// Loaders
+const dracoLoader = new DRACOLoader()
+dracoLoader.setDecoderPath('./draco/')
+const gltfLoader = new GLTFLoader()
+gltfLoader.setDRACOLoader(dracoLoader)
+
+/**
+ * Sizes
+ */
+const sizes = {
+    width: window.innerWidth,
+    height: window.innerHeight,
+    pixelRatio: Math.min(window.devicePixelRatio, 2)
+}
+
+window.addEventListener('resize', () =>
+{
+    // Update sizes
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
+    sizes.pixelRatio = Math.min(window.devicePixelRatio, 2)
+
+    // Materials
+    particles.material.uniforms.uResolution.value.set(sizes.width * sizes.pixelRatio, sizes.height * sizes.pixelRatio)
+
+    // Update camera
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
+
+    // Update renderer
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(sizes.pixelRatio)
+})
+
+/**
+ * Camera
+ */
+// Base camera
+const camera = new THREE.PerspectiveCamera(35, sizes.width / sizes.height, 0.1, 100)
+camera.position.set(0, 0, 8 * 2)
+scene.add(camera)
+
+// Controls
+const controls = new OrbitControls(camera, canvas)
+controls.enableDamping = true
+
+/**
+ * Renderer
+ */
+const renderer = new THREE.WebGLRenderer({
+    canvas: canvas,
+    antialias: true,
+})
+
+renderer.setSize(sizes.width, sizes.height)
+renderer.setPixelRatio(sizes.pixelRatio)
+
+debugObject.clearColor = '#160920'
+gui.addColor(debugObject, 'clearColor').onChange(() => { renderer.setClearColor(debugObject.clearColor) })
+renderer.setClearColor(debugObject.clearColor)
+
+/**
+ * Particles
+ */
+const particles = {}
+
+// Geometry
+particles.geometry = new THREE.SphereGeometry(3)
+
+// Material
+particles.material = new THREE.ShaderMaterial({
+    vertexShader: particlesVertexShader,
+    fragmentShader: particlesFragmentShader,
+    uniforms:
+    {
+        uSize: new THREE.Uniform(0.4),
+        uResolution: new THREE.Uniform(new THREE.Vector2(sizes.width * sizes.pixelRatio, sizes.height * sizes.pixelRatio))
+    }
+})
+
+// Points
+particles.points = new THREE.Points(particles.geometry, particles.material)
+scene.add(particles.points)
+
+/**
+ * Animate
+ */
+const tick = () =>
+{
+    // Update controls
+    controls.update()
+
+    // Render normal scene
+    renderer.render(scene, camera)
+
+    // Call tick again on the next frame
+    window.requestAnimationFrame(tick)
+}
+
+tick()
+</script></body>
+</html>
