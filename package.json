@@ -3,12 +3,13 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "prebuild": "node scripts/generate-previews.js",
-    "predev": "node scripts/generate-previews.js",
-    "dev": "astro dev",
-    "start": "astro dev",
-    "build": "astro build",
+    "dev": "node scripts/generate-previews.js && astro dev",
+    "start": "node scripts/generate-previews.js && astro dev",
+    "build": "node scripts/generate-previews.js && astro build",
     "preview": "astro preview",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
     "astro": "astro"
   },
   "dependencies": {
@@ -24,6 +25,8 @@
     "three": "^0.184.0"
   },
   "devDependencies": {
-    "@types/three": "^0.184.0"
+    "@tauri-apps/cli": "^2.10.1",
+    "@types/three": "^0.184.0",
+    "esbuild": "^0.28.0"
   }
 }

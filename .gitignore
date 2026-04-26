@@ -19,3 +19,9 @@ pnpm-debug.log*
 
 # macOS-specific files
 .DS_Store
+
+# Tauri
+src-tauri/target/
+
+# Generated vendor files (offline Tauri builds)
+public/vendor/

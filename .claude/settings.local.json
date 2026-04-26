@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 *)",
+      "WebSearch",
+      "Bash(pnpm add *)",
+      "Bash(pnpm tauri *)",
+      "Bash(pnpm build *)",
+      "Bash(node *)"
+    ]
+  }
+}

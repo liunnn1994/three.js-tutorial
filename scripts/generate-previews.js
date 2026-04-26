@@ -41,13 +41,22 @@ function inlineGlslImports(jsContent, filePath, glslFiles) {
   );
 }
 
+const isTauri = !!process.env.TAURI;
+
 const importMap = JSON.stringify({
-  imports: {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.184.0/+esm",
-    "three/": "https://cdn.jsdelivr.net/npm/three@0.184.0/",
-    "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm",
-    "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.12/+esm",
-  }
+  imports: isTauri
+    ? {
+        "three": "/vendor/three.module.js",
+        "three/": "/vendor/three/",
+        "lil-gui": "/vendor/lil-gui.esm.js",
+        "gsap": "/vendor/gsap.esm.js",
+      }
+    : {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.184.0/+esm",
+        "three/": "https://cdn.jsdelivr.net/npm/three@0.184.0/",
+        "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm",
+        "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.12/+esm",
+      }
 });
 
 function toCDN(content) {
