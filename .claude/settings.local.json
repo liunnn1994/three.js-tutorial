@@ -6,7 +6,29 @@
       "Bash(pnpm add *)",
       "Bash(pnpm tauri *)",
       "Bash(pnpm build *)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(openspec new *)",
+      "Bash(openspec status *)",
+      "Bash(openspec instructions *)",
+      "Bash(grep -E '^\\([0-9]+ - .*\\\\.html$\\)')",
+      "Bash(grep -E '^[0-9]+\\(-[a-z]|-[a-z-]+\\)$')",
+      "Bash(grep -v 'final$')",
+      "Bash(grep -E '^[0-9]+ - .*\\\\.html$')",
+      "Bash(git checkout *)",
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Bash(npm -v)",
+      "Bash(corepack enable *)",
+      "Bash(pnpm -v)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm dev *)",
+      "Bash(kill %1)",
+      "Bash(wait)",
+      "Bash([ ! -f \"/Users/nord/work/three.js-tutorial/src/content/docs/basics/$dir.mdx\" ])",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(npm ls *)",
+      "Bash(curl -s \"https://cdn.jsdelivr.net/npm/stats.js@0.17/+esm\" -o /Users/nord/work/three.js-tutorial/public/vendor/stats.esm.js)",
+      "Bash(grep -E 'final$')"
     ]
   }
 }

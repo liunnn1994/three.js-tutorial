@@ -22,8 +22,6 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 你可以用 `new THREE.Mesh()` 创建几千个小球或小方块来模拟粒子效果。但这会有严重的**性能问题**——每个 Mesh 都是一次独立的绘制调用（draw call），GPU 需要分别处理每一个。
 
 而使用粒子系统（`THREE.Points`），**成千上万个粒子只需要一次绘制调用**，GPU 可以高效地批量处理它们。这就是粒子的核心优势。
-
-
 <LessonPreview lesson="17-particles" />
 
 ## 创建粒子的基本步骤

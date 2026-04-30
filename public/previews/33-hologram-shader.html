@@ -24,7 +24,7 @@ body
     left: 0;
     outline: none;
 }
-</style><script type="importmap">{"imports":{"three":"/vendor/three.module.js","three/":"/vendor/three/","lil-gui":"/vendor/lil-gui.esm.js","gsap":"/vendor/gsap.esm.js"}}</script></head>
+</style><script type="importmap">{"imports":{"three":"/vendor/three.module.js","three/":"/vendor/three/","lil-gui":"/vendor/lil-gui.esm.js","gsap":"/vendor/gsap.esm.js","stats.js":"/vendor/stats.esm.js","cannon-es":"/vendor/cannon-es.esm.js"}}</script></head>
 <body>
     <canvas class="webgl"></canvas>
     
@@ -33,6 +33,9 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import GUI from 'lil-gui'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+
+const holographicVertexShader = "uniform float uTime;\n\nvarying vec3 vPosition;\nvarying vec3 vNormal;\n\n#include ../includes/random2D.glsl\n\nvoid main()\n{\n    // Position\n    vec4 modelPosition = modelMatrix * vec4(position, 1.0);\n\n    // Glitch\n    float glitchTime = uTime - modelPosition.y;\n    float glitchStrength = sin(glitchTime) + sin(glitchTime * 3.45) +  sin(glitchTime * 8.76);\n    glitchStrength /= 3.0;\n    glitchStrength = smoothstep(0.3, 1.0, glitchStrength);\n    glitchStrength *= 0.25;\n    modelPosition.x += (random2D(modelPosition.xz + uTime) - 0.5) * glitchStrength;\n    modelPosition.z += (random2D(modelPosition.zx + uTime) - 0.5) * glitchStrength;\n\n    // Final position\n    gl_Position = projectionMatrix * viewMatrix * modelPosition;\n\n    // Model normal\n    vec4 modelNormal = modelMatrix * vec4(normal, 0.0);\n\n    // Varyings\n    vPosition = modelPosition.xyz;\n    vNormal = modelNormal.xyz;\n}"
+const holographicFragmentShader = "uniform vec3 uColor;\nuniform float uTime;\n\nvarying vec3 vPosition;\nvarying vec3 vNormal;\n\nvoid main()\n{\n    // Normal\n    vec3 normal = normalize(vNormal);\n    if(!gl_FrontFacing)\n        normal *= - 1.0;\n\n    // Stripes\n    float stripes = mod((vPosition.y - uTime * 0.02) * 20.0, 1.0);\n    stripes = pow(stripes, 3.0);\n\n    // Fresnel\n    vec3 viewDirection = normalize(vPosition - cameraPosition);\n    float fresnel = dot(viewDirection, normal) + 1.0;\n    fresnel = pow(fresnel, 2.0);\n\n    // Falloff\n    float falloff = smoothstep(0.8, 0.2, fresnel);\n\n    // Holographic\n    float holographic = stripes * fresnel;\n    holographic += fresnel * 1.25;\n    holographic *= falloff;\n\n    // Final color\n    gl_FragColor = vec4(uColor, holographic);\n    #include <tonemapping_fragment>\n    #include <colorspace_fragment>\n}"
 
 /**
  * Base
@@ -108,7 +111,29 @@ gui
 /**
  * Material
  */
-const material = new THREE.MeshBasicMaterial()
+const materialParameters = {}
+materialParameters.color = '#70c1ff'
+
+gui
+    .addColor(materialParameters, 'color')
+    .onChange(() =>
+    {
+        material.uniforms.uColor.value.set(materialParameters.color)
+    })
+
+const material = new THREE.ShaderMaterial({
+    vertexShader: holographicVertexShader,
+    fragmentShader: holographicFragmentShader,
+    uniforms:
+    {
+        uTime: new THREE.Uniform(0),
+        uColor: new THREE.Uniform(new THREE.Color(materialParameters.color)),
+    },
+    transparent: true,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+})
 
 /**
  * Objects
@@ -154,6 +179,9 @@ const tick = () =>
 {
     const elapsedTime = clock.getElapsedTime()
 
+    // Update material
+    material.uniforms.uTime.value = elapsedTime
+
     // Rotate objects
     if(suzanne)
     {
@@ -178,5 +206,7 @@ const tick = () =>
 }
 
 tick()
+
+
 </script></body>
 </html>

@@ -9,7 +9,8 @@ interface Props {
 
 const { lesson } = Astro.props;
 
-const codeDir = path.join(process.cwd(), 'src/lesson-code', lesson, 'src');
+const finalDir = path.join(process.cwd(), 'src/lesson-code', lesson + '-final', 'src');
+const codeDir = fs.existsSync(finalDir) ? finalDir : path.join(process.cwd(), 'src/lesson-code', lesson, 'src');
 
 if (!fs.existsSync(codeDir)) {
   throw new Error(`Lesson code not found: ${codeDir}`);
@@ -62,3 +63,4 @@ for (const file of sourceFiles) {
     </div>
   </details>
 </div>
+

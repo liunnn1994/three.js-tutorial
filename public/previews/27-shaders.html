@@ -24,7 +24,7 @@ body
     left: 0;
     outline: none;
 }
-</style><script type="importmap">{"imports":{"three":"/vendor/three.module.js","three/":"/vendor/three/","lil-gui":"/vendor/lil-gui.esm.js","gsap":"/vendor/gsap.esm.js"}}</script></head>
+</style><script type="importmap">{"imports":{"three":"/vendor/three.module.js","three/":"/vendor/three/","lil-gui":"/vendor/lil-gui.esm.js","gsap":"/vendor/gsap.esm.js","stats.js":"/vendor/stats.esm.js","cannon-es":"/vendor/cannon-es.esm.js"}}</script></head>
 <body>
     <canvas class="webgl"></canvas>
     
@@ -32,6 +32,9 @@ body
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import GUI from 'lil-gui'
+
+const testVertexShader = "uniform vec2 uFrequency;\nuniform float uTime;\n\nvarying vec2 vUv;\nvarying float vElevation;\n\nvoid main()\n{\n    vec4 modelPosition = modelMatrix * vec4(position, 1.0);\n\n    float elevation = sin(modelPosition.x * uFrequency.x - uTime) * 0.1;\n    elevation += sin(modelPosition.y * uFrequency.y - uTime) * 0.1;\n\n    modelPosition.z += elevation;\n\n    vec4 viewPosition = viewMatrix * modelPosition;\n    vec4 projectedPosition = projectionMatrix * viewPosition;\n\n    gl_Position = projectedPosition;\n\n    vUv = uv;\n    vElevation = elevation;\n}"
+const testFragmentShader = "uniform vec3 uColor;\nuniform sampler2D uTexture;\n\nvarying vec2 vUv;\nvarying float vElevation;\n\nvoid main()\n{\n    vec4 textureColor = texture2D(uTexture, vUv);\n    textureColor.rgb *= vElevation * 2.0 + 0.65;\n    gl_FragColor = textureColor;\n    // gl_FragColor = vec4(vUv, 1.0, 1.0);\n}"
 
 /**
  * Base
@@ -49,6 +52,7 @@ const scene = new THREE.Scene()
  * Textures
  */
 const textureLoader = new THREE.TextureLoader()
+const flagTexture = textureLoader.load('/assets/27-shaders-final/textures/flag-french.jpg')
 
 /**
  * Test mesh
@@ -56,11 +60,35 @@ const textureLoader = new THREE.TextureLoader()
 // Geometry
 const geometry = new THREE.PlaneGeometry(1, 1, 32, 32)
 
+const count = geometry.attributes.position.count
+const randoms = new Float32Array(count)
+
+for(let i = 0; i < count; i++)
+{
+    randoms[i] = Math.random()
+}
+
+geometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1))
+
 // Material
-const material = new THREE.MeshBasicMaterial()
+const material = new THREE.ShaderMaterial({
+    vertexShader: testVertexShader,
+    fragmentShader: testFragmentShader,
+    uniforms:
+    {
+        uFrequency: { value: new THREE.Vector2(10, 5) },
+        uTime: { value: 0 },
+        uColor: { value: new THREE.Color('orange') },
+        uTexture: { value: flagTexture }
+    }
+})
+
+gui.add(material.uniforms.uFrequency.value, 'x').min(0).max(20).step(0.01).name('frequencyX')
+gui.add(material.uniforms.uFrequency.value, 'y').min(0).max(20).step(0.01).name('frequencyY')
 
 // Mesh
 const mesh = new THREE.Mesh(geometry, material)
+mesh.scale.y = 2 / 3
 scene.add(mesh)
 
 /**
@@ -116,6 +144,9 @@ const tick = () =>
 {
     const elapsedTime = clock.getElapsedTime()
 
+    // Update material
+    material.uniforms.uTime.value = elapsedTime
+
     // Update controls
     controls.update()
 
@@ -127,5 +158,7 @@ const tick = () =>
 }
 
 tick()
+
+
 </script></body>
 </html>

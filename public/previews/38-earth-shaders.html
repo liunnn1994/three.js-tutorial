@@ -24,7 +24,7 @@ body
     left: 0;
     outline: none;
 }
-</style><script type="importmap">{"imports":{"three":"/vendor/three.module.js","three/":"/vendor/three/","lil-gui":"/vendor/lil-gui.esm.js","gsap":"/vendor/gsap.esm.js"}}</script></head>
+</style><script type="importmap">{"imports":{"three":"/vendor/three.module.js","three/":"/vendor/three/","lil-gui":"/vendor/lil-gui.esm.js","gsap":"/vendor/gsap.esm.js","stats.js":"/vendor/stats.esm.js","cannon-es":"/vendor/cannon-es.esm.js"}}</script></head>
 <body>
     <canvas class="webgl"></canvas>
     
@@ -32,8 +32,11 @@ body
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import GUI from 'lil-gui'
+
 const earthVertexShader = "varying vec2 vUv;\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n\nvoid main()\n{\n    // Position\n    vec4 modelPosition = modelMatrix * vec4(position, 1.0);\n    gl_Position = projectionMatrix * viewMatrix * modelPosition;\n\n    // Model normal\n    vec3 modelNormal = (modelMatrix * vec4(normal, 0.0)).xyz;\n\n    // Varyings\n    vUv = uv;\n    vNormal = modelNormal;\n    vPosition = modelPosition.xyz;\n}"
-const earthFragmentShader = "varying vec2 vUv;\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n\nvoid main()\n{\n    vec3 viewDirection = normalize(vPosition - cameraPosition);\n    vec3 normal = normalize(vNormal);\n    vec3 color = vec3(vUv, 1.0);\n\n    // Final color\n    gl_FragColor = vec4(color, 1.0);\n    #include <tonemapping_fragment>\n    #include <colorspace_fragment>\n}"
+const earthFragmentShader = "uniform sampler2D uDayTexture;\nuniform sampler2D uNightTexture;\nuniform sampler2D uSpecularCloudsTexture;\nuniform vec3 uSunDirection;\nuniform vec3 uAtmosphereDayColor;\nuniform vec3 uAtmosphereTwilightColor;\n\nvarying vec2 vUv;\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n\nvoid main()\n{\n    vec3 viewDirection = normalize(vPosition - cameraPosition);\n    vec3 normal = normalize(vNormal);\n    vec3 color = vec3(0.0);\n\n    // Sun orientation\n    float sunOrientation = dot(uSunDirection, normal);\n\n    // Day / night color\n    float dayMix = smoothstep(- 0.25, 0.5, sunOrientation);\n    vec3 dayColor = texture(uDayTexture, vUv).rgb;\n    vec3 nightColor = texture(uNightTexture, vUv).rgb;\n    color = mix(nightColor, dayColor, dayMix);\n\n    // Specular cloud color\n    vec2 specularCloudsColor = texture(uSpecularCloudsTexture, vUv).rg;\n\n    // Clouds\n    float cloudsMix = smoothstep(0.5, 1.0, specularCloudsColor.g);\n    cloudsMix *= dayMix;\n    color = mix(color, vec3(1.0), cloudsMix);\n\n    // Fresnel\n    float fresnel = dot(viewDirection, normal) + 1.0;\n    fresnel = pow(fresnel, 2.0);\n\n    // Atmosphere\n    float atmosphereDayMix = smoothstep(- 0.5, 1.0, sunOrientation);\n    vec3 atmosphereColor = mix(uAtmosphereTwilightColor, uAtmosphereDayColor, atmosphereDayMix);\n    color = mix(color, atmosphereColor, fresnel * atmosphereDayMix);\n\n    // Specular\n    vec3 reflection = reflect(- uSunDirection, normal);\n    float specular = - dot(reflection, viewDirection);\n    specular = max(specular, 0.0);\n    specular = pow(specular, 32.0);\n    specular *= specularCloudsColor.r;\n\n    vec3 specularColor = mix(vec3(1.0), atmosphereColor, fresnel);\n    color += specular * specularColor;\n\n    // Final color\n    gl_FragColor = vec4(color, 1.0);\n    #include <tonemapping_fragment>\n    #include <colorspace_fragment>\n}"
+const atmosphereVertexShader = "varying vec3 vNormal;\nvarying vec3 vPosition;\n\nvoid main()\n{\n    // Position\n    vec4 modelPosition = modelMatrix * vec4(position, 1.0);\n    gl_Position = projectionMatrix * viewMatrix * modelPosition;\n\n    // Model normal\n    vec3 modelNormal = (modelMatrix * vec4(normal, 0.0)).xyz;\n\n    // Varyings\n    vNormal = modelNormal;\n    vPosition = modelPosition.xyz;\n}"
+const atmosphereFragmentShader = "uniform vec3 uSunDirection;\nuniform vec3 uAtmosphereDayColor;\nuniform vec3 uAtmosphereTwilightColor;\n\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n\nvoid main()\n{\n    vec3 viewDirection = normalize(vPosition - cameraPosition);\n    vec3 normal = normalize(vNormal);\n    vec3 color = vec3(0.0);\n\n    // Sun orientation\n    float sunOrientation = dot(uSunDirection, normal);\n\n    // Atmosphere\n    float atmosphereDayMix = smoothstep(- 0.5, 1.0, sunOrientation);\n    vec3 atmosphereColor = mix(uAtmosphereTwilightColor, uAtmosphereDayColor, atmosphereDayMix);\n    color = mix(color, atmosphereColor, atmosphereDayMix);\n    color += atmosphereColor;\n\n    // Alpha\n    float edgeAlpha = dot(viewDirection, normal);\n    edgeAlpha = smoothstep(0.0, 0.5, edgeAlpha);\n\n    float dayAlpha = smoothstep(- 0.5, 0.0, sunOrientation);\n\n    float alpha = edgeAlpha * dayAlpha;\n\n    // Final color\n    gl_FragColor = vec4(color, alpha);\n    #include <tonemapping_fragment>\n    #include <colorspace_fragment>\n}"
 
 /**
  * Base
@@ -53,6 +56,38 @@ const textureLoader = new THREE.TextureLoader()
 /**
  * Earth
  */
+const earthParameters = {}
+earthParameters.atmosphereDayColor = '#00aaff'
+earthParameters.atmosphereTwilightColor = '#ff6600'
+
+gui
+    .addColor(earthParameters, 'atmosphereDayColor')
+    .onChange(() =>
+    {
+        earthMaterial.uniforms.uAtmosphereDayColor.value.set(earthParameters.atmosphereDayColor)
+        atmosphereMaterial.uniforms.uAtmosphereDayColor.value.set(earthParameters.atmosphereDayColor)
+    })
+
+gui
+    .addColor(earthParameters, 'atmosphereTwilightColor')
+    .onChange(() =>
+    {
+        earthMaterial.uniforms.uAtmosphereTwilightColor.value.set(earthParameters.atmosphereTwilightColor)
+        atmosphereMaterial.uniforms.uAtmosphereTwilightColor.value.set(earthParameters.atmosphereTwilightColor)
+    })
+
+// Textures
+const earthDayTexture = textureLoader.load('/assets/38-earth-shaders-final/earth/day.jpg')
+earthDayTexture.colorSpace = THREE.SRGBColorSpace
+earthDayTexture.anisotropy = 8
+
+const earthNightTexture = textureLoader.load('/assets/38-earth-shaders-final/earth/night.jpg')
+earthNightTexture.colorSpace = THREE.SRGBColorSpace
+earthNightTexture.anisotropy = 8
+
+const earthSpecularCloudsTexture = textureLoader.load('/assets/38-earth-shaders-final/earth/specularClouds.jpg')
+earthSpecularCloudsTexture.anisotropy = 8
+
 // Mesh
 const earthGeometry = new THREE.SphereGeometry(2, 64, 64)
 const earthMaterial = new THREE.ShaderMaterial({
@@ -60,10 +95,79 @@ const earthMaterial = new THREE.ShaderMaterial({
     fragmentShader: earthFragmentShader,
     uniforms:
     {
+        uDayTexture: new THREE.Uniform(earthDayTexture),
+        uNightTexture: new THREE.Uniform(earthNightTexture),
+        uSpecularCloudsTexture: new THREE.Uniform(earthSpecularCloudsTexture),
+        uSunDirection: new THREE.Uniform(new THREE.Vector3(0, 0, 1)),
+        uAtmosphereDayColor: new THREE.Uniform(new THREE.Color(earthParameters.atmosphereDayColor)),
+        uAtmosphereTwilightColor: new THREE.Uniform(new THREE.Color(earthParameters.atmosphereTwilightColor))
     }
 })
 const earth = new THREE.Mesh(earthGeometry, earthMaterial)
 scene.add(earth)
+
+// Atmosphere
+const atmosphereMaterial = new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    transparent: true,
+    vertexShader: atmosphereVertexShader,
+    fragmentShader: atmosphereFragmentShader,
+    uniforms:
+    {
+        uSunDirection: new THREE.Uniform(new THREE.Vector3(0, 0, 1)),
+        uAtmosphereDayColor: new THREE.Uniform(new THREE.Color(earthParameters.atmosphereDayColor)),
+        uAtmosphereTwilightColor: new THREE.Uniform(new THREE.Color(earthParameters.atmosphereTwilightColor))
+    },
+})
+
+const atmosphere = new THREE.Mesh(earthGeometry, atmosphereMaterial)
+atmosphere.scale.set(1.04, 1.04, 1.04)
+scene.add(atmosphere)
+
+/**
+ * Sun
+ */
+// Coordinates
+const sunSpherical = new THREE.Spherical(1, Math.PI * 0.5, 0.5)
+const sunDirection = new THREE.Vector3()
+
+// Debug
+const debugSun = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.1, 2),
+    new THREE.MeshBasicMaterial()
+)
+scene.add(debugSun)
+
+// Update
+const updateSun = () =>
+{
+    // Sun direction
+    sunDirection.setFromSpherical(sunSpherical)
+
+    // Debug
+    debugSun.position
+        .copy(sunDirection)
+        .multiplyScalar(5)
+
+    // Uniforms
+    earthMaterial.uniforms.uSunDirection.value.copy(sunDirection)
+    atmosphereMaterial.uniforms.uSunDirection.value.copy(sunDirection)
+}
+
+updateSun()
+
+// Tweaks
+gui
+    .add(sunSpherical, 'phi')
+    .min(0)
+    .max(Math.PI)
+    .onChange(updateSun)
+
+gui
+    .add(sunSpherical, 'theta')
+    .min(- Math.PI)
+    .max(Math.PI)
+    .onChange(updateSun)
 
 /**
  * Sizes
@@ -137,5 +241,7 @@ const tick = () =>
 }
 
 tick()
+
+
 </script></body>
 </html>

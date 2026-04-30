@@ -24,7 +24,7 @@ body
     left: 0;
     outline: none;
 }
-</style><script type="importmap">{"imports":{"three":"/vendor/three.module.js","three/":"/vendor/three/","lil-gui":"/vendor/lil-gui.esm.js","gsap":"/vendor/gsap.esm.js"}}</script></head>
+</style><script type="importmap">{"imports":{"three":"/vendor/three.module.js","three/":"/vendor/three/","lil-gui":"/vendor/lil-gui.esm.js","gsap":"/vendor/gsap.esm.js","stats.js":"/vendor/stats.esm.js","cannon-es":"/vendor/cannon-es.esm.js"}}</script></head>
 <body>
     <canvas class="webgl"></canvas>
     
@@ -33,8 +33,9 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import GUI from 'lil-gui'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-const shadingVertexShader = "void main()\n{\n    // Position\n    vec4 modelPosition = modelMatrix * vec4(position, 1.0);\n    gl_Position = projectionMatrix * viewMatrix * modelPosition;\n}"
-const shadingFragmentShader = "uniform vec3 uColor;\n\nvoid main()\n{\n    vec3 color = uColor;\n\n    // Final color\n    gl_FragColor = vec4(color, 1.0);\n    #include <tonemapping_fragment>\n    #include <colorspace_fragment>\n}"
+
+const shadingVertexShader = "varying vec3 vNormal;\nvarying vec3 vPosition;\n\nvoid main()\n{\n    // Position\n    vec4 modelPosition = modelMatrix * vec4(position, 1.0);\n    gl_Position = projectionMatrix * viewMatrix * modelPosition;\n\n    // Model normal\n    vec4 modelNormal = modelMatrix * vec4(normal, 0.0);\n\n    // Varying\n    vNormal = modelNormal.xyz;\n    vPosition = modelPosition.xyz;\n}"
+const shadingFragmentShader = "uniform vec3 uColor;\n\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n\n#include ../includes/ambientLight.glsl\n#include ../includes/directionalLight.glsl\n#include ../includes/pointLight.glsl\n\nvoid main()\n{\n    vec3 normal = normalize(vNormal);\n    vec3 viewDirection = normalize(vPosition - cameraPosition);\n    vec3 color = uColor;\n\n    // Lights\n    vec3 light = vec3(0.0);\n\n    light += ambientLight(\n        vec3(1.0), // Light color\n        0.03       // Light intensity\n    );\n\n    light += directionalLight(\n        vec3(0.1, 0.1, 1.0), // Light color\n        1.0,                 // Light intensity,\n        normal,              // Normal\n        vec3(0.0, 0.0, 3.0), // Light position\n        viewDirection,       // View direction\n        20.0                 // Specular power\n    );\n\n    light += pointLight(\n        vec3(1.0, 0.1, 0.1), // Light color\n        1.0,                 // Light intensity,\n        normal,              // Normal\n        vec3(0.0, 2.5, 0.0), // Light position\n        viewDirection,       // View direction\n        20.0,                // Specular power\n        vPosition,           // Position\n        0.25                 // Light decay\n    );\n\n    light += pointLight(\n        vec3(0.1, 1.0, 0.5), // Light color\n        1.0,                 // Light intensity,\n        normal,              // Normal\n        vec3(2.0, 0.0, 2.0), // Light position\n        viewDirection,       // View direction\n        20.0,                // Specular power\n        vPosition,           // Position\n        0.2                  // Light decay\n    );\n\n    color *= light;\n\n    // Final color\n    gl_FragColor = vec4(color, 1.0);\n    #include <tonemapping_fragment>\n    #include <colorspace_fragment>\n}"
 
 /**
  * Base
@@ -125,6 +126,34 @@ gui
     })
 
 /**
+ * Light helpers
+ */
+const directionalLightHelper = new THREE.Mesh(
+    new THREE.PlaneGeometry(),
+    new THREE.MeshBasicMaterial()
+)
+directionalLightHelper.material.color.setRGB(0.1, 0.1, 1)
+directionalLightHelper.material.side = THREE.DoubleSide
+directionalLightHelper.position.set(0, 0, 3)
+scene.add(directionalLightHelper)
+
+const pointLightHelper = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.1, 2),
+    new THREE.MeshBasicMaterial()
+)
+pointLightHelper.material.color.setRGB(1, 0.1, 0.1)
+pointLightHelper.position.set(0, 2.5, 0)
+scene.add(pointLightHelper)
+
+const pointLightHelper2 = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.1, 2),
+    new THREE.MeshBasicMaterial()
+)
+pointLightHelper2.material.color.setRGB(0.1, 1.0, 0.5)
+pointLightHelper2.position.set(2, 0, 2)
+scene.add(pointLightHelper2)
+
+/**
  * Objects
  */
 // Torus knot
@@ -192,5 +221,7 @@ const tick = () =>
 }
 
 tick()
+
+
 </script></body>
 </html>

@@ -3,6 +3,10 @@ title: 46 性能优化
 description: Three.js 项目系统性性能优化——测量瓶颈、减少绘制调用、优化几何体、纹理与材质
 ---
 
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+<LessonPreview lesson="46-performance-tips" />
+
 ## 性能优化
 
 良好的性能是 3D Web 应用的生命线。你的目标是**至少 60 FPS**（每秒 60 帧）。性能瓶颈可能来自 **CPU**（JavaScript 逻辑、绘制调用过多、碰撞检测）或 **GPU**（复杂着色器、庞大纹理、过多的三角形渲染）。二者需要分别关注——你可能优化了所有模型和纹理（GPU 没问题），但绘制调用过多（CPU 瓶颈）依然导致帧率下降。

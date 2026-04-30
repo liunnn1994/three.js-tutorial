@@ -11,8 +11,6 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 当你的 3D 场景包含大量资源（如 50MB 的 GLTF 模型、HDR 环境贴图等），在本地开发时加载很快，但在线上环境用户可能需要等待数秒甚至更长。如果不做任何处理，用户只会看到一个空白或闪烁的画面——这完全破坏了沉浸感。我们需要实现一个专业的加载体验：一个覆盖整个画面的加载界面，实时显示加载进度，加载完成后平滑过渡到 3D 场景。
 
 `LoadingManager` 是实现这一目标的核心工具。它可以集中监控所有通过 Three.js Loader 加载的资源进度。
-
-
 <LessonPreview lesson="47-intro-and-loading-progress" />
 
 ## LoadingManager 详解

@@ -304,3 +304,7 @@ loader.load('gears.glb', (gltf) => {
 :::tip
 `discard` 会影响 GPU 的 Early-Z（Early Depth Test）优化。正常情况下，GPU 在片元着色器执行之前就可以通过深度测试丢弃被遮挡的像素。但当片元着色器中有 `discard` 时，GPU 必须先执行完整个片元着色器才能确定该片元是否被丢弃，这会增加 GPU 的工作量。对于复杂的片元着色器，这种性能影响可能比较明显。
 :::
+
+## 下载资源
+
+- [gears.blend (1.8MB)](/downloads/43-sliced-model-shader/gears.blend) — 齿轮模型 Blender 源文件

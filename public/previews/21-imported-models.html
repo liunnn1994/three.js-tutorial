@@ -24,7 +24,7 @@ body
     left: 0;
     outline: none;
 }
-</style><script type="importmap">{"imports":{"three":"/vendor/three.module.js","three/":"/vendor/three/","lil-gui":"/vendor/lil-gui.esm.js","gsap":"/vendor/gsap.esm.js"}}</script></head>
+</style><script type="importmap">{"imports":{"three":"/vendor/three.module.js","three/":"/vendor/three/","lil-gui":"/vendor/lil-gui.esm.js","gsap":"/vendor/gsap.esm.js","stats.js":"/vendor/stats.esm.js","cannon-es":"/vendor/cannon-es.esm.js"}}</script></head>
 <body>
     <canvas class="webgl"></canvas>
     
@@ -32,6 +32,8 @@ body
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import GUI from 'lil-gui'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 
 /**
  * Base
@@ -44,6 +46,31 @@ const canvas = document.querySelector('canvas.webgl')
 
 // Scene
 const scene = new THREE.Scene()
+
+/**
+ * Models
+ */
+const dracoLoader = new DRACOLoader()
+dracoLoader.setDecoderPath('/assets/21-imported-models-final/draco/')
+
+const gltfLoader = new GLTFLoader()
+gltfLoader.setDRACOLoader(dracoLoader)
+
+let mixer = null
+
+gltfLoader.load(
+    '/assets/21-imported-models-final/models/Fox/glTF/Fox.gltf',
+    (gltf) =>
+    {
+        gltf.scene.scale.set(0.025, 0.025, 0.025)
+        scene.add(gltf.scene)
+
+        // Animation
+        mixer = new THREE.AnimationMixer(gltf.scene)
+        const action = mixer.clipAction(gltf.animations[2])
+        action.play()
+    }
+)
 
 /**
  * Floor
@@ -74,7 +101,7 @@ directionalLight.shadow.camera.left = - 7
 directionalLight.shadow.camera.top = 7
 directionalLight.shadow.camera.right = 7
 directionalLight.shadow.camera.bottom = - 7
-directionalLight.position.set(5, 5, 5)
+directionalLight.position.set(- 5, 5, 0)
 scene.add(directionalLight)
 
 /**
@@ -135,6 +162,12 @@ const tick = () =>
     const elapsedTime = clock.getElapsedTime()
     const deltaTime = elapsedTime - previousTime
     previousTime = elapsedTime
+
+    // Model animation
+    if(mixer)
+    {
+        mixer.update(deltaTime)
+    }
 
     // Update controls
     controls.update()

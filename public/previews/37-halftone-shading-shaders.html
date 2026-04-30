@@ -24,7 +24,7 @@ body
     left: 0;
     outline: none;
 }
-</style><script type="importmap">{"imports":{"three":"/vendor/three.module.js","three/":"/vendor/three/","lil-gui":"/vendor/lil-gui.esm.js","gsap":"/vendor/gsap.esm.js"}}</script></head>
+</style><script type="importmap">{"imports":{"three":"/vendor/three.module.js","three/":"/vendor/three/","lil-gui":"/vendor/lil-gui.esm.js","gsap":"/vendor/gsap.esm.js","stats.js":"/vendor/stats.esm.js","cannon-es":"/vendor/cannon-es.esm.js"}}</script></head>
 <body>
     <canvas class="webgl"></canvas>
     
@@ -33,8 +33,9 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import GUI from 'lil-gui'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+
 const halftoneVertexShader = "varying vec3 vNormal;\nvarying vec3 vPosition;\n\nvoid main()\n{\n    // Position\n    vec4 modelPosition = modelMatrix * vec4(position, 1.0);\n    gl_Position = projectionMatrix * viewMatrix * modelPosition;\n\n    // Model normal\n    vec3 modelNormal = (modelMatrix * vec4(normal, 0.0)).xyz;\n\n    // Varyings\n    vNormal = modelNormal;\n    vPosition = modelPosition.xyz;\n}"
-const halftoneFragmentShader = "uniform vec3 uColor;\n\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n\nvoid main()\n{\n    vec3 viewDirection = normalize(vPosition - cameraPosition);\n    vec3 normal = normalize(vNormal);\n    vec3 color = uColor;\n\n    // Final color\n    gl_FragColor = vec4(color, 1.0);\n    #include <tonemapping_fragment>\n    #include <colorspace_fragment>\n}"
+const halftoneFragmentShader = "uniform vec3 uColor;\nuniform vec2 uResolution;\nuniform float uShadowRepetitions;\nuniform vec3 uShadowColor;\nuniform float uLightRepetitions;\nuniform vec3 uLightColor;\n\nvarying vec3 vNormal;\nvarying vec3 vPosition;\n\n#include ../includes/ambientLight.glsl\n#include ../includes/directionalLight.glsl\n\nvec3 halftone(\n    vec3 color,\n    float repetitions,\n    vec3 direction,\n    float low,\n    float high,\n    vec3 pointColor,\n    vec3 normal\n)\n{\n    float intensity = dot(normal, direction);\n    intensity = smoothstep(low, high, intensity);\n\n    vec2 uv = gl_FragCoord.xy / uResolution.y;\n    uv *= repetitions;\n    uv = mod(uv, 1.0);\n\n    float point = distance(uv, vec2(0.5));\n    point = 1.0 - step(0.5 * intensity, point);\n\n    return mix(color, pointColor, point);\n}\n\nvoid main()\n{\n    vec3 viewDirection = normalize(vPosition - cameraPosition);\n    vec3 normal = normalize(vNormal);\n    vec3 color = uColor;\n\n    // Lights\n    vec3 light = vec3(0.0);\n\n    light += ambientLight(\n        vec3(1.0), // Light color\n        1.0        // Light intensity,\n    );\n\n    light += directionalLight(\n        vec3(1.0, 1.0, 1.0), // Light color\n        1.0,                 // Light intensity\n        normal,              // Normal\n        vec3(1.0, 1.0, 0.0), // Light position\n        viewDirection,       // View direction\n        1.0                  // Specular power\n    );\n\n    color *= light;\n\n    // Halftone\n    color = halftone(\n        color,                 // Input color\n        uShadowRepetitions,    // Repetitions\n        vec3(0.0, - 1.0, 0.0), // Direction\n        - 0.8,                 // Low\n        1.5,                   // High\n        uShadowColor,          // Point color\n        normal                 // Normal\n    );\n\n    color = halftone(\n        color,               // Input color\n        uLightRepetitions,   // Repetitions\n        vec3(1.0, 1.0, 0.0), // Direction\n        0.5,                 // Low\n        1.5,                 // High\n        uLightColor,         // Point color\n        normal               // Normal\n    );\n\n    // Final color\n    gl_FragColor = vec4(color, 1.0);\n    #include <tonemapping_fragment>\n    #include <colorspace_fragment>\n}"
 
 /**
  * Base
@@ -66,6 +67,9 @@ window.addEventListener('resize', () =>
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
     sizes.pixelRatio = Math.min(window.devicePixelRatio, 2)
+
+    // Update materials
+    material.uniforms.uResolution.value.set(sizes.width * sizes.pixelRatio, sizes.height * sizes.pixelRatio)
 
     // Update camera
     camera.aspect = sizes.width / sizes.height
@@ -116,6 +120,8 @@ gui
  */
 const materialParameters = {}
 materialParameters.color = '#ff794d'
+materialParameters.shadowColor = '#8e19b8'
+materialParameters.lightColor = '#e5ffe0'
 
 const material = new THREE.ShaderMaterial({
     vertexShader: halftoneVertexShader,
@@ -124,6 +130,11 @@ const material = new THREE.ShaderMaterial({
     {
         uColor: new THREE.Uniform(new THREE.Color(materialParameters.color)),
         uShadeColor: new THREE.Uniform(new THREE.Color(materialParameters.shadeColor)),
+        uResolution: new THREE.Uniform(new THREE.Vector2(sizes.width * sizes.pixelRatio, sizes.height * sizes.pixelRatio)),
+        uShadowRepetitions: new THREE.Uniform(100),
+        uShadowColor: new THREE.Uniform(new THREE.Color(materialParameters.shadowColor)),
+        uLightRepetitions: new THREE.Uniform(130),
+        uLightColor: new THREE.Uniform(new THREE.Color(materialParameters.lightColor))
     }
 })
 
@@ -132,6 +143,32 @@ gui
     .onChange(() =>
     {
         material.uniforms.uColor.value.set(materialParameters.color)
+    })
+
+gui
+    .add(material.uniforms.uShadowRepetitions, 'value')
+    .min(1)
+    .max(300)
+    .step(1)
+
+gui
+    .addColor(materialParameters, 'shadowColor')
+    .onChange(() =>
+    {
+        material.uniforms.uShadowColor.value.set(materialParameters.shadowColor)
+    })
+
+gui
+    .add(material.uniforms.uLightRepetitions, 'value')
+    .min(1)
+    .max(300)
+    .step(1)
+
+gui
+    .addColor(materialParameters, 'lightColor')
+    .onChange(() =>
+    {
+        material.uniforms.uLightColor.value.set(materialParameters.lightColor)
     })
 
 /**
@@ -202,5 +239,7 @@ const tick = () =>
 }
 
 tick()
+
+
 </script></body>
 </html>

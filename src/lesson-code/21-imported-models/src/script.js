@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import GUI from 'lil-gui'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 
 /**
  * Base
@@ -45,6 +47,54 @@ directionalLight.shadow.camera.right = 7
 directionalLight.shadow.camera.bottom = - 7
 directionalLight.position.set(5, 5, 5)
 scene.add(directionalLight)
+
+/**
+ * Model
+ */
+// DRACOLoader
+const dracoLoader = new DRACOLoader()
+dracoLoader.setDecoderPath('/assets/21-imported-models/draco/')
+
+// GLTFLoader
+const gltfLoader = new GLTFLoader()
+gltfLoader.setDRACOLoader(dracoLoader)
+
+let mixer = null
+
+gltfLoader.load(
+    '/assets/21-imported-models/models/Fox/glTF/Fox.gltf',
+    (gltf) =>
+    {
+        // Scale the model
+        gltf.scene.scale.set(0.025, 0.025, 0.025)
+
+        // Add to scene
+        scene.add(gltf.scene)
+
+        // Enable shadows on all meshes
+        gltf.scene.traverse((child) =>
+        {
+            if(child.isMesh)
+            {
+                child.castShadow = true
+                child.receiveShadow = true
+            }
+        })
+
+        // Animation
+        mixer = new THREE.AnimationMixer(gltf.scene)
+        const action = mixer.clipAction(gltf.animations[2])
+        action.play()
+    },
+    (progress) =>
+    {
+        console.log('loading progress', progress)
+    },
+    (error) =>
+    {
+        console.log('an error happened', error)
+    }
+)
 
 /**
  * Sizes
@@ -104,6 +154,12 @@ const tick = () =>
     const elapsedTime = clock.getElapsedTime()
     const deltaTime = elapsedTime - previousTime
     previousTime = elapsedTime
+
+    // Update mixer
+    if(mixer !== null)
+    {
+        mixer.update(deltaTime)
+    }
 
     // Update controls
     controls.update()

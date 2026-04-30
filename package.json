@@ -27,6 +27,8 @@
   "devDependencies": {
     "@tauri-apps/cli": "^2.10.1",
     "@types/three": "^0.184.0",
-    "esbuild": "^0.28.0"
+    "cannon-es": "^0.20.0",
+    "esbuild": "^0.28.0",
+    "stats.js": "^0.17.0"
   }
 }

@@ -5,13 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fullscreen and resizing</title>
     
-<style></style><script type="importmap">{"imports":{"three":"/vendor/three.module.js","three/":"/vendor/three/","lil-gui":"/vendor/lil-gui.esm.js","gsap":"/vendor/gsap.esm.js"}}</script></head>
+<style>*
+{
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body
+{
+    overflow: hidden;
+}
+
+.webgl
+{
+    position: fixed;
+    top: 0;
+    left: 0;
+    outline: none;
+}
+</style><script type="importmap">{"imports":{"three":"/vendor/three.module.js","three/":"/vendor/three/","lil-gui":"/vendor/lil-gui.esm.js","gsap":"/vendor/gsap.esm.js","stats.js":"/vendor/stats.esm.js","cannon-es":"/vendor/cannon-es.esm.js"}}</script></head>
 <body>
     <canvas class="webgl"></canvas>
     
 <script type="module">
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import GUI from 'lil-gui'
 
 /**
  * Base
@@ -21,6 +41,39 @@ const canvas = document.querySelector('canvas.webgl')
 
 // Scene
 const scene = new THREE.Scene()
+
+/**
+ * Debug
+ */
+const gui = new GUI()
+const params = {
+    pixelRatio: Math.min(window.devicePixelRatio, 2),
+    meshColor: '#ff0000',
+    fullscreen: () =>
+    {
+        const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement
+        if(!fullscreenElement)
+        {
+            if(canvas.requestFullscreen) canvas.requestFullscreen()
+            else if(canvas.webkitRequestFullscreen) canvas.webkitRequestFullscreen()
+        }
+        else
+        {
+            if(document.exitFullscreen) document.exitFullscreen()
+            else if(document.webkitExitFullscreen) document.webkitExitFullscreen()
+        }
+    }
+}
+
+gui.add(params, 'pixelRatio').min(0.5).max(window.devicePixelRatio).step(0.5).name('Pixel Ratio').onChange(() =>
+{
+    renderer.setPixelRatio(params.pixelRatio)
+})
+gui.addColor(params, 'meshColor').name('Mesh Color').onChange(() =>
+{
+    material.color.set(params.meshColor)
+})
+gui.add(params, 'fullscreen').name('Toggle Fullscreen')
 
 /**
  * Object
@@ -34,9 +87,55 @@ scene.add(mesh)
  * Sizes
  */
 const sizes = {
-    width: 800,
-    height: 600
+    width: window.innerWidth,
+    height: window.innerHeight
 }
+
+window.addEventListener('resize', () =>
+{
+    // Update sizes
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
+
+    // Update camera
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
+
+    // Update renderer
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+})
+
+/**
+ * Fullscreen
+ */
+window.addEventListener('dblclick', () =>
+{
+    const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement
+
+    if(!fullscreenElement)
+    {
+        if(canvas.requestFullscreen)
+        {
+            canvas.requestFullscreen()
+        }
+        else if(canvas.webkitRequestFullscreen)
+        {
+            canvas.webkitRequestFullscreen()
+        }
+    }
+    else
+    {
+        if(document.exitFullscreen)
+        {
+            document.exitFullscreen()
+        }
+        else if(document.webkitExitFullscreen)
+        {
+            document.webkitExitFullscreen()
+        }
+    }
+})
 
 /**
  * Camera
@@ -57,6 +156,7 @@ const renderer = new THREE.WebGLRenderer({
     canvas: canvas
 })
 renderer.setSize(sizes.width, sizes.height)
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
 /**
  * Animate

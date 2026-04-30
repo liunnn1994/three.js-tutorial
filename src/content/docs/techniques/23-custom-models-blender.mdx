@@ -3,6 +3,10 @@ title: 23 Blender 自定义模型
 description: 使用 Blender 创建 3D 模型并导出为 Three.js 可用的 glTF 格式
 ---
 
+import LessonPreview from '../../../components/LessonPreview.astro';
+
+<LessonPreview lesson="23-custom-models-with-blender" />
+
 ## 为什么需要 3D 建模软件
 
 虽然 Three.js 提供了很多内置几何体（BoxGeometry, SphereGeometry 等），但它们只能创建简单的形状。要创建复杂的模型（角色、建筑、家具等），你需要使用专业的 3D 建模软件。
@@ -198,3 +202,9 @@ gltfLoader.load('./model.glb', (gltf) => {
 - [Three.js GLTFLoader 文档](https://threejs.org/docs/#examples/en/loaders/GLTFLoader)
 - [glTF 格式规范](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html)
 - [Don McCurdy 的 glTF 指南](https://modelviewer.dev/examples/loading/)
+
+## 下载资源
+
+- [portal.blend (1.2MB)](/downloads/23-custom-models-blender/portal.blend) — Blender 源文件
+- [portal-v2.blend (789KB)](/downloads/23-custom-models-blender/portal-v2.blend) — Blender 源文件（备用版）
+- [model.blend (77MB)](/downloads/23-custom-models-blender/model.blend) — 完整场景模型

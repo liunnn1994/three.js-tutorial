@@ -11,12 +11,43 @@ const canvas = document.querySelector('canvas.webgl')
 const scene = new THREE.Scene()
 
 /**
+ * Textures
+ */
+const textureLoader = new THREE.TextureLoader()
+
+// Load a color texture
+const colorTexture = textureLoader.load('/assets/10-textures/textures/door/color.jpg')
+colorTexture.colorSpace = THREE.SRGBColorSpace
+
+// Load other texture types
+const normalTexture = textureLoader.load('/assets/10-textures/textures/door/normal.jpg')
+const roughnessTexture = textureLoader.load('/assets/10-textures/textures/door/roughness.jpg')
+const metalnessTexture = textureLoader.load('/assets/10-textures/textures/door/metalness.jpg')
+const ambientOcclusionTexture = textureLoader.load('/assets/10-textures/textures/door/ambientOcclusion.jpg')
+const alphaTexture = textureLoader.load('/assets/10-textures/textures/door/alpha.jpg')
+const heightTexture = textureLoader.load('/assets/10-textures/textures/door/height.jpg')
+
+/**
  * Object
  */
 const geometry = new THREE.BoxGeometry(1, 1, 1)
-const material = new THREE.MeshBasicMaterial({ color: 0xff0000 })
+const material = new THREE.MeshStandardMaterial({
+    map: colorTexture,
+    normalMap: normalTexture,
+    roughnessMap: roughnessTexture,
+    metalnessMap: metalnessTexture,
+    aoMap: ambientOcclusionTexture,
+})
 const mesh = new THREE.Mesh(geometry, material)
 scene.add(mesh)
+
+// Add ambient light so PBR material is visible
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
+scene.add(ambientLight)
+
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
+directionalLight.position.set(2, 2, 2)
+scene.add(directionalLight)
 
 /**
  * Sizes

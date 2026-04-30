@@ -24,7 +24,7 @@ body
     left: 0;
     outline: none;
 }
-</style><script type="importmap">{"imports":{"three":"/vendor/three.module.js","three/":"/vendor/three/","lil-gui":"/vendor/lil-gui.esm.js","gsap":"/vendor/gsap.esm.js"}}</script></head>
+</style><script type="importmap">{"imports":{"three":"/vendor/three.module.js","three/":"/vendor/three/","lil-gui":"/vendor/lil-gui.esm.js","gsap":"/vendor/gsap.esm.js","stats.js":"/vendor/stats.esm.js","cannon-es":"/vendor/cannon-es.esm.js"}}</script></head>
 <body>
     <canvas class="webgl"></canvas>
     
@@ -34,7 +34,11 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
+import CustomShaderMaterial from 'three-custom-shader-material/vanilla'
 import GUI from 'lil-gui'
+
+const slicedVertexShader = "varying vec3 vPosition;\n\nvoid main()\n{\n    vPosition = csm_Position.xyz;\n}"
+const slicedFragmentShader = "uniform float uSliceStart;\nuniform float uSliceArc;\n\nvarying vec3 vPosition;\n\nvoid main()\n{\n    float angle = atan(vPosition.y, vPosition.x);\n    angle -= uSliceStart;\n    angle = mod(angle, PI * 2.0);\n\n    if(angle > 0.0 && angle < uSliceArc)\n        discard;\n\n    float csm_Slice;\n}"
 
 /**
  * Base
@@ -52,14 +56,14 @@ const scene = new THREE.Scene()
 // Loaders
 const rgbeLoader = new RGBELoader()
 const dracoLoader = new DRACOLoader()
-dracoLoader.setDecoderPath('./draco/')
+dracoLoader.setDecoderPath('/assets/43-sliced-model-shader-final/draco/')
 const gltfLoader = new GLTFLoader()
 gltfLoader.setDRACOLoader(dracoLoader)
 
 /**
  * Environment map
  */
-rgbeLoader.load('./aerodynamics_workshop.hdr', (environmentMap) =>
+rgbeLoader.load('/assets/43-sliced-model-shader-final/aerodynamics_workshop.hdr', (environmentMap) =>
 {
     environmentMap.mapping = THREE.EquirectangularReflectionMapping
 
@@ -71,10 +75,28 @@ rgbeLoader.load('./aerodynamics_workshop.hdr', (environmentMap) =>
 /**
  * Sliced model
  */
-// Geometry
-const geometry = new THREE.IcosahedronGeometry(2.5, 5)
-
 // Material
+const uniforms = {
+    uSliceStart: new THREE.Uniform(1.75),
+    uSliceArc: new THREE.Uniform(1.25),
+}
+
+gui.add(uniforms.uSliceStart, 'value', - Math.PI, Math.PI, 0.001).name('uSliceStart')
+gui.add(uniforms.uSliceArc, 'value', 0, Math.PI * 2, 0.001).name('uSliceArc')
+
+const patchMap = {
+    csm_Slice:
+    {
+        '#include <colorspace_fragment>':
+        `
+            #include <colorspace_fragment>
+
+            if(!gl_FrontFacing)
+                gl_FragColor = vec4(0.75, 0.15, 0.3, 1.0);
+        `
+    }
+}
+
 const material = new THREE.MeshStandardMaterial({
     metalness: 0.5,
     roughness: 0.25,
@@ -82,9 +104,63 @@ const material = new THREE.MeshStandardMaterial({
     color: '#858080'
 })
 
-// Mesh
-const mesh = new THREE.Mesh(geometry, material)
-scene.add(mesh)
+const slicedMaterial = new CustomShaderMaterial({
+    // CSM
+    baseMaterial: THREE.MeshStandardMaterial,
+    vertexShader: slicedVertexShader,
+    fragmentShader: slicedFragmentShader,
+    uniforms: uniforms,
+    patchMap: patchMap,
+    silent: true,
+
+    // MeshStandardMaterial
+    metalness: 0.5,
+    roughness: 0.25,
+    envMapIntensity: 0.5,
+    color: '#858080',
+    side: THREE.DoubleSide
+})
+
+const slicedDepthMaterial = new CustomShaderMaterial({
+    // CSM
+    baseMaterial: THREE.MeshDepthMaterial,
+    vertexShader: slicedVertexShader,
+    fragmentShader: slicedFragmentShader,
+    uniforms: uniforms,
+    patchMap: patchMap,
+    silent: true,
+
+    // MeshDepthMaterial
+    depthPacking: THREE.RGBADepthPacking
+})
+
+// Model
+let model = null
+gltfLoader.load('/assets/43-sliced-model-shader-final/gears.glb', (gltf) =>
+{
+    model = gltf.scene
+
+    model.traverse((child) =>
+    {
+        if(child.isMesh)
+        {
+            if(child.name === 'outerHull')
+            {
+                child.material = slicedMaterial
+                child.customDepthMaterial = slicedDepthMaterial
+            }
+            else
+            {
+                child.material = material
+            }
+
+            child.castShadow = true
+            child.receiveShadow = true
+        }
+    })
+
+    scene.add(model)
+})
 
 /**
  * Plane
@@ -175,6 +251,10 @@ const clock = new THREE.Clock()
 const tick = () =>
 {
     const elapsedTime = clock.getElapsedTime()
+    
+    // Update model
+    if(model)
+        model.rotation.y = elapsedTime * 0.1
 
     // Update controls
     controls.update()
@@ -187,5 +267,7 @@ const tick = () =>
 }
 
 tick()
+
+
 </script></body>
 </html>
