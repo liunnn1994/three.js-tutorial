@@ -34,7 +34,8 @@
       "Bash(pkill -f \"astro dev\")",
       "Bash(npm info *)",
       "Bash(npx --yes esbuild --version)",
-      "Bash(npx esbuild *)"
+      "Bash(npx esbuild *)",
+      "Bash(grep -v \"^$\")"
     ]
   }
 }

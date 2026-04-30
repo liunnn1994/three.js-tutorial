@@ -26,6 +26,8 @@ src-tauri/target/
 # Generated vendor files (offline Tauri builds)
 public/vendor/
 vendor/
+!public/vendor/normalize.css
+!public/vendor/webgl-base.css
 
 # Generated preview files (from lesson-code)
 public/previews/

@@ -193,6 +193,9 @@ function collectFiles(dir) {
   return { glslFiles, jsFiles, otherFiles };
 }
 
+const normalizeCss = fs.readFileSync(path.join(projectRoot, 'public/vendor/normalize.css'), 'utf-8');
+const webglBaseCss = fs.readFileSync(path.join(projectRoot, 'public/vendor/webgl-base.css'), 'utf-8');
+
 fs.rmSync(outputRoot, { recursive: true, force: true });
 fs.mkdirSync(outputRoot, { recursive: true });
 
@@ -233,7 +236,7 @@ for (const lesson of lessons) {
   const previewHtml = rawHtml
     .replace(/<link\s+rel=['"]stylesheet['"]\s+href=['"]\.\/style\.css['"]\s*\/?>/gi, '')
     .replace(/<script\s+type=['"]module['"]\s+src=['"]\.\/script\.js['"]\s*><\/script>/gi, '')
-    .replace('</head>', `<style>${rawCss}</style></head>`)
+    .replace('</head>', `<style>${normalizeCss}\n${webglBaseCss}\n${rawCss}</style></head>`)
     .replace('</head>', `<script type="importmap">${importMap}</script></head>`)
     .replace('</body>', `<script type="module">\n${combinedJs}\n</script></body>`);
 
@@ -254,6 +257,16 @@ for (const lesson of lessons) {
   }
   if (!finalHtml.includes('type="module"')) {
     finalHtml = finalHtml.replace('</html>', `<script type="module">\n${combinedJs}\n</script></html>`);
+  }
+
+  // Fallback CSS injection for templates without <head>
+  if (!finalHtml.includes('normalize.css')) {
+    const allCss = `${normalizeCss}\n${webglBaseCss}\n${rawCss}`;
+    if (finalHtml.includes('</head>')) {
+      finalHtml = finalHtml.replace('</head>', `<style>${allCss}</style></head>`);
+    } else {
+      finalHtml = finalHtml.replace('<body>', `<head><style>${allCss}</style></head><body>`);
+    }
   }
 
   fs.writeFileSync(path.join(outputRoot, `${lesson}.html`), finalHtml, 'utf-8');
