@@ -125,7 +125,7 @@ scene.add(sphere)
 // Suzanne
 let suzanne = null
 gltfLoader.load(
-    './suzanne.glb',
+    '/assets/33-hologram-shader-final/suzanne.glb',
     (gltf) =>
     {
         suzanne = gltf.scene

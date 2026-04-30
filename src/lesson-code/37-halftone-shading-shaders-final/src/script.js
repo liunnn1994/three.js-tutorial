@@ -161,7 +161,7 @@ scene.add(sphere)
 // Suzanne
 let suzanne = null
 gltfLoader.load(
-    './suzanne.glb',
+    '/assets/37-halftone-shading-shaders-final/suzanne.glb',
     (gltf) =>
     {
         suzanne = gltf.scene

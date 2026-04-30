@@ -73,7 +73,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
  * Model
  */
 gltfLoader.load(
-    './bakedModel.glb',
+    '/assets/32-coffee-smoke-shader-final/bakedModel.glb',
     (gltf) =>
     {
         gltf.scene.getObjectByName('baked').material.map.anisotropy = 8

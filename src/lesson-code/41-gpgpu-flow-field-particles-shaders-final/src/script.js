@@ -84,7 +84,7 @@ renderer.setClearColor(debugObject.clearColor)
 /**
  * Load model
  */
-const gltf = await gltfLoader.loadAsync('./model.glb')
+const gltf = await gltfLoader.loadAsync('/assets/41-gpgpu-flow-field-particles-shaders-final/model.glb')
 
 /**
  * Base geometry

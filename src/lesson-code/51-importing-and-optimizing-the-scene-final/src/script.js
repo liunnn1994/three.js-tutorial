@@ -42,7 +42,7 @@ gltfLoader.setDRACOLoader(dracoLoader)
 /**
  * Textures
  */
-const bakedTexture = textureLoader.load('baked.jpg')
+const bakedTexture = textureLoader.load('/assets/51-importing-and-optimizing-the-scene-final/baked.jpg')
 bakedTexture.flipY = false
 bakedTexture.colorSpace = THREE.SRGBColorSpace
 
@@ -62,7 +62,7 @@ const poleLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffe5 })
  * Model
  */
 gltfLoader.load(
-    'portal.glb',
+    '/assets/51-importing-and-optimizing-the-scene-final/portal.glb',
     (gltf) =>
     {
         const bakedMesh = gltf.scene.children.find(child => child.name === 'baked')

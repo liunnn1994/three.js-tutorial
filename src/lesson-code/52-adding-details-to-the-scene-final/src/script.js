@@ -40,7 +40,7 @@ gltfLoader.setDRACOLoader(dracoLoader)
 /**
  * Textures
  */
-const bakedTexture = textureLoader.load('baked.jpg')
+const bakedTexture = textureLoader.load('/assets/52-adding-details-to-the-scene-final/baked.jpg')
 bakedTexture.flipY = false
 bakedTexture.colorSpace = THREE.SRGBColorSpace
 
@@ -86,7 +86,7 @@ const portalLightMaterial = new THREE.ShaderMaterial({
  * Model
  */
 gltfLoader.load(
-    'portal.glb',
+    '/assets/52-adding-details-to-the-scene-final/portal.glb',
     (gltf) =>
     {
         scene.add(gltf.scene)

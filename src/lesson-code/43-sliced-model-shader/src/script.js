@@ -21,14 +21,14 @@ const scene = new THREE.Scene()
 // Loaders
 const rgbeLoader = new RGBELoader()
 const dracoLoader = new DRACOLoader()
-dracoLoader.setDecoderPath('./draco/')
+dracoLoader.setDecoderPath('/assets/43-sliced-model-shader/draco/')
 const gltfLoader = new GLTFLoader()
 gltfLoader.setDRACOLoader(dracoLoader)
 
 /**
  * Environment map
  */
-rgbeLoader.load('./aerodynamics_workshop.hdr', (environmentMap) =>
+rgbeLoader.load('/assets/43-sliced-model-shader/aerodynamics_workshop.hdr', (environmentMap) =>
 {
     environmentMap.mapping = THREE.EquirectangularReflectionMapping
 

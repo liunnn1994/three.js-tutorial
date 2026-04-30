@@ -28,7 +28,13 @@
       "Bash(echo \"EXIT: $?\")",
       "Bash(npm ls *)",
       "Bash(curl -s \"https://cdn.jsdelivr.net/npm/stats.js@0.17/+esm\" -o /Users/nord/work/three.js-tutorial/public/vendor/stats.esm.js)",
-      "Bash(grep -E 'final$')"
+      "Bash(grep -E 'final$')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:4321/assets/12-3d-text-final/fonts/helvetiker_regular.typeface.json)",
+      "Bash(curl *)",
+      "Bash(pkill -f \"astro dev\")",
+      "Bash(npm info *)",
+      "Bash(npx --yes esbuild --version)",
+      "Bash(npx esbuild *)"
     ]
   }
 }

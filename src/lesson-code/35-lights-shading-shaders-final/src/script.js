@@ -143,7 +143,7 @@ scene.add(sphere)
 // Suzanne
 let suzanne = null
 gltfLoader.load(
-    './suzanne.glb',
+    '/assets/35-lights-shading-shaders-final/suzanne.glb',
     (gltf) =>
     {
         suzanne = gltf.scene

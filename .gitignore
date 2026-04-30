@@ -25,3 +25,7 @@ src-tauri/target/
 
 # Generated vendor files (offline Tauri builds)
 public/vendor/
+vendor/
+
+# Generated preview files (from lesson-code)
+public/previews/

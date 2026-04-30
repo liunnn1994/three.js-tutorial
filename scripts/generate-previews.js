@@ -28,14 +28,36 @@ const lessons = [
   '51-importing-and-optimizing-the-scene', '52-adding-details-to-the-scene',
 ];
 
+function resolveGlslIncludes(glslContent, filePath, glslFiles) {
+  const visited = new Set();
+  function resolve(content, currentPath) {
+    if (visited.has(currentPath)) return content;
+    visited.add(currentPath);
+    return content.replace(
+      /#include\s+([^\n<][^\n]*)/g,
+      (_match, includePath) => {
+        const fileDir = currentPath.substring(0, currentPath.lastIndexOf('/'));
+        const resolved = path.posix.normalize(fileDir + '/' + includePath.trim());
+        const included = glslFiles.get(resolved);
+        if (included !== undefined) {
+          return resolve(included, resolved);
+        }
+        return _match;
+      }
+    );
+  }
+  return resolve(glslContent, filePath);
+}
+
 function inlineGlslImports(jsContent, filePath, glslFiles) {
   return jsContent.replace(
     /import\s+(\w+)\s+from\s+['"]([^'"]+\.(?:glsl|vert|frag))['"]/g,
     (_match, varName, importPath) => {
       const fileDir = filePath.substring(0, filePath.lastIndexOf('/'));
       const resolved = path.posix.normalize(fileDir + '/' + importPath);
-      const glslContent = glslFiles.get(resolved);
+      let glslContent = glslFiles.get(resolved);
       if (glslContent !== undefined) {
+        glslContent = resolveGlslIncludes(glslContent, resolved, glslFiles);
         return `const ${varName} = ${JSON.stringify(glslContent)}`;
       }
       return _match;
@@ -133,6 +155,8 @@ const importMap = JSON.stringify({
     "gsap": "/vendor/gsap.esm.js",
     "stats.js": "/vendor/stats.esm.js",
     "cannon-es": "/vendor/cannon-es.esm.js",
+    "three-custom-shader-material/vanilla": "/vendor/three-custom-shader-material-vanilla.esm.js",
+    "three-bvh-csg": "/vendor/three-bvh-csg.esm.js",
   }
 });
 

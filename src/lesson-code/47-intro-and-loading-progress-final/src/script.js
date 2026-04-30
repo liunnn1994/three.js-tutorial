@@ -118,7 +118,6 @@ debugObject.envMapIntensity = 2.5
  */
 const gui = new GUI()
 gui.add(debugObject, 'envMapIntensity').min(0).max(5).step(0.1).name('Env Map Intensity').onChange(updateAllMaterials)
-gui.add(renderer, 'toneMappingExposure').min(0).max(10).step(0.1).name('Tone Mapping Exposure')
 
 /**
  * Models
@@ -155,21 +154,6 @@ const sizes = {
     height: window.innerHeight
 }
 
-window.addEventListener('resize', () =>
-{
-    // Update sizes
-    sizes.width = window.innerWidth
-    sizes.height = window.innerHeight
-
-    // Update camera
-    camera.aspect = sizes.width / sizes.height
-    camera.updateProjectionMatrix()
-
-    // Update renderer
-    renderer.setSize(sizes.width, sizes.height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-})
-
 /**
  * Camera
  */
@@ -195,6 +179,23 @@ renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFSoftShadowMap
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+gui.add(renderer, 'toneMappingExposure').min(0).max(10).step(0.1).name('Tone Mapping Exposure')
+
+window.addEventListener('resize', () =>
+{
+    // Update sizes
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
+
+    // Update camera
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
+
+    // Update renderer
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+})
 
 /**
  * Animate

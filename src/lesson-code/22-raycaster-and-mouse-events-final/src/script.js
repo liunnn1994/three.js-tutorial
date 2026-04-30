@@ -143,7 +143,7 @@ const gltfLoader = new GLTFLoader()
 
 let model = null
 gltfLoader.load(
-    './models/Duck/glTF-Binary/Duck.glb',
+    '/assets/22-raycaster-and-mouse-events-final/models/Duck/glTF-Binary/Duck.glb',
     (gltf) =>
     {
         model = gltf.scene

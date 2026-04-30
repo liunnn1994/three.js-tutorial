@@ -21,14 +21,14 @@ const scene = new THREE.Scene()
 // Loaders
 const rgbeLoader = new RGBELoader()
 const dracoLoader = new DRACOLoader()
-dracoLoader.setDecoderPath('./draco/')
+dracoLoader.setDecoderPath('/assets/42-wobbly-sphere-shader/draco/')
 const gltfLoader = new GLTFLoader()
 gltfLoader.setDRACOLoader(dracoLoader)
 
 /**
  * Environment map
  */
-rgbeLoader.load('./urban_alley_01_1k.hdr', (environmentMap) =>
+rgbeLoader.load('/assets/42-wobbly-sphere-shader/urban_alley_01_1k.hdr', (environmentMap) =>
 {
     environmentMap.mapping = THREE.EquirectangularReflectionMapping
 
