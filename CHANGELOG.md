@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/liunnn1994/three.js-tutorial/compare/v1.2.1...v1.2.2) (2026-05-01)
+
+
+### Bug Fixes
+
+* 🐛 修复仓库找不到的问题 ([ec678a1](https://github.com/liunnn1994/three.js-tutorial/commit/ec678a147f157f37bd77b97fca3b5f471de54774))
+
 ## [1.2.1](https://github.com/liunnn1994/three.js-tutorial/compare/v1.2.0...v1.2.1) (2026-05-01)
 
 
