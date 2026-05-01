@@ -22,16 +22,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Get the triggering workflow run time
-          RUN_TIME=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }} --jq '.updated_at')
-          # Get the latest release
+          RUN_TIME="${{ github.event.workflow_run.updated_at }}"
           LATEST_RELEASE=$(gh release view --json tagName,createdAt -q '.tagName // empty')
           if [ -z "$LATEST_RELEASE" ]; then
             echo "has_release=false" >> $GITHUB_OUTPUT
             exit 0
           fi
           RELEASE_TIME=$(gh release view --json createdAt -q '.createdAt')
-          # Compare timestamps: only proceed if release was created after workflow started
           if [[ "$RELEASE_TIME" > "$RUN_TIME" ]] || [[ "$RELEASE_TIME" == "$RUN_TIME" ]]; then
             echo "has_release=true" >> $GITHUB_OUTPUT
             echo "tag_name=$LATEST_RELEASE" >> $GITHUB_OUTPUT
