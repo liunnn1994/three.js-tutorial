@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.3.0...v1.4.0) (2026-05-01)
+
+
+### Features
+
+* 🎸 修改安卓打包配置 ([c9c59d4](https://github.com/liunnn1994/three.js-tutorial/commit/c9c59d4c684e3036bb17cd37da66c5438692b48b))
+
 # [1.3.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.2.7...v1.3.0) (2026-05-01)
 
 
