@@ -1,3 +1,10 @@
+## [1.4.2](https://github.com/liunnn1994/three.js-tutorial/compare/v1.4.1...v1.4.2) (2026-05-01)
+
+
+### Bug Fixes
+
+* 🐛 修复构建失败的问题 ([2382d25](https://github.com/liunnn1994/three.js-tutorial/commit/2382d2539ff4baf6c171482197ca246b7e3b788f))
+
 ## [1.4.1](https://github.com/liunnn1994/three.js-tutorial/compare/v1.4.0...v1.4.1) (2026-05-01)
 
 
