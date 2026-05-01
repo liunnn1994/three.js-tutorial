@@ -27,6 +27,9 @@
   "bundle": {
     "active": true,
     "targets": ["dmg", "app", "nsis", "deb", "appimage", "rpm"],
+    "android": {
+      "minSdkVersion": 36
+    },
     "windows": {
       "webviewInstallMode": {
         "type": "skip"

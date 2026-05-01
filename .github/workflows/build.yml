@@ -44,11 +44,11 @@ jobs:
       matrix:
         include:
           - platform: macos-latest
-            args: '--target aarch64-apple-darwin'
+            args: '--target aarch64-apple-darwin --bundles app'
           - platform: windows-latest
-            args: ''
+            args: '--target x86_64-pc-windows-msvc --no-bundle'
           - platform: ubuntu-22.04
-            args: ''
+            args: '--bundles appimage'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -92,11 +92,35 @@ jobs:
         with:
           args: ${{ matrix.args }}
 
-      - name: Upload artifacts to release
+      - name: Pack macOS app to zip
+        if: matrix.platform == 'macos-latest'
+        shell: bash
+        run: |
+          for app in src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app; do
+            [ -e "$app" ] || continue
+            zip -r -y "${app}.zip" "$app"
+          done
+
+      - name: Upload macOS artifacts to release
+        if: matrix.platform == 'macos-latest'
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: find src-tauri/target -path "*/bundle/*" -type f \( -name "*.dmg" -o -name "*.msi" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.tar.gz" -o -name "*.exe" \) -print0 | xargs -0 gh release upload ${{ needs.check.outputs.tag_name }} --clobber
+        run: find src-tauri/target -path "*/bundle/macos/*.app.zip" -type f -print0 | xargs -0 gh release upload ${{ needs.check.outputs.tag_name }} --clobber
+
+      - name: Upload Windows artifacts to release
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: find src-tauri/target/x86_64-pc-windows-msvc/release -maxdepth 1 -type f -name "*.exe" -print0 | xargs -0 gh release upload ${{ needs.check.outputs.tag_name }} --clobber
+
+      - name: Upload Linux artifacts to release
+        if: matrix.platform == 'ubuntu-22.04'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: find src-tauri/target -path "*/bundle/appimage/*" -type f \( -name "*.AppImage" -o -name "*.appimage" \) -print0 | xargs -0 gh release upload ${{ needs.check.outputs.tag_name }} --clobber
 
   build-android:
     needs: check
@@ -130,7 +154,7 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+          targets: aarch64-linux-android
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -153,8 +177,9 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         with:
           mobile: 'android'
+          args: '--target aarch64-linux-android'
 
       - name: Upload artifacts to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: find src-tauri/target -path "*/bundle/android*" -type f \( -name "*.apk" -o -name "*.aab" \) -print0 | xargs -0 -I {} gh release upload ${{ needs.check.outputs.tag_name }} {} --clobber || true
+        run: find src-tauri/target -path "*/bundle/android*" -type f -name "*.apk" -print0 | xargs -0 -I {} gh release upload ${{ needs.check.outputs.tag_name }} {} --clobber || true
