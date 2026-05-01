@@ -59,7 +59,8 @@ jobs:
       - name: Sync version
         run: node scripts/sync-version.js
 
-      - uses: tauri-apps/tauri-action@v1
+      # TODO: tauri-action v1 发布后切换到 @v1
+      - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -113,7 +114,8 @@ jobs:
       - name: Sync version
         run: node scripts/sync-version.js
 
-      - uses: tauri-apps/tauri-action@v1
+      # TODO: tauri-action v1 发布后切换到 @v1
+      - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -159,7 +161,8 @@ jobs:
       - name: Sync version
         run: node scripts/sync-version.js
 
-      - uses: tauri-apps/tauri-action@v1
+      # TODO: tauri-action v1 发布后切换到 @v1
+      - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
