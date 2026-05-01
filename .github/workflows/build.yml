@@ -102,7 +102,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
-          cache: pnpm
 
       - name: Install pnpm
         run: corepack enable && corepack prepare pnpm@latest --activate
@@ -199,7 +198,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
-          cache: pnpm
 
       - name: Install pnpm
         run: corepack enable && corepack prepare pnpm@latest --activate
@@ -223,7 +221,7 @@ jobs:
 
       - name: Initialize Android
         run: |
-          if [ -d src-tauri/gen/android ]; then
+          if [ -f src-tauri/gen/android/gradlew ] && [ -d src-tauri/gen/android/app ]; then
             echo "Android project already initialized"
           else
             pnpm tauri android init
