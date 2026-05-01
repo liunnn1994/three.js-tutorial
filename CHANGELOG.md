@@ -1,3 +1,10 @@
+## [1.2.4](https://github.com/liunnn1994/three.js-tutorial/compare/v1.2.3...v1.2.4) (2026-05-01)
+
+
+### Bug Fixes
+
+* 🐛 修复部分文件没有提交的问题 ([105edcd](https://github.com/liunnn1994/three.js-tutorial/commit/105edcdca2e9f5e37028518a8e6073cb31851dcf))
+
 ## [1.2.3](https://github.com/liunnn1994/three.js-tutorial/compare/v1.2.2...v1.2.3) (2026-05-01)
 
 
