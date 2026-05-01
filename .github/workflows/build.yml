@@ -5,6 +5,11 @@ on:
     workflows: ["Release"]
     types: [completed]
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Optional release tag to build (e.g. v1.4.0). If empty, use latest release"
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -12,7 +17,6 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success'
     outputs:
       has_release: ${{ steps.check.outputs.has_release }}
       tag_name: ${{ steps.check.outputs.tag_name }}
@@ -22,18 +26,52 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
+
+          EVENT_NAME="${{ github.event_name }}"
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            REQUESTED_TAG="${{ github.event.inputs.tag_name || '' }}"
+            if [[ -n "$REQUESTED_TAG" ]]; then
+              if gh release view "$REQUESTED_TAG" --repo ${{ github.repository }} >/dev/null 2>&1; then
+                echo "has_release=true" >> "$GITHUB_OUTPUT"
+                echo "tag_name=$REQUESTED_TAG" >> "$GITHUB_OUTPUT"
+              else
+                echo "has_release=false" >> "$GITHUB_OUTPUT"
+                echo "Requested tag '$REQUESTED_TAG' does not exist"
+              fi
+              exit 0
+            fi
+
+            LATEST_RELEASE=$(gh release view --repo ${{ github.repository }} --json tagName -q '.tagName // empty')
+            if [[ -z "$LATEST_RELEASE" ]]; then
+              echo "has_release=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+
+            echo "has_release=true" >> "$GITHUB_OUTPUT"
+            echo "tag_name=$LATEST_RELEASE" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "${{ github.event.workflow_run.conclusion }}" != "success" ]]; then
+            echo "has_release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           RUN_STARTED="${{ github.event.workflow_run.run_started_at }}"
           LATEST_RELEASE=$(gh release view --repo ${{ github.repository }} --json tagName,createdAt -q '.tagName // empty')
           if [ -z "$LATEST_RELEASE" ]; then
-            echo "has_release=false" >> $GITHUB_OUTPUT
+            echo "has_release=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+
           RELEASE_TIME=$(gh release view --repo ${{ github.repository }} --json createdAt -q '.createdAt')
           if [[ "$RELEASE_TIME" > "$RUN_STARTED" ]]; then
-            echo "has_release=true" >> $GITHUB_OUTPUT
-            echo "tag_name=$LATEST_RELEASE" >> $GITHUB_OUTPUT
+            echo "has_release=true" >> "$GITHUB_OUTPUT"
+            echo "tag_name=$LATEST_RELEASE" >> "$GITHUB_OUTPUT"
           else
-            echo "has_release=false" >> $GITHUB_OUTPUT
+            echo "has_release=false" >> "$GITHUB_OUTPUT"
           fi
 
   build-desktop:
@@ -64,6 +102,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
+          cache: pnpm
 
       - name: Install pnpm
         run: corepack enable && corepack prepare pnpm@latest --activate
@@ -79,7 +118,7 @@ jobs:
           workspaces: './src-tauri -> target'
 
       - name: Install frontend dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Generate icons
         run: node scripts/generate-icons.mjs
@@ -106,21 +145,39 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: find src-tauri/target -path "*/bundle/macos/*.app.zip" -type f -print0 | xargs -0 gh release upload ${{ needs.check.outputs.tag_name }} --clobber
+        run: |
+          mapfile -d '' files < <(find src-tauri/target -path "*/bundle/macos/*.app.zip" -type f -print0)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No macOS artifacts found"
+            exit 0
+          fi
+          gh release upload ${{ needs.check.outputs.tag_name }} "${files[@]}" --clobber
 
       - name: Upload Windows artifacts to release
         if: matrix.platform == 'windows-latest'
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: find src-tauri/target/x86_64-pc-windows-msvc/release -maxdepth 1 -type f -name "*.exe" -print0 | xargs -0 gh release upload ${{ needs.check.outputs.tag_name }} --clobber
+        run: |
+          mapfile -d '' files < <(find src-tauri/target/x86_64-pc-windows-msvc/release -maxdepth 1 -type f -name "*.exe" -print0)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No Windows artifacts found"
+            exit 0
+          fi
+          gh release upload ${{ needs.check.outputs.tag_name }} "${files[@]}" --clobber
 
       - name: Upload Linux artifacts to release
         if: matrix.platform == 'ubuntu-22.04'
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: find src-tauri/target -path "*/bundle/appimage/*" -type f \( -name "*.AppImage" -o -name "*.appimage" \) -print0 | xargs -0 gh release upload ${{ needs.check.outputs.tag_name }} --clobber
+        run: |
+          mapfile -d '' files < <(find src-tauri/target -path "*/bundle/appimage/*" -type f \( -name "*.AppImage" -o -name "*.appimage" \) -print0)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No Linux artifacts found"
+            exit 0
+          fi
+          gh release upload ${{ needs.check.outputs.tag_name }} "${files[@]}" --clobber
 
   build-android:
     needs: check
@@ -138,15 +195,11 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
+          cache: pnpm
 
       - name: Install pnpm
         run: corepack enable && corepack prepare pnpm@latest --activate
@@ -154,29 +207,43 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Add Android Rust targets
+        run: rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
+
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri -> target'
 
       - name: Install frontend dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Generate icons
         run: node scripts/generate-icons.mjs
 
       - name: Initialize Android
-        run: pnpm tauri android init
+        run: |
+          if [ -d src-tauri/gen/android ]; then
+            echo "Android project already initialized"
+          else
+            pnpm tauri android init
+          fi
 
       - name: Sync version
         run: node scripts/sync-version.js
 
-      - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
-        with:
-          mobile: 'android'
+      - name: Build Android app (APK + AAB)
+        run: |
+          pnpm tauri android build --apk
+          pnpm tauri android build --aab
 
       - name: Upload artifacts to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: find src-tauri/target -path "*/bundle/android*" -type f -name "*.apk" -print0 | xargs -0 -I {} gh release upload ${{ needs.check.outputs.tag_name }} {} --clobber || true
+        run: |
+          mapfile -d '' files < <(find src-tauri/gen/android/app/build/outputs -type f \( -name "*.apk" -o -name "*.aab" \) -print0 2>/dev/null || true)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No Android artifacts found"
+            exit 0
+          fi
+          gh release upload ${{ needs.check.outputs.tag_name }} "${files[@]}" --clobber
