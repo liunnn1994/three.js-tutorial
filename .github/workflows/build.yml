@@ -145,7 +145,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mapfile -d '' files < <(find src-tauri/target -path "*/bundle/macos/*.app.zip" -type f -print0)
+          files=()
+          while IFS= read -r -d '' file; do
+            files+=("$file")
+          done < <(find src-tauri/target -path "*/bundle/macos/*.app.zip" -type f -print0)
           if [ "${#files[@]}" -eq 0 ]; then
             echo "No macOS artifacts found"
             exit 0
@@ -158,7 +161,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mapfile -d '' files < <(find src-tauri/target/x86_64-pc-windows-msvc/release -maxdepth 1 -type f -name "*.exe" -print0)
+          files=()
+          while IFS= read -r -d '' file; do
+            files+=("$file")
+          done < <(find src-tauri/target/x86_64-pc-windows-msvc/release -maxdepth 1 -type f -name "*.exe" -print0)
           if [ "${#files[@]}" -eq 0 ]; then
             echo "No Windows artifacts found"
             exit 0
@@ -171,7 +177,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mapfile -d '' files < <(find src-tauri/target -path "*/bundle/appimage/*" -type f \( -name "*.AppImage" -o -name "*.appimage" \) -print0)
+          files=()
+          while IFS= read -r -d '' file; do
+            files+=("$file")
+          done < <(find src-tauri/target -path "*/bundle/appimage/*" -type f \( -name "*.AppImage" -o -name "*.appimage" \) -print0)
           if [ "${#files[@]}" -eq 0 ]; then
             echo "No Linux artifacts found"
             exit 0
@@ -239,7 +248,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mapfile -d '' files < <(find src-tauri/gen/android/app/build/outputs -type f \( -name "*.apk" -o -name "*.aab" \) -print0 2>/dev/null || true)
+          files=()
+          while IFS= read -r -d '' file; do
+            files+=("$file")
+          done < <(find src-tauri/gen/android/app/build/outputs -type f \( -name "*.apk" -o -name "*.aab" \) -print0 2>/dev/null || true)
           if [ "${#files[@]}" -eq 0 ]; then
             echo "No Android artifacts found"
             exit 0
