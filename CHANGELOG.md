@@ -1,3 +1,10 @@
+## [1.2.7](https://github.com/liunnn1994/three.js-tutorial/compare/v1.2.6...v1.2.7) (2026-05-01)
+
+
+### Bug Fixes
+
+* 🐛 修复错误的job ([3cc29c8](https://github.com/liunnn1994/three.js-tutorial/commit/3cc29c8acaf773f78769c18a2ba46fda66ef12a3))
+
 ## [1.2.6](https://github.com/liunnn1994/three.js-tutorial/compare/v1.2.5...v1.2.6) (2026-05-01)
 
 
