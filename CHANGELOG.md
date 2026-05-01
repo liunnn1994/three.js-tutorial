@@ -1,3 +1,16 @@
+# [1.3.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.2.7...v1.3.0) (2026-05-01)
+
+
+### Bug Fixes
+
+* 🐛 修复windows上报错的问题 ([12609e6](https://github.com/liunnn1994/three.js-tutorial/commit/12609e618ef713eb85fab5c191a256048877f205))
+
+
+### Features
+
+* 🎸 修改打包逻辑，去掉了ios ([b904783](https://github.com/liunnn1994/three.js-tutorial/commit/b904783259dcbcdf0033f48f2b47290b3ac49fa9))
+* 🎸 修改构建目标 ([8250fac](https://github.com/liunnn1994/three.js-tutorial/commit/8250fac914e63c777f60c163055253696844041a))
+
 ## [1.2.7](https://github.com/liunnn1994/three.js-tutorial/compare/v1.2.6...v1.2.7) (2026-05-01)
 
 
