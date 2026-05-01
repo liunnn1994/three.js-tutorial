@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/liunnn1994/three.js-tutorial/compare/v1.4.0...v1.4.1) (2026-05-01)
+
+
+### Bug Fixes
+
+* 🐛 修复安卓的构建 ([cf2d1c5](https://github.com/liunnn1994/three.js-tutorial/commit/cf2d1c54e3d44a20c9be700d4b8ddef72afda0b1))
+
 # [1.4.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.3.0...v1.4.0) (2026-05-01)
 
 
