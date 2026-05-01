@@ -1,3 +1,10 @@
+## [1.4.5](https://github.com/liunnn1994/three.js-tutorial/compare/v1.4.4...v1.4.5) (2026-05-01)
+
+
+### Bug Fixes
+
+* 🐛 修复安卓打包超时的问题 ([e99ce8f](https://github.com/liunnn1994/three.js-tutorial/commit/e99ce8fe28ecc00501d8faa77210e5f75282c3a3))
+
 ## [1.4.4](https://github.com/liunnn1994/three.js-tutorial/compare/v1.4.3...v1.4.4) (2026-05-01)
 
 
