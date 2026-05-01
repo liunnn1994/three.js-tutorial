@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/liunnn1994/three.js-tutorial/compare/v1.2.0...v1.2.1) (2026-05-01)
+
+
+### Bug Fixes
+
+* 🐛 修复build失败的问题 ([000fcac](https://github.com/liunnn1994/three.js-tutorial/commit/000fcac2705a33779adc7c618332d8879def32aa))
+
 # [1.2.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.1.0...v1.2.0) (2026-05-01)
 
 
