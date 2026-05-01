@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.0.1...v1.1.0) (2026-05-01)
+
+
+### Features
+
+* 🎸 修改release流程 ([508cdcc](https://github.com/liunnn1994/three.js-tutorial/commit/508cdccd95547fdb2b90c772e05b83f8baf9a0e0))
+
 ## [1.0.1](https://github.com/liunnn1994/three.js-tutorial/compare/v1.0.0...v1.0.1) (2026-05-01)
 
 
