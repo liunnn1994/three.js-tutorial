@@ -93,6 +93,7 @@ jobs:
           args: ${{ matrix.args }}
 
       - name: Upload artifacts to release
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: find src-tauri/target -path "*/bundle/*" -type f \( -name "*.dmg" -o -name "*.msi" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.tar.gz" -o -name "*.exe" \) -print0 | xargs -0 gh release upload ${{ needs.check.outputs.tag_name }} --clobber
