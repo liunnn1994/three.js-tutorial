@@ -1,3 +1,10 @@
+## [1.4.4](https://github.com/liunnn1994/three.js-tutorial/compare/v1.4.3...v1.4.4) (2026-05-01)
+
+
+### Bug Fixes
+
+* 🐛 修复安卓打包失败 ([cb2382f](https://github.com/liunnn1994/three.js-tutorial/commit/cb2382fd6d9fbdb4c83fe47a9a94cd1275f416ed))
+
 ## [1.4.3](https://github.com/liunnn1994/three.js-tutorial/compare/v1.4.2...v1.4.3) (2026-05-01)
 
 
