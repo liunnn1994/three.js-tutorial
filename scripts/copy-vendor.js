@@ -8,8 +8,24 @@ const projectRoot = path.resolve(__dirname, "..");
 const nm = path.join(projectRoot, "node_modules");
 const vendorDir = path.join(projectRoot, "public", "vendor");
 
+const preservedFiles = ["normalize.css", "webgl-base.css"];
+const tmpDir = path.join(projectRoot, "public", ".vendor-tmp");
+if (fs.existsSync(vendorDir)) {
+  fs.mkdirSync(tmpDir, { recursive: true });
+  for (const f of preservedFiles) {
+    const src = path.join(vendorDir, f);
+    if (fs.existsSync(src)) fs.copyFileSync(src, path.join(tmpDir, f));
+  }
+}
+
 fs.rmSync(vendorDir, { recursive: true, force: true });
 fs.mkdirSync(vendorDir, { recursive: true });
+
+for (const f of preservedFiles) {
+  const src = path.join(tmpDir, f);
+  if (fs.existsSync(src)) fs.copyFileSync(src, path.join(vendorDir, f));
+}
+fs.rmSync(tmpDir, { recursive: true, force: true });
 
 // Three.js core (ESM)
 fs.copyFileSync(

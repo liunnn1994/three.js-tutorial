@@ -36,7 +36,8 @@
       "Bash(npx --yes esbuild --version)",
       "Bash(npx esbuild *)",
       "Bash(grep -v \"^$\")",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(gh run *)"
     ]
   }
 }
