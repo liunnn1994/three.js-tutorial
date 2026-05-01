@@ -26,8 +26,8 @@ src-tauri/gen/android/
 src-tauri/gen/apple/
 
 # Generated vendor files (offline Tauri builds)
-public/vendor/
-vendor/
+/vendor/
+public/vendor/*
 !public/vendor/normalize.css
 !public/vendor/webgl-base.css
 
