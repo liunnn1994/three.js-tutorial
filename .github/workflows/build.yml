@@ -95,7 +95,7 @@ jobs:
       - name: Upload artifacts to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload ${{ needs.check.outputs.tag_name }} $(find src-tauri/target -path "*/bundle/*" -type f \( -name "*.dmg" -o -name "*.msi" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.tar.gz" \)) --clobber
+        run: find src-tauri/target -path "*/bundle/*" -type f \( -name "*.dmg" -o -name "*.msi" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.tar.gz" -o -name "*.exe" \) -print0 | xargs -0 gh release upload ${{ needs.check.outputs.tag_name }} --clobber
 
   build-android:
     needs: check
@@ -156,9 +156,7 @@ jobs:
       - name: Upload artifacts to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ARTIFACTS=$(find src-tauri/target -path "*/bundle/android*" -type f \( -name "*.apk" -o -name "*.aab" \))
-          [ -n "$ARTIFACTS" ] && gh release upload ${{ needs.check.outputs.tag_name }} $ARTIFACTS --clobber || echo "No Android artifacts found, skipping upload"
+        run: find src-tauri/target -path "*/bundle/android*" -type f \( -name "*.apk" -o -name "*.aab" \) -print0 | xargs -0 -I {} gh release upload ${{ needs.check.outputs.tag_name }} {} --clobber || true
 
   build-ios:
     needs: check
@@ -205,6 +203,4 @@ jobs:
       - name: Upload artifacts to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ARTIFACTS=$(find src-tauri/target -path "*/bundle/ios*" -type f \( -name "*.ipa" \))
-          [ -n "$ARTIFACTS" ] && gh release upload ${{ needs.check.outputs.tag_name }} $ARTIFACTS --clobber || echo "No iOS artifacts found, skipping upload"
+        run: find src-tauri/target -path "*/bundle/ios*" -type f \( -name "*.ipa" \) -print0 | xargs -0 -I {} gh release upload ${{ needs.check.outputs.tag_name }} {} --clobber || true
