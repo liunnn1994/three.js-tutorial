@@ -1,3 +1,11 @@
+## [1.4.3](https://github.com/liunnn1994/three.js-tutorial/compare/v1.4.2...v1.4.3) (2026-05-01)
+
+
+### Bug Fixes
+
+* 🐛 修复 mac 打包报错 ([ff61a2c](https://github.com/liunnn1994/three.js-tutorial/commit/ff61a2cba2af61313c05d6bf5dafb2eac8b91496))
+* 🐛 修复安卓打包报错 ([50dc7c8](https://github.com/liunnn1994/three.js-tutorial/commit/50dc7c8d79d9ea1588c8ff5f8f2cb4a85d6726a0))
+
 ## [1.4.2](https://github.com/liunnn1994/three.js-tutorial/compare/v1.4.1...v1.4.2) (2026-05-01)
 
 
