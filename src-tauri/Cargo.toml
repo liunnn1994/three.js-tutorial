@@ -1,8 +1,8 @@
 [package]
-name = "app"
-version = "0.0.1"
-description = "A Tauri App"
-authors = ["you"]
+name = "three_js_tutorial"
+version = "1.2.6"
+description = "A three.js tutorial application built with Tauri and Rust."
+authors = ["Norris Lau"]
 license = ""
 repository = ""
 edition = "2021"
