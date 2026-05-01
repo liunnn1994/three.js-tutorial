@@ -56,13 +56,15 @@ jobs:
       - name: Generate icons
         run: node scripts/generate-icons.mjs
 
+      - name: Sync version
+        run: node scripts/sync-version.js
+
       - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: v__VERSION__
           releaseName: 'Three.js Tutorial v__VERSION__'
-          releaseBody: 'See the assets to download and install.'
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
@@ -108,13 +110,15 @@ jobs:
       - name: Initialize Android
         run: pnpm tauri android init
 
+      - name: Sync version
+        run: node scripts/sync-version.js
+
       - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: v__VERSION__
           releaseName: 'Three.js Tutorial v__VERSION__'
-          releaseBody: 'See the assets to download and install.'
           releaseDraft: true
           prerelease: false
           mobile: 'android'
@@ -152,13 +156,15 @@ jobs:
       - name: Initialize iOS
         run: pnpm tauri ios init
 
+      - name: Sync version
+        run: node scripts/sync-version.js
+
       - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: v__VERSION__
           releaseName: 'Three.js Tutorial v__VERSION__'
-          releaseBody: 'See the assets to download and install.'
           releaseDraft: true
           prerelease: false
           mobile: 'ios'

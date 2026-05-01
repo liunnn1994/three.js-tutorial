@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Three.js 中文教程",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "identifier": "com.threejs-tutorial.app",
   "build": {
     "beforeBuildCommand": "node scripts/copy-vendor.js && node scripts/generate-previews.js && astro build",
