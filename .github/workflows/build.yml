@@ -153,8 +153,6 @@ jobs:
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-linux-android
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -177,7 +175,6 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         with:
           mobile: 'android'
-          args: '--target aarch64-linux-android'
 
       - name: Upload artifacts to release
         env:
