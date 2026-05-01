@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/liunnn1994/three.js-tutorial/compare/v1.0.0...v1.0.1) (2026-05-01)
+
+
+### Bug Fixes
+
+* 🐛 修复 v0 报错的问题 ([71c46a1](https://github.com/liunnn1994/three.js-tutorial/commit/71c46a11dba46e305a3a12d38146967317940df8))
+
 # 1.0.0 (2026-05-01)
 
 
