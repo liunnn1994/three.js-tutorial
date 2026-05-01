@@ -10,7 +10,18 @@
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
-    "astro": "astro"
+    "tauri:android:init": "tauri android init",
+    "tauri:android:dev": "tauri android dev",
+    "tauri:android:build": "tauri android build",
+    "tauri:ios:init": "tauri ios init",
+    "tauri:ios:dev": "tauri ios dev",
+    "tauri:ios:build": "tauri ios build",
+    "astro": "astro",
+    "icons": "node scripts/generate-icons.mjs",
+    "tauri:build:all": "run-s tauri:build:prepare -p tauri:build:desktop tauri:build:mobile",
+    "tauri:build:desktop": "tauri build",
+    "tauri:build:mobile": "run-p tauri:android:build tauri:ios:build",
+    "tauri:build:prepare": "run-p icons tauri:android:init tauri:ios:init"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.38.4",
@@ -30,6 +41,8 @@
     "@types/three": "^0.184.0",
     "cannon-es": "^0.20.0",
     "esbuild": "^0.28.0",
+    "npm-run-all2": "^8.0.4",
+    "png-to-ico": "^3.0.1",
     "sharp": "^0.34.5",
     "stats.js": "^0.17.0"
   }

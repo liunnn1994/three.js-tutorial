@@ -8,6 +8,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: "Three.js 中文教程",
+      favicon: "./public/favicon.ico",
       defaultLocale: "root",
       locales: {
         root: {

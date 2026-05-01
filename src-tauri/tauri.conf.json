@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "identifier": "com.threejs-tutorial.app",
   "build": {
-    "beforeBuildCommand": "node scripts/copy-vendor.js && TAURI=1 node scripts/generate-previews.js && astro build",
-    "beforeDevCommand": "node scripts/copy-vendor.js && TAURI=1 node scripts/generate-previews.js && astro dev",
+    "beforeBuildCommand": "node scripts/copy-vendor.js && node scripts/generate-previews.js && astro build",
+    "beforeDevCommand": "node scripts/copy-vendor.js && node scripts/generate-previews.js && astro dev",
     "frontendDist": "../dist",
     "devUrl": "http://localhost:4321"
   },
