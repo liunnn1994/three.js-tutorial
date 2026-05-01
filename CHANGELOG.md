@@ -1,3 +1,11 @@
+## [1.2.6](https://github.com/liunnn1994/three.js-tutorial/compare/v1.2.5...v1.2.6) (2026-05-01)
+
+
+### Bug Fixes
+
+* 🐛 修复安卓打包报错的问题 ([9109247](https://github.com/liunnn1994/three.js-tutorial/commit/91092473c699506aa67c55fb78d306a4750d99a3))
+* 🐛 修复打包失败的问题 ([17bcadf](https://github.com/liunnn1994/three.js-tutorial/commit/17bcadf5ee8568b76aaffa6fced5f92579146d4a))
+
 ## [1.2.5](https://github.com/liunnn1994/three.js-tutorial/compare/v1.2.4...v1.2.5) (2026-05-01)
 
 
