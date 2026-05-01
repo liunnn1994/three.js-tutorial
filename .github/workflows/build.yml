@@ -190,16 +190,6 @@ jobs:
   build-android:
     needs: check
     if: needs.check.outputs.has_release == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - package_type: apk
-            build_arg: --apk
-            artifact_pattern: '*.apk'
-          - package_type: aab
-            build_arg: --aab
-            artifact_pattern: '*.aab'
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -234,18 +224,15 @@ jobs:
         run: node scripts/generate-icons.mjs
 
       - name: Initialize Android
-        run: |
-          if [ -f src-tauri/gen/android/gradlew ] && [ -d src-tauri/gen/android/app ]; then
-            echo "Android project already initialized"
-          else
-            pnpm tauri android init
-          fi
+        run: pnpm tauri android init
 
       - name: Sync version
         run: node scripts/sync-version.js
 
-      - name: Build Android app (${{ matrix.package_type }})
-        run: pnpm tauri android build ${{ matrix.build_arg }}
+      - name: Build Android app (APK + AAB)
+        run: |
+          pnpm tauri android build --apk
+          pnpm tauri android build --aab
 
       - name: Upload artifacts to release
         env:
@@ -254,9 +241,9 @@ jobs:
           files=()
           while IFS= read -r -d '' file; do
             files+=("$file")
-          done < <(find src-tauri/gen/android/app/build/outputs -type f -name "${{ matrix.artifact_pattern }}" -print0 2>/dev/null || true)
+          done < <(find src-tauri/gen/android/app/build/outputs -type f \( -name "*.apk" -o -name "*.aab" \) -print0 2>/dev/null || true)
           if [ "${#files[@]}" -eq 0 ]; then
-            echo "No Android ${{ matrix.package_type }} artifacts found"
+            echo "No Android artifacts found"
             exit 0
           fi
           gh release upload ${{ needs.check.outputs.tag_name }} "${files[@]}" --clobber
