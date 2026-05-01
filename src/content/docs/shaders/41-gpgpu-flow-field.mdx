@@ -3,8 +3,7 @@ title: 41 GPGPU 流场粒子着色器
 description: 使用 GPU 计算纹理实现大规模粒子流场模拟
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## GPGPU 概念
 
@@ -21,6 +20,7 @@ GPGPU（General Purpose computing on Graphics Processing Units，图形处理单
 - **A 通道** 可以存储粒子的生命值、速度或其他属性
 
 这张纹理对用户是不可见的——它只存在于 GPU 显存中，作为数据的"容器"。
+
 <LessonPreview lesson="41-gpgpu-flow-field-particles-shaders" />
 
 ## 为什么用 GPGPU
@@ -67,13 +67,13 @@ Three.js 社区提供了一个非常有用的工具类 `GPUComputationRenderer`�
 
 ```js
 // 导入 GPUComputationRenderer
-import { GPUComputationRenderer } from 'three/examples/jsm/misc/GPUComputationRenderer.js'
+import { GPUComputationRenderer } from "three/examples/jsm/misc/GPUComputationRenderer.js";
 
 // 纹理尺寸（必须是 2 的幂）
-const size = 128  // 128x128 = 16384 粒子
+const size = 128; // 128x128 = 16384 粒子
 
 // 创建计算渲染器
-const gpuCompute = new GPUComputationRenderer(size, size, renderer)
+const gpuCompute = new GPUComputationRenderer(size, size, renderer);
 ```
 
 ### 为什么纹理尺寸必须是 2 的幂？
@@ -90,30 +90,26 @@ WebGL 对非 2 的幂（NPOT）纹理有许多限制。2 的幂纹理在 GPU 上
 我们需要为粒子提供初始位置。数据以 Float32Array 的形式传入：
 
 ```js
-const size = 128
-const count = size * size  // 16384 粒子
-const data = new Float32Array(count * 4)  // 每个粒子 4 个通道 (RGBA)
+const size = 128;
+const count = size * size; // 16384 粒子
+const data = new Float32Array(count * 4); // 每个粒子 4 个通道 (RGBA)
 
 for (let i = 0; i < count; i++) {
-    const i4 = i * 4
-    // 在模型表面随机分布（假设模型已经被处理为粒子的目标位置）
-    data[i4]     = (Math.random() - 0.5) * 10  // x 位置
-    data[i4 + 1] = (Math.random() - 0.5) * 10  // y 位置
-    data[i4 + 2] = (Math.random() - 0.5) * 10  // z 位置
-    data[i4 + 3] = Math.random()                // 随机生命值，用于淡入淡出
+  const i4 = i * 4;
+  // 在模型表面随机分布（假设模型已经被处理为粒子的目标位置）
+  data[i4] = (Math.random() - 0.5) * 10; // x 位置
+  data[i4 + 1] = (Math.random() - 0.5) * 10; // y 位置
+  data[i4 + 2] = (Math.random() - 0.5) * 10; // z 位置
+  data[i4 + 3] = Math.random(); // 随机生命值，用于淡入淡出
 }
 
 // 使用 DataTexture 创建初始纹理
-const texture = new THREE.DataTexture(
-    data, size, size,
-    THREE.RGBAFormat,
-    THREE.FloatType
-)
-texture.needsUpdate = true
+const texture = new THREE.DataTexture(data, size, size, THREE.RGBAFormat, THREE.FloatType);
+texture.needsUpdate = true;
 
 // 将纹理传入 GPUComputationRenderer
-const positionTexture = gpuCompute.createTexture()
-gpuCompute.setTextureAt(0, positionTexture)
+const positionTexture = gpuCompute.createTexture();
+gpuCompute.setTextureAt(0, positionTexture);
 ```
 
 :::tip
@@ -186,6 +182,7 @@ void main() {
 粒子不是永久的。每个粒子有一个"生命值"（存储在纹理的 Alpha 通道中），随时间递减。当生命值降到 0 以下时，粒子"死亡"并在随机位置"重生"，生命值重置为 1.0。
 
 这个机制实现了两个效果：
+
 1. **持续的视觉更新**——粒子不断消失和出现，保持动态感
 2. **渐变过渡**——可以在渲染着色器中用生命值控制粒子的大小和透明度，实现自然的淡入淡出
 
@@ -239,19 +236,16 @@ void main() {
 `aReference` 是连接粒子和纹理数据的桥梁。每个粒子的顶点都携带一个 `vec2` 属性，指向纹理中存储该粒子数据的像素：
 
 ```js
-const references = new Float32Array(count * 2)
+const references = new Float32Array(count * 2);
 for (let i = 0; i < count; i++) {
-    // 计算第 i 个粒子在纹理中的 UV 坐标
-    const x = (i % size) / size
-    const y = Math.floor(i / size) / size
-    references[i * 2]     = x
-    references[i * 2 + 1] = y
+  // 计算第 i 个粒子在纹理中的 UV 坐标
+  const x = (i % size) / size;
+  const y = Math.floor(i / size) / size;
+  references[i * 2] = x;
+  references[i * 2 + 1] = y;
 }
 
-geometry.setAttribute(
-    'aReference',
-    new THREE.BufferAttribute(references, 2)
-)
+geometry.setAttribute("aReference", new THREE.BufferAttribute(references, 2));
 ```
 
 :::tip
@@ -264,34 +258,27 @@ geometry.setAttribute(
 
 ```js
 // 创建时钟
-const clock = new THREE.Clock()
+const clock = new THREE.Clock();
 
 function animate() {
-    const elapsedTime = clock.getElapsedTime()
-    const delta = clock.getDelta()
+  const elapsedTime = clock.getElapsedTime();
+  const delta = clock.getDelta();
 
-    // 更新计算着色器的 uniforms
-    gpuCompute
-        .getVariable(0)
-        .material.uniforms.uTime.value = elapsedTime
-    gpuCompute
-        .getVariable(0)
-        .material.uniforms.uDelta.value = delta
+  // 更新计算着色器的 uniforms
+  gpuCompute.getVariable(0).material.uniforms.uTime.value = elapsedTime;
+  gpuCompute.getVariable(0).material.uniforms.uDelta.value = delta;
 
-    // 执行 GPU 计算（内部自动切换乒乓缓冲）
-    gpuCompute.compute()
+  // 执行 GPU 计算（内部自动切换乒乓缓冲）
+  gpuCompute.compute();
 
-    // 获取最新的位置纹理
-    const positionTexture = gpuCompute
-        .getCurrentRenderTarget(0)
-        .texture
+  // 获取最新的位置纹理
+  const positionTexture = gpuCompute.getCurrentRenderTarget(0).texture;
 
-    // 更新渲染着色器的纹理 uniform
-    particlesMaterial.uniforms.uPositionTexture.value =
-        positionTexture
+  // 更新渲染着色器的纹理 uniform
+  particlesMaterial.uniforms.uPositionTexture.value = positionTexture;
 
-    renderer.render(scene, camera)
-    requestAnimationFrame(animate)
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
 }
 ```
 

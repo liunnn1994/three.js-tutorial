@@ -3,8 +3,7 @@ title: 07 全屏与响应式
 description: 让 Three.js 画布适应窗口大小、处理设备像素比、实现全屏模式 —— 打造沉浸式 3D 体验的基础
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 为什么全屏很重要？
 
@@ -13,17 +12,18 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 想象一下你去电影院看电影：如果电影只占屏幕中间一小块，四周都是黑色或者网页的白色背景，那种感觉完全不沉浸。3D 体验也是一样 —— 当画布铺满整个视口时，用户才能完全"进入"你的 3D 世界。
 
 当然，不是所有场景都必须全屏。你可以把 3D 画布放在网页的某个区域（比如一个产品展示卡片），然后让用户滚动来查看。这完全取决于你的需求。但在后续课程中，我们将追求**非常沉浸式的体验**，所以全屏适配是基础。
+
 <LessonPreview lesson="07-fullscreen-and-resizing" />
 
 ## 视口（Viewport）的概念
 
 在开始之前，我们需要明确几个概念的区别：
 
-| 术语 | 含义 |
-|------|------|
+| 术语                 | 含义                                                               |
+| -------------------- | ------------------------------------------------------------------ |
 | **视口（Viewport）** | 浏览器窗口中实际显示网页内容的区域，不包括地址栏、书签栏、标签栏等 |
-| **窗口（Window）** | 整个浏览器窗口，包括工具栏、状态栏等 |
-| **屏幕（Screen）** | 物理显示器的整个显示区域 |
+| **窗口（Window）**   | 整个浏览器窗口，包括工具栏、状态栏等                               |
+| **屏幕（Screen）**   | 物理显示器的整个显示区域                                           |
 
 我们使用 `window.innerWidth` 和 `window.innerHeight` 来获取视口的尺寸，而非屏幕或窗口。在 JavaScript 中，它恰好是挂在 `window` 对象上，但返回的是视口的宽度和高度。
 
@@ -35,18 +35,18 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 
 ```js
 const sizes = {
-    width: 800,
-    height: 600
-}
+  width: 800,
+  height: 600,
+};
 ```
 
 现在，将其替换为视口的实际大小：
 
 ```js
 const sizes = {
-    width: window.innerWidth,
-    height: window.innerHeight
-}
+  width: window.innerWidth,
+  height: window.innerHeight,
+};
 ```
 
 `window.innerWidth` 返回视口的宽度（单位：像素），`window.innerHeight` 返回视口的高度。保存后，画布会立即扩展到视口大小。
@@ -66,22 +66,20 @@ const sizes = {
 
 ```css
 * {
-    margin: 0;
-    padding: 0;
+  margin: 0;
+  padding: 0;
 }
 
 html,
-body
-{
-    overflow: hidden;
+body {
+  overflow: hidden;
 }
 
-.webgl
-{
-    position: fixed;
-    top: 0;
-    left: 0;
-    outline: none;
+.webgl {
+  position: fixed;
+  top: 0;
+  left: 0;
+  outline: none;
 }
 ```
 
@@ -91,8 +89,8 @@ body
 
 ```css
 * {
-    margin: 0;
-    padding: 0;
+  margin: 0;
+  padding: 0;
 }
 ```
 
@@ -108,15 +106,14 @@ body
 
 ```css
 html,
-body
-{
-    overflow: hidden;
+body {
+  overflow: hidden;
 }
 ```
 
 - **`overflow: hidden`** — 隐藏超出容器边界的内容。当内容超出视口时，不会显示滚动条，也不会允许用户滚动
 
-:::warning 为什么需要禁止滚动？
+:::caution[为什么需要禁止滚动？]
 
 即使我们已经让画布铺满整个视口，在某些设备上（特别是 MacBook 的触控板），用户仍然可以通过触控板或鼠标滚轮"过度滚动"，导致页面出现弹性的上下抖动效果。`overflow: hidden` 可以彻底禁止这种行为，确保页面无法滚动。
 
@@ -126,12 +123,11 @@ body
 #### 3. `.webgl` 类的定位样式
 
 ```css
-.webgl
-{
-    position: fixed;
-    top: 0;
-    left: 0;
-    outline: none;
+.webgl {
+  position: fixed;
+  top: 0;
+  left: 0;
+  outline: none;
 }
 ```
 
@@ -143,13 +139,14 @@ body
 
 - **`outline: none`** — 移除元素被聚焦时的**蓝色轮廓**。当用户在画布上按下鼠标并拖拽时，某些浏览器（如 Chrome）会在画布周围显示一个蓝色的边框轮廓。这在 3D 体验中看起来很不专业，所以用 `outline: none` 去掉它
 
-:::info `position: fixed` vs `position: absolute`
+:::note[`position: fixed` vs `position: absolute`]
 两者都可以让画布覆盖整个视口，但 `position: fixed` 是相对于**视口**定位，`position: absolute` 是相对于**最近的定位祖先元素**定位。如果你的 3D 画布是页面中唯一的内容，两者效果相同。但如果页面中还有其他内容（如覆盖在 3D 上的 UI 面板），使用 `fixed` 能确保画布始终覆盖视口，不受其他元素布局的影响。
 :::
 
 ### 效果
 
 应用以上 CSS 后，你的 3D 画布将：
+
 - 铺满整个视口，没有空白
 - 不会出现滚动条
 - 拖拽时不会出现蓝色轮廓
@@ -159,6 +156,7 @@ body
 到目前为止，画布在页面加载时确实铺满了视口。但还有一个问题：**如果用户调整了浏览器窗口的大小怎么办？**
 
 试试看 —— 拖动浏览器窗口的边缘来改变大小。你会发现：
+
 - 画布的大小**没有跟随变化**
 - 3D 场景的内容可能会被拉伸、变形，甚至看不到
 
@@ -169,10 +167,9 @@ body
 我们需要监听浏览器的 `resize` 事件。这是一个原生的 JavaScript API，和 Three.js 无关：
 
 ```js
-window.addEventListener('resize', () =>
-{
-    console.log('窗口大小已改变')
-})
+window.addEventListener("resize", () => {
+  console.log("窗口大小已改变");
+});
 ```
 
 当用户调整浏览器窗口时，回调函数会被触发。你可以在控制台中看到日志输出。
@@ -184,8 +181,8 @@ window.addEventListener('resize', () =>
 #### 1. 更新尺寸变量
 
 ```js
-sizes.width = window.innerWidth
-sizes.height = window.innerHeight
+sizes.width = window.innerWidth;
+sizes.height = window.innerHeight;
 ```
 
 重新获取最新的视口尺寸。虽然更新这个对象本身不会改变任何渲染，但后面的代码需要用到最新的宽高值。
@@ -193,7 +190,7 @@ sizes.height = window.innerHeight
 #### 2. 更新相机的宽高比（Aspect Ratio）
 
 ```js
-camera.aspect = sizes.width / sizes.height
+camera.aspect = sizes.width / sizes.height;
 ```
 
 还记得我们在创建透视相机时传入的第二个参数吗？就是宽高比 `sizes.width / sizes.height`。这个值决定了 3D 场景在屏幕上的**投影比例**。
@@ -203,12 +200,12 @@ camera.aspect = sizes.width / sizes.height
 #### 3. 调用 `updateProjectionMatrix()`
 
 ```js
-camera.updateProjectionMatrix()
+camera.updateProjectionMatrix();
 ```
 
 **这是很多人容易忘记的一步！** 仅仅修改 `camera.aspect` 的值是不够的。
 
-:::info 为什么需要调用 updateProjectionMatrix()？
+:::note[为什么需要调用 updateProjectionMatrix()？]
 
 相机的内部使用一个叫做**投影矩阵（Projection Matrix）**的数学矩阵来计算 3D 物体如何投影到 2D 屏幕上。这个矩阵是在相机创建时根据 FOV、宽高比、近/远裁剪面计算出来的。
 
@@ -224,35 +221,35 @@ camera.updateProjectionMatrix()
 #### 4. 更新渲染器尺寸
 
 ```js
-renderer.setSize(sizes.width, sizes.height)
+renderer.setSize(sizes.width, sizes.height);
 ```
 
 这一步会同时做两件事：
+
 1. **更新 WebGL 画布的 CSS 尺寸和渲染分辨率** —— 让画布跟随新的窗口大小
 2. **更新内部渲染缓冲区** —— 告诉 GPU 按新的尺寸进行渲染
 
 如果不调用 `renderer.setSize()`，即使相机已经正确更新，画布本身的物理大小和渲染分辨率仍然是旧的，所以你看到的场景要么被裁切，要么被拉伸。
 
-:::tip 渲染器 setSize 的两个参数
+:::tip[渲染器 setSize 的两个参数]
 `renderer.setSize(width, height)` 接收两个参数。第三个可选参数 `updateStyle`（默认为 `true`）控制是否同时更新 CSS 样式。通常保持默认值即可。
 :::
 
 ### 完整的 resize 处理代码
 
 ```js
-window.addEventListener('resize', () =>
-{
-    // 更新尺寸
-    sizes.width = window.innerWidth
-    sizes.height = window.innerHeight
+window.addEventListener("resize", () => {
+  // 更新尺寸
+  sizes.width = window.innerWidth;
+  sizes.height = window.innerHeight;
 
-    // 更新相机
-    camera.aspect = sizes.width / sizes.height
-    camera.updateProjectionMatrix()
+  // 更新相机
+  camera.aspect = sizes.width / sizes.height;
+  camera.updateProjectionMatrix();
 
-    // 更新渲染器
-    renderer.setSize(sizes.width, sizes.height)
-})
+  // 更新渲染器
+  renderer.setSize(sizes.width, sizes.height);
+});
 ```
 
 ### 执行顺序
@@ -273,9 +270,10 @@ window.addEventListener('resize', () =>
 
 这和**设备像素比（devicePixelRatio，简称 DPR）**有关。
 
-:::info 用生活来理解像素比
+:::note[用生活来理解像素比]
 
 想象你的屏幕是一面由很多小方格（像素）拼成的墙：
+
 - **普通屏幕（DPR = 1）** — 每个软件像素对应 1 个物理像素。方格比较大，离近了能看到格子
 - **Retina 屏幕（DPR = 2）** — 每个软件像素对应 4 个物理像素（2x2）。屏幕用 4 个更小的物理像素来显示 1 个软件像素，看起来更精细
 - **高端手机（DPR = 3 甚至更高）** — 每个软件像素对应 9 个物理像素（3x3）或更多
@@ -291,14 +289,14 @@ DPR 越高，画面越精细，但 GPU 需要渲染的像素数量也成倍增�
 
 ```js
 // 在浏览器控制台中输入
-window.devicePixelRatio
+window.devicePixelRatio;
 // 输出：1（普通屏幕）或 2（Retina）或 2.5、3 等
 ```
 
 ### 设置像素比
 
 ```js
-renderer.setPixelRatio(window.devicePixelRatio)
+renderer.setPixelRatio(window.devicePixelRatio);
 ```
 
 告诉 Three.js 使用设备的实际像素比进行渲染。对于 Retina 屏幕的用户，画面会变得清晰很多。
@@ -306,20 +304,20 @@ renderer.setPixelRatio(window.devicePixelRatio)
 ### 为什么要限制像素比为最大 2？
 
 ```js
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 ```
 
 这是一个非常重要的性能优化！
 
-:::warning 性能 vs 画质
+:::caution[性能 vs 画质]
 
 像素比越高 = 需要渲染的像素越多 = GPU 负担越重。具体来说：
 
 | 像素比 | 每个软件像素需要渲染的物理像素 | 总渲染像素量（相对 DPR 1） |
-|--------|------------------------------|--------------------------|
-| 1 | 1 | 1 倍（基准） |
-| 2 | 4（2x2） | **4 倍** |
-| 3 | 9（3x3） | **9 倍** |
+| ------ | ------------------------------ | -------------------------- |
+| 1      | 1                              | 1 倍（基准）               |
+| 2      | 4（2x2）                       | **4 倍**                   |
+| 3      | 9（3x3）                       | **9 倍**                   |
 
 一台 DPR = 3 的设备，需要渲染 **9 倍于** DPR = 1 的像素量！这对 GPU 来说是巨大的负担。
 
@@ -330,39 +328,39 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
 `Math.min(window.devicePixelRatio, 2)` 的工作原理：
 
-| 设备 DPR | 计算过程 | 最终值 |
-|----------|---------|--------|
-| 1 | Math.min(1, 2) | 1 |
-| 2 | Math.min(2, 2) | 2 |
-| 2.5 | Math.min(2.5, 2) | 2 |
-| 3 | Math.min(3, 2) | 2 |
+| 设备 DPR | 计算过程         | 最终值 |
+| -------- | ---------------- | ------ |
+| 1        | Math.min(1, 2)   | 1      |
+| 2        | Math.min(2, 2)   | 2      |
+| 2.5      | Math.min(2.5, 2) | 2      |
+| 3        | Math.min(3, 2)   | 2      |
 
 ### 为什么把 setPixelRatio 放在 resize 事件里？
 
 除了初始化时调用一次，我们还建议在 `resize` 事件中再次调用 `setPixelRatio`：
 
 ```js
-window.addEventListener('resize', () =>
-{
-    // Update sizes
-    sizes.width = window.innerWidth
-    sizes.height = window.innerHeight
+window.addEventListener("resize", () => {
+  // Update sizes
+  sizes.width = window.innerWidth;
+  sizes.height = window.innerHeight;
 
-    // Update camera
-    camera.aspect = sizes.width / sizes.height
-    camera.updateProjectionMatrix()
+  // Update camera
+  camera.aspect = sizes.width / sizes.height;
+  camera.updateProjectionMatrix();
 
-    // Update renderer
-    renderer.setSize(sizes.width, sizes.height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-})
+  // Update renderer
+  renderer.setSize(sizes.width, sizes.height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+});
 ```
 
-:::info 多显示器场景
+:::note[多显示器场景]
 
 很多人使用**双显示器**，而且两台显示器的像素比可能不同。例如，你有一台外接 1080p 显示器（DPR = 1）和一台 MacBook Pro 的内置屏幕（DPR = 2）。
 
 当你把浏览器窗口从一台显示器拖到另一台时：
+
 1. 窗口大小会改变 → 触发 `resize` 事件
 2. `window.devicePixelRatio` 的值也会变化 → 反映新显示器的像素比
 
@@ -378,10 +376,9 @@ window.addEventListener('resize', () =>
 我们通过监听浏览器的 `dblclick`（双击）事件来触发全屏切换：
 
 ```js
-window.addEventListener('dblclick', () =>
-{
-    // 双击时的处理逻辑
-})
+window.addEventListener("dblclick", () => {
+  // 双击时的处理逻辑
+});
 ```
 
 ### 判断当前是否全屏
@@ -389,7 +386,8 @@ window.addEventListener('dblclick', () =>
 在切换之前，我们需要知道当前是否已经处于全屏状态：
 
 ```js
-const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement
+const fullscreenElement =
+  document.fullscreenElement || document.webkitFullscreenElement;
 ```
 
 - **`document.fullscreenElement`** — 如果当前有元素处于全屏状态，返回该元素；否则返回 `null`
@@ -398,29 +396,20 @@ const fullscreenElement = document.fullscreenElement || document.webkitFullscree
 ### 进入和退出全屏
 
 ```js
-if(!fullscreenElement)
-{
-    // 当前不是全屏 → 进入全屏
-    if(canvas.requestFullscreen)
-    {
-        canvas.requestFullscreen()
-    }
-    else if(canvas.webkitRequestFullscreen)
-    {
-        canvas.webkitRequestFullscreen()
-    }
-}
-else
-{
-    // 当前已全屏 → 退出全屏
-    if(document.exitFullscreen)
-    {
-        document.exitFullscreen()
-    }
-    else if(document.webkitExitFullscreen)
-    {
-        document.webkitExitFullscreen()
-    }
+if (!fullscreenElement) {
+  // 当前不是全屏 → 进入全屏
+  if (canvas.requestFullscreen) {
+    canvas.requestFullscreen();
+  } else if (canvas.webkitRequestFullscreen) {
+    canvas.webkitRequestFullscreen();
+  }
+} else {
+  // 当前已全屏 → 退出全屏
+  if (document.exitFullscreen) {
+    document.exitFullscreen();
+  } else if (document.webkitExitFullscreen) {
+    document.webkitExitFullscreen();
+  }
 }
 ```
 
@@ -434,15 +423,15 @@ else
 
 全屏 API 在 Safari 上的支持比较晚。为了兼容 Safari，我们需要使用带 `webkit` 前缀的版本：
 
-| 标准版本 | Safari 版本 |
-|---------|-------------|
-| `document.fullscreenElement` | `document.webkitFullscreenElement` |
+| 标准版本                      | Safari 版本                         |
+| ----------------------------- | ----------------------------------- |
+| `document.fullscreenElement`  | `document.webkitFullscreenElement`  |
 | `element.requestFullscreen()` | `element.webkitRequestFullscreen()` |
-| `document.exitFullscreen()` | `document.webkitExitFullscreen()` |
+| `document.exitFullscreen()`   | `document.webkitExitFullscreen()`   |
 
 代码中的 `if(canvas.requestFullscreen)` / `else if(canvas.webkitRequestFullscreen)` 就是用于检测浏览器支持哪个版本 —— 如果标准版本存在就用标准的，否则尝试 Safari 的版本。
 
-:::warning 浏览器兼容性
+:::caution[浏览器兼容性]
 全屏 API 目前被所有现代浏览器支持，但在较老版本的 Safari 中需要使用 `webkit` 前缀。如果你只针对 Chrome/Firefox/Edge 开发，可以省略 `webkit` 相关代码。但为了保险起见，建议保留兼容写法。
 :::
 
@@ -451,156 +440,147 @@ else
 ## 完整代码
 
 ```js
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 /**
  * Base
  */
 // Canvas
-const canvas = document.querySelector('canvas.webgl')
+const canvas = document.querySelector("canvas.webgl");
 
 // Scene
-const scene = new THREE.Scene()
+const scene = new THREE.Scene();
 
 /**
  * Object
  */
-const geometry = new THREE.BoxGeometry(1, 1, 1)
-const material = new THREE.MeshBasicMaterial({ color: 0xff0000 })
-const mesh = new THREE.Mesh(geometry, material)
-scene.add(mesh)
+const geometry = new THREE.BoxGeometry(1, 1, 1);
+const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+const mesh = new THREE.Mesh(geometry, material);
+scene.add(mesh);
 
 /**
  * Sizes
  */
 const sizes = {
-    width: window.innerWidth,
-    height: window.innerHeight
-}
+  width: window.innerWidth,
+  height: window.innerHeight,
+};
 
-window.addEventListener('resize', () =>
-{
-    // Update sizes
-    sizes.width = window.innerWidth
-    sizes.height = window.innerHeight
+window.addEventListener("resize", () => {
+  // Update sizes
+  sizes.width = window.innerWidth;
+  sizes.height = window.innerHeight;
 
-    // Update camera
-    camera.aspect = sizes.width / sizes.height
-    camera.updateProjectionMatrix()
+  // Update camera
+  camera.aspect = sizes.width / sizes.height;
+  camera.updateProjectionMatrix();
 
-    // Update renderer
-    renderer.setSize(sizes.width, sizes.height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-})
+  // Update renderer
+  renderer.setSize(sizes.width, sizes.height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+});
 
 /**
  * Fullscreen
  */
-window.addEventListener('dblclick', () =>
-{
-    const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement
+window.addEventListener("dblclick", () => {
+  const fullscreenElement =
+    document.fullscreenElement || document.webkitFullscreenElement;
 
-    if(!fullscreenElement)
-    {
-        if(canvas.requestFullscreen)
-        {
-            canvas.requestFullscreen()
-        }
-        else if(canvas.webkitRequestFullscreen)
-        {
-            canvas.webkitRequestFullscreen()
-        }
+  if (!fullscreenElement) {
+    if (canvas.requestFullscreen) {
+      canvas.requestFullscreen();
+    } else if (canvas.webkitRequestFullscreen) {
+      canvas.webkitRequestFullscreen();
     }
-    else
-    {
-        if(document.exitFullscreen)
-        {
-            document.exitFullscreen()
-        }
-        else if(document.webkitExitFullscreen)
-        {
-            document.webkitExitFullscreen()
-        }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
     }
-})
+  }
+});
 
 /**
  * Camera
  */
 // Base camera
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-camera.position.z = 3
-scene.add(camera)
+const camera = new THREE.PerspectiveCamera(
+  75,
+  sizes.width / sizes.height,
+  0.1,
+  100,
+);
+camera.position.z = 3;
+scene.add(camera);
 
 // Controls
-const controls = new OrbitControls(camera, canvas)
-controls.enableDamping = true
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
 
 /**
  * Renderer
  */
 const renderer = new THREE.WebGLRenderer({
-    canvas: canvas
-})
-renderer.setSize(sizes.width, sizes.height)
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  canvas: canvas,
+});
+renderer.setSize(sizes.width, sizes.height);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
  * Animate
  */
-const clock = new THREE.Clock()
+const clock = new THREE.Clock();
 
-const tick = () =>
-{
-    const elapsedTime = clock.getElapsedTime()
+const tick = () => {
+  const elapsedTime = clock.getElapsedTime();
 
-    // Update controls
-    controls.update()
+  // Update controls
+  controls.update();
 
-    // Render
-    renderer.render(scene, camera)
+  // Render
+  renderer.render(scene, camera);
 
-    // Call tick again on the next frame
-    window.requestAnimationFrame(tick)
-}
+  // Call tick again on the next frame
+  window.requestAnimationFrame(tick);
+};
 
-tick()
+tick();
 ```
 
 ### CSS 文件
 
 ```css
-*
-{
-    margin: 0;
-    padding: 0;
+* {
+  margin: 0;
+  padding: 0;
 }
 
 html,
-body
-{
-    overflow: hidden;
+body {
+  overflow: hidden;
 }
 
-.webgl
-{
-    position: fixed;
-    top: 0;
-    left: 0;
-    outline: none;
+.webgl {
+  position: fixed;
+  top: 0;
+  left: 0;
+  outline: none;
 }
 ```
 
 ## 本课要点回顾
 
-| 操作 | 代码 | 说明 |
-|------|------|------|
-| 使用视口尺寸 | `window.innerWidth` / `window.innerHeight` | 获取视口宽高 |
-| 监听窗口变化 | `window.addEventListener('resize', ...)` | 窗口大小改变时触发 |
-| 更新相机宽高比 | `camera.aspect = width / height` | 防止画面拉伸 |
-| 重新计算投影矩阵 | `camera.updateProjectionMatrix()` | **必须调用，否则画面异常** |
-| 更新渲染器尺寸 | `renderer.setSize(width, height)` | 让画布跟随窗口大小 |
-| 设置像素比 | `renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))` | 兼顾画质和性能 |
-| 进入全屏 | `canvas.requestFullscreen()` | 让画布全屏显示 |
-| 退出全屏 | `document.exitFullscreen()` | 退出全屏模式 |
+| 操作             | 代码                                                           | 说明                       |
+| ---------------- | -------------------------------------------------------------- | -------------------------- |
+| 使用视口尺寸     | `window.innerWidth` / `window.innerHeight`                     | 获取视口宽高               |
+| 监听窗口变化     | `window.addEventListener('resize', ...)`                       | 窗口大小改变时触发         |
+| 更新相机宽高比   | `camera.aspect = width / height`                               | 防止画面拉伸               |
+| 重新计算投影矩阵 | `camera.updateProjectionMatrix()`                              | **必须调用，否则画面异常** |
+| 更新渲染器尺寸   | `renderer.setSize(width, height)`                              | 让画布跟随窗口大小         |
+| 设置像素比       | `renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))` | 兼顾画质和性能             |
+| 进入全屏         | `canvas.requestFullscreen()`                                   | 让画布全屏显示             |
+| 退出全屏         | `document.exitFullscreen()`                                    | 退出全屏模式               |

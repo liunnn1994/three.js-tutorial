@@ -3,15 +3,13 @@ title: 42 摇晃球体着色器
 description: 使用 Simplex 噪声创建有机变形的球体效果
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 有机变形
 
 使用 3D 噪声函数对球体表面进行变形，可以创建像果冻、细胞、水滴或生物体一样的有机运动效果。这种技术在游戏和视觉特效中被广泛使用——角色身体的微微晃动、水面的涟漪、史莱姆的弹跳，都可以通过这种方式实现。
 
 本课的特殊之处在于：我们不从零开始编写 ShaderMaterial，而是**增强 Three.js 内置的 MeshPhysicalMaterial**。这样我们可以保留 PBR 材质的所有特性（金属度、粗糙度、透射、折射等），同时添加顶点变形的效果。这需要借助一个库——`CustomShaderMaterial`（即 `three-custom-shader-material`）。
-
 
 <LessonPreview lesson="42-wobbly-sphere-shader" />
 
@@ -212,11 +210,11 @@ float fbm(vec3 p) {
 
 ### FBM 参数说明
 
-| 参数 | 含义 | 常用值 | 效果 |
-|------|------|--------|------|
-| 叠加层数（Octaves） | 噪声叠加的次数 | 3-8 | 层数越多细节越丰富，但性能越低 |
-| 持续度（Persistence） | 每层振幅的衰减系数 | 0.3-0.7 | 值越大，高频细节越明显 |
-| 间隙度（Lacunarity） | 每层频率的增长系数 | 1.5-2.5 | 值越大，层间频率跨度越大 |
+| 参数                  | 含义               | 常用值  | 效果                           |
+| --------------------- | ------------------ | ------- | ------------------------------ |
+| 叠加层数（Octaves）   | 噪声叠加的次数     | 3-8     | 层数越多细节越丰富，但性能越低 |
+| 持续度（Persistence） | 每层振幅的衰减系数 | 0.3-0.7 | 值越大，高频细节越明显         |
+| 间隙度（Lacunarity）  | 每层频率的增长系数 | 1.5-2.5 | 值越大，层间频率跨度越大       |
 
 ### 为什么 FBM 看起来更自然
 
@@ -228,23 +226,20 @@ float fbm(vec3 p) {
 
 ```js
 const material = new THREE.ShaderMaterial({
-    uniforms: {
-        uTime: { value: 0 },
-        uFrequency: { value: 2.0 },     // 噪声频率（变形密度）
-        uAmplitude: { value: 0.3 },     // 位移幅度（变形力度）
-        uSpeed: { value: 0.4 },         // 动画速度
-        uColorA: { value: new THREE.Color('#ff6030') },
-        uColorB: { value: new THREE.Color('#1b3984') }
-    }
-})
+  uniforms: {
+    uTime: { value: 0 },
+    uFrequency: { value: 2.0 }, // 噪声频率（变形密度）
+    uAmplitude: { value: 0.3 }, // 位移幅度（变形力度）
+    uSpeed: { value: 0.4 }, // 动画速度
+    uColorA: { value: new THREE.Color("#ff6030") },
+    uColorB: { value: new THREE.Color("#1b3984") },
+  },
+});
 
 // GUI 控制
-gui.add(material.uniforms.uFrequency, 'value')
-    .min(0.1).max(10).step(0.01).name('频率')
-gui.add(material.uniforms.uAmplitude, 'value')
-    .min(0).max(2).step(0.01).name('振幅')
-gui.add(material.uniforms.uSpeed, 'value')
-    .min(0).max(2).step(0.01).name('速度')
+gui.add(material.uniforms.uFrequency, "value").min(0.1).max(10).step(0.01).name("频率");
+gui.add(material.uniforms.uAmplitude, "value").min(0).max(2).step(0.01).name("振幅");
+gui.add(material.uniforms.uSpeed, "value").min(0).max(2).step(0.01).name("速度");
 ```
 
 ## 球体细分的重要性
@@ -253,10 +248,10 @@ gui.add(material.uniforms.uSpeed, 'value')
 
 ```js
 // 低细分：变形粗糙，可见多边形
-const lowSphere = new THREE.IcosahedronGeometry(1, 8)
+const lowSphere = new THREE.IcosahedronGeometry(1, 8);
 
 // 高细分：变形平滑，有机感强
-const highSphere = new THREE.IcosahedronGeometry(1, 128)
+const highSphere = new THREE.IcosahedronGeometry(1, 128);
 ```
 
 :::caution

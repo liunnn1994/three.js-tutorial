@@ -3,8 +3,7 @@ title: 30 动态银河
 description: 使用自定义着色器在 GPU 上计算粒子旋转动画，实现高性能银河效果
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 概述
 
@@ -13,6 +12,7 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 :::tip
 GPU 上的顶点着色器可以同时处理数十万个顶点的运算，远比 CPU 上逐个更新属性高效。使用着色器版本可以轻松支持 20 万甚至更多粒子流畅运行。
 :::
+
 <LessonPreview lesson="30-animated-galaxy" />
 
 ## 从 PointsMaterial 到 ShaderMaterial
@@ -22,24 +22,24 @@ GPU 上的顶点着色器可以同时处理数十万个顶点的运算，远比 
 ```js
 // 之前使用的 PointsMaterial
 const material = new THREE.PointsMaterial({
-    size: 0.02,
-    sizeAttenuation: true,
-    // ...
-})
+  size: 0.02,
+  sizeAttenuation: true,
+  // ...
+});
 
 // 替换为 ShaderMaterial
 const material = new THREE.ShaderMaterial({
-    vertexShader: galaxyVertexShader,
-    fragmentShader: galaxyFragmentShader,
-    uniforms: {
-        uTime: { value: 0 },
-        uSize: { value: 30 * renderer.getPixelRatio() }
-    },
-    vertexColors: true,
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending
-})
+  vertexShader: galaxyVertexShader,
+  fragmentShader: galaxyFragmentShader,
+  uniforms: {
+    uTime: { value: 0 },
+    uSize: { value: 30 * renderer.getPixelRatio() },
+  },
+  vertexColors: true,
+  transparent: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+});
 ```
 
 :::caution
@@ -51,36 +51,49 @@ const material = new THREE.ShaderMaterial({
 我们需要为每个粒子存储额外的数据，以自定义 attribute 的形式传入着色器：
 
 ```js
-const positions = new Float32Array(parameters.count * 3)
-const randomness = new Float32Array(parameters.count * 3)
-const colors = new Float32Array(parameters.count * 3)
-const scales = new Float32Array(parameters.count)
+const positions = new Float32Array(parameters.count * 3);
+const randomness = new Float32Array(parameters.count * 3);
+const colors = new Float32Array(parameters.count * 3);
+const scales = new Float32Array(parameters.count);
 
 for (let i = 0; i < parameters.count; i++) {
-    const i3 = i * 3
-    const radius = Math.random() * parameters.radius
-    const branchAngle = (i % parameters.branches) / parameters.branches * Math.PI * 2
+  const i3 = i * 3;
+  const radius = Math.random() * parameters.radius;
+  const branchAngle = ((i % parameters.branches) / parameters.branches) * Math.PI * 2;
 
-    // 基础位置：在对应分支上的圆环分布
-    positions[i3]     = Math.cos(branchAngle) * radius
-    positions[i3 + 1] = 0
-    positions[i3 + 2] = Math.sin(branchAngle) * radius
+  // 基础位置：在对应分支上的圆环分布
+  positions[i3] = Math.cos(branchAngle) * radius;
+  positions[i3 + 1] = 0;
+  positions[i3 + 2] = Math.sin(branchAngle) * radius;
 
-    // 随机偏移：让粒子不完全贴合分支，产生自然的弥散感
-    const randomX = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius
-    const randomY = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius * 0.5  // Y 方向偏移更小
-    const randomZ = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius
+  // 随机偏移：让粒子不完全贴合分支，产生自然的弥散感
+  const randomX =
+    Math.pow(Math.random(), parameters.randomnessPower) *
+    (Math.random() < 0.5 ? 1 : -1) *
+    parameters.randomness *
+    radius;
+  const randomY =
+    Math.pow(Math.random(), parameters.randomnessPower) *
+    (Math.random() < 0.5 ? 1 : -1) *
+    parameters.randomness *
+    radius *
+    0.5; // Y 方向偏移更小
+  const randomZ =
+    Math.pow(Math.random(), parameters.randomnessPower) *
+    (Math.random() < 0.5 ? 1 : -1) *
+    parameters.randomness *
+    radius;
 
-    randomness[i3]     = randomX
-    randomness[i3 + 1] = randomY
-    randomness[i3 + 2] = randomZ
+  randomness[i3] = randomX;
+  randomness[i3 + 1] = randomY;
+  randomness[i3 + 2] = randomZ;
 
-    scales[i] = Math.random()
+  scales[i] = Math.random();
 }
 
-geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-geometry.setAttribute('aRandomness', new THREE.BufferAttribute(randomness, 3))
-geometry.setAttribute('aScale', new THREE.BufferAttribute(scales, 1))
+geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+geometry.setAttribute("aRandomness", new THREE.BufferAttribute(randomness, 3));
+geometry.setAttribute("aScale", new THREE.BufferAttribute(scales, 1));
 ```
 
 **Attribute 命名规范：**
@@ -218,13 +231,13 @@ void main() {
 
 ## 性能对比
 
-| 方面 | JavaScript 版本 | 着色器版本 |
-|------|----------------|-----------|
-| 旋转计算 | CPU 每帧逐粒子更新 | GPU 并行处理 |
-| 粒子上限 | ~5 万（开始卡顿） | 20 万+（流畅） |
-| 每帧开销 | 更新 buffer + `needsUpdate` | 只更新一个 uniform（`uTime`） |
-| 数据传输 | CPU -> GPU 每帧传输 | 初始传输一次，之后 GPU 自行计算 |
+| 方面     | JavaScript 版本             | 着色器版本                      |
+| -------- | --------------------------- | ------------------------------- |
+| 旋转计算 | CPU 每帧逐粒子更新          | GPU 并行处理                    |
+| 粒子上限 | ~5 万（开始卡顿）           | 20 万+（流畅）                  |
+| 每帧开销 | 更新 buffer + `needsUpdate` | 只更新一个 uniform（`uTime`）   |
+| 数据传输 | CPU -> GPU 每帧传输         | 初始传输一次，之后 GPU 自行计算 |
 
 :::tip
-着色器版本的核心优势：每帧只需要更新 `uTime` 这一个 `float` 值（4 字节），而不是更新 20 万个粒子的位置数据（20 万 * 3 * 4 字节 = 2.4MB）。这在数据传输量上有几个数量级的差异。
+着色器版本的核心优势：每帧只需要更新 `uTime` 这一个 `float` 值（4 字节），而不是更新 20 万个粒子的位置数据（20 万 _ 3 _ 4 字节 = 2.4MB）。这在数据传输量上有几个数量级的差异。
 :::

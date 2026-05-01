@@ -3,14 +3,14 @@ title: 18 银河生成器
 description: 使用参数化粒子系统创建壮观的银河效果 -- 从零开始理解螺旋星系的数学原理
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 本课概览
 
 在这一课中，我们将运用粒子（Points）的知识，创建一个**参数化的银河生成器**。用户可以通过调试面板（lil-gui）实时调整银河的形态、分支数量、旋转程度、颜色等参数。每当参数改变时，银河会自动重新生成。
 
 这不仅仅是一次技术练习 -- 你将学到**过程化生成（Procedural Generation）**的核心思想：用数学公式和随机性来创造看起来自然、有机的视觉效果。
+
 <LessonPreview lesson="18-galaxy-generator" />
 
 ## 什么是过程化生成？
@@ -42,8 +42,8 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 
 ```js
 // 将极坐标转换为直角坐标
-const x = Math.cos(angle) * radius  // 水平位置
-const y = Math.sin(angle) * radius  // 垂直位置
+const x = Math.cos(angle) * radius; // 水平位置
+const y = Math.sin(angle) * radius; // 垂直位置
 ```
 
 想象你在圆心站着，`Math.cos(angle)` 告诉你向东走多远，`Math.sin(angle)` 告诉你向北走多远。两者结合起来，你就在圆上走了一圈。
@@ -55,7 +55,7 @@ const y = Math.sin(angle) * radius  // 垂直位置
 用数学来表达：
 
 ```js
-const spinAngle = radius * spinStrength
+const spinAngle = radius * spinStrength;
 ```
 
 这里 `radius` 是粒子到中心的随机距离，`spinStrength` 是一个控制旋转程度的参数。这意味着：
@@ -75,19 +75,19 @@ const spinAngle = radius * spinStrength
 
 ```js
 const parameters = {
-    count: 100000,          // 粒子总数
-    size: 0.01,             // 每个粒子的大小
-    radius: 5,              // 银河的半径
-    branches: 3,            // 螺旋分支的数量
-    spin: 1,                // 旋转强度
-    randomness: 0.2,        // 随机偏移强度
-    randomnessPower: 3,     // 随机分布的集中程度
-    insideColor: '#ff6030', // 银河内部颜色（靠近中心）
-    outsideColor: '#1b3984' // 银河外部颜色（远离中心）
-}
+  count: 100000, // 粒子总数
+  size: 0.01, // 每个粒子的大小
+  radius: 5, // 银河的半径
+  branches: 3, // 螺旋分支的数量
+  spin: 1, // 旋转强度
+  randomness: 0.2, // 随机偏移强度
+  randomnessPower: 3, // 随机分布的集中程度
+  insideColor: "#ff6030", // 银河内部颜色（靠近中心）
+  outsideColor: "#1b3984", // 银河外部颜色（远离中心）
+};
 ```
 
-:::info
+:::note
 每个参数都有明确的物理含义。`count` 控制性能和细节程度，`radius` 控制银河大小，`branches` 决定螺旋臂数量，`spin` 控制螺旋的松紧程度，`randomness` 控制星体的分散程度。
 :::
 
@@ -108,14 +108,14 @@ const parameters = {
 
 ```js
 // 创建空的 BufferGeometry
-const geometry = new THREE.BufferGeometry()
+const geometry = new THREE.BufferGeometry();
 
 // 创建一个 Float32Array 来存储所有粒子的位置
 // 每个粒子需要 3 个值（x, y, z），所以数组长度是 粒子数 x 3
-const positions = new Float32Array(parameters.count * 3)
+const positions = new Float32Array(parameters.count * 3);
 
 // 将位置数据设置为 BufferGeometry 的属性
-geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
 ```
 
 :::warning
@@ -138,11 +138,11 @@ geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
 
 ```js
 for (let i = 0; i < parameters.count; i++) {
-    const i3 = i * 3  // 当前粒子在数组中的起始索引
+  const i3 = i * 3; // 当前粒子在数组中的起始索引
 
-    // 现在可以用 positions[i3]     访问 x
-    //         positions[i3 + 1] 访问 y
-    //         positions[i3 + 2] 访问 z
+  // 现在可以用 positions[i3]     访问 x
+  //         positions[i3 + 1] 访问 y
+  //         positions[i3 + 2] 访问 z
 }
 ```
 
@@ -153,7 +153,7 @@ for (let i = 0; i < parameters.count; i++) {
 每个粒子需要一个从中心到边缘的随机距离：
 
 ```js
-const radius = Math.random() * parameters.radius
+const radius = Math.random() * parameters.radius;
 ```
 
 `Math.random()` 返回 0 到 1 之间的随机数，乘以 `parameters.radius`（默认 5）后，每个粒子到中心的距离在 0 到 5 之间均匀分布。
@@ -180,15 +180,17 @@ const radius = Math.random() * parameters.radius
 接下来，我们需要把这些 0、1、2 的整数转换成**角度**。完整的一圈是 `2 * Math.PI` 弧度（约 6.28），所以：
 
 ```js
-const branchAngle = (i % parameters.branches) / parameters.branches * Math.PI * 2
+const branchAngle = ((i % parameters.branches) / parameters.branches) * Math.PI * 2;
 ```
 
 这行代码的含义是：
+
 1. `i % parameters.branches` → 得到 0、1、2 循环
 2. `/ parameters.branches` → 除以 3，得到 0、0.33、0.67 的比例
 3. `* Math.PI * 2` → 乘以一整圈的弧度数
 
 对于 3 条分支，结果大约是：
+
 - 分支 0：角度 = 0（正右方）
 - 分支 1：角度 = 2.09（约 120 度）
 - 分支 2：角度 = 4.19（约 240 度）
@@ -200,10 +202,11 @@ const branchAngle = (i % parameters.branches) / parameters.branches * Math.PI * 
 螺旋星系的关键在于：**离中心越远的恒星，旋转的角度越大**。
 
 ```js
-const spinAngle = radius * parameters.spin
+const spinAngle = radius * parameters.spin;
 ```
 
 这里用的是**当前粒子的半径**（而非银河的最大半径），所以：
+
 - 靠近中心的粒子（radius 小）旋转角度小
 - 远离中心的粒子（radius 大）旋转角度大
 
@@ -214,9 +217,9 @@ const spinAngle = radius * parameters.spin
 把分支角度和旋转角度相加后，用 `Math.cos` 和 `Math.sin` 转换为 X 和 Z 坐标：
 
 ```js
-positions[i3    ] = Math.cos(branchAngle + spinAngle) * radius
-positions[i3 + 1] = 0  // Y 轴暂设为 0，后面加上随机偏移
-positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius
+positions[i3] = Math.cos(branchAngle + spinAngle) * radius;
+positions[i3 + 1] = 0; // Y 轴暂设为 0，后面加上随机偏移
+positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius;
 ```
 
 注意：我们用的是 X 和 Z 轴（不是 X 和 Y），因为银河是**水平铺开**的，Y 轴代表高度。
@@ -228,17 +231,23 @@ positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius
 真实的星系并不是完美的几何形状，恒星会随机散布在螺旋臂附近。我们需要给每个粒子的位置加上随机偏移。
 
 ```js
-const randomX = Math.pow(Math.random(), parameters.randomnessPower)
-    * (Math.random() < 0.5 ? 1 : -1)
-    * parameters.randomness * radius
+const randomX =
+  Math.pow(Math.random(), parameters.randomnessPower) *
+  (Math.random() < 0.5 ? 1 : -1) *
+  parameters.randomness *
+  radius;
 
-const randomY = Math.pow(Math.random(), parameters.randomnessPower)
-    * (Math.random() < 0.5 ? 1 : -1)
-    * parameters.randomness * radius
+const randomY =
+  Math.pow(Math.random(), parameters.randomnessPower) *
+  (Math.random() < 0.5 ? 1 : -1) *
+  parameters.randomness *
+  radius;
 
-const randomZ = Math.pow(Math.random(), parameters.randomnessPower)
-    * (Math.random() < 0.5 ? 1 : -1)
-    * parameters.randomness * radius
+const randomZ =
+  Math.pow(Math.random(), parameters.randomnessPower) *
+  (Math.random() < 0.5 ? 1 : -1) *
+  parameters.randomness *
+  radius;
 ```
 
 这段代码有几个关键点需要理解：
@@ -263,9 +272,9 @@ const randomZ = Math.pow(Math.random(), parameters.randomnessPower)
 最后，把随机偏移加到位置上：
 
 ```js
-positions[i3    ] = Math.cos(branchAngle + spinAngle) * radius + randomX
-positions[i3 + 1] = randomY
-positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ
+positions[i3] = Math.cos(branchAngle + spinAngle) * radius + randomX;
+positions[i3 + 1] = randomY;
+positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
 ```
 
 ## 颜色渐变 -- 顶点着色（Vertex Colors）
@@ -281,31 +290,32 @@ positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ
 和位置一样，我们创建一个 `Float32Array` 来存储颜色：
 
 ```js
-const colors = new Float32Array(parameters.count * 3)
+const colors = new Float32Array(parameters.count * 3);
 
 // 创建两种颜色
-const colorInside = new THREE.Color(parameters.insideColor)  // 中心颜色
-const colorOutside = new THREE.Color(parameters.outsideColor) // 边缘颜色
+const colorInside = new THREE.Color(parameters.insideColor); // 中心颜色
+const colorOutside = new THREE.Color(parameters.outsideColor); // 边缘颜色
 
 for (let i = 0; i < parameters.count; i++) {
-    const i3 = i * 3
+  const i3 = i * 3;
 
-    // 根据 radius 计算混合比例
-    // 靠近中心（radius 小）→ 混合比例接近 0 → 更偏 insideColor
-    // 远离中心（radius 大）→ 混合比例接近 1 → 更偏 outsideColor
-    const mixedColor = colorInside.clone()
-    mixedColor.lerp(colorOutside, radius / parameters.radius)
+  // 根据 radius 计算混合比例
+  // 靠近中心（radius 小）→ 混合比例接近 0 → 更偏 insideColor
+  // 远离中心（radius 大）→ 混合比例接近 1 → 更偏 outsideColor
+  const mixedColor = colorInside.clone();
+  mixedColor.lerp(colorOutside, radius / parameters.radius);
 
-    colors[i3    ] = mixedColor.r
-    colors[i3 + 1] = mixedColor.g
-    colors[i3 + 2] = mixedColor.b
+  colors[i3] = mixedColor.r;
+  colors[i3 + 1] = mixedColor.g;
+  colors[i3 + 2] = mixedColor.b;
 }
 
 // 将颜色数据添加到几何体
-geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 ```
 
 `THREE.Color` 的 `lerp()` 方法（线性插值）接受一个 0 到 1 的混合比例：
+
 - 比例为 0 → 完全是 `colorInside`
 - 比例为 1 → 完全是 `colorOutside`
 - 比例为 0.5 → 两者的混合
@@ -320,21 +330,21 @@ geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
 
 ```js
 const material = new THREE.PointsMaterial({
-    size: parameters.size,
-    sizeAttenuation: true,                // 远处的粒子更小（透视效果）
-    depthWrite: false,                     // 禁用深度写入
-    blending: THREE.AdditiveBlending,      // 加法混合
-    vertexColors: true                     // 使用顶点颜色
-})
+  size: parameters.size,
+  sizeAttenuation: true, // 远处的粒子更小（透视效果）
+  depthWrite: false, // 禁用深度写入
+  blending: THREE.AdditiveBlending, // 加法混合
+  vertexColors: true, // 使用顶点颜色
+});
 ```
 
 这些参数都很关键：
 
-| 参数 | 说明 |
-|------|------|
-| `sizeAttenuation: true` | 启用透视效果，远处的粒子看起来更小。关闭后所有粒子大小相同。 |
-| `depthWrite: false` | 禁止粒子写入深度缓冲区。如果不关闭，粒子会互相遮挡，在中心密集区域看起来会有"洞"。 |
-| `blending: THREE.AdditiveBlending` | 加法混合模式。颜色会叠加而不是覆盖，中心粒子密集区域会变得更亮，产生"发光"效果。 |
+| 参数                               | 说明                                                                               |
+| ---------------------------------- | ---------------------------------------------------------------------------------- |
+| `sizeAttenuation: true`            | 启用透视效果，远处的粒子看起来更小。关闭后所有粒子大小相同。                       |
+| `depthWrite: false`                | 禁止粒子写入深度缓冲区。如果不关闭，粒子会互相遮挡，在中心密集区域看起来会有"洞"。 |
+| `blending: THREE.AdditiveBlending` | 加法混合模式。颜色会叠加而不是覆盖，中心粒子密集区域会变得更亮，产生"发光"效果。   |
 
 ## 销毁旧的银河 -- 内存管理
 
@@ -346,20 +356,20 @@ const material = new THREE.PointsMaterial({
 - 最终浏览器崩溃
 
 ```js
-let geometry = null
-let material = null
-let points = null
+let geometry = null;
+let material = null;
+let points = null;
 
 const generateGalaxy = () => {
-    // 如果已经有银河，先销毁旧的
-    if (points !== null) {
-        geometry.dispose()     // 释放几何体占用的 GPU 内存
-        material.dispose()     // 释放材质占用的 GPU 内存
-        scene.remove(points)   // 从场景中移除粒子对象
-    }
+  // 如果已经有银河，先销毁旧的
+  if (points !== null) {
+    geometry.dispose(); // 释放几何体占用的 GPU 内存
+    material.dispose(); // 释放材质占用的 GPU 内存
+    scene.remove(points); // 从场景中移除粒子对象
+  }
 
-    // 创建新的银河...
-}
+  // 创建新的银河...
+};
 ```
 
 ### dispose() 做了什么？
@@ -380,39 +390,23 @@ Three.js 中，`geometry` 和 `material` 在创建时会向 GPU 上传数据。�
 使用 `onFinishChange` 而非 `onChange` 来触发银河重建：
 
 ```js
-gui.add(parameters, 'count')
-    .min(100).max(1000000).step(100)
-    .onFinishChange(generateGalaxy)
+gui.add(parameters, "count").min(100).max(1000000).step(100).onFinishChange(generateGalaxy);
 
-gui.add(parameters, 'size')
-    .min(0.001).max(0.1).step(0.001)
-    .onFinishChange(generateGalaxy)
+gui.add(parameters, "size").min(0.001).max(0.1).step(0.001).onFinishChange(generateGalaxy);
 
-gui.add(parameters, 'radius')
-    .min(0.01).max(20).step(0.01)
-    .onFinishChange(generateGalaxy)
+gui.add(parameters, "radius").min(0.01).max(20).step(0.01).onFinishChange(generateGalaxy);
 
-gui.add(parameters, 'branches')
-    .min(2).max(20).step(1)
-    .onFinishChange(generateGalaxy)
+gui.add(parameters, "branches").min(2).max(20).step(1).onFinishChange(generateGalaxy);
 
-gui.add(parameters, 'spin')
-    .min(-5).max(5).step(0.001)
-    .onFinishChange(generateGalaxy)
+gui.add(parameters, "spin").min(-5).max(5).step(0.001).onFinishChange(generateGalaxy);
 
-gui.add(parameters, 'randomness')
-    .min(0).max(2).step(0.001)
-    .onFinishChange(generateGalaxy)
+gui.add(parameters, "randomness").min(0).max(2).step(0.001).onFinishChange(generateGalaxy);
 
-gui.add(parameters, 'randomnessPower')
-    .min(1).max(10).step(0.001)
-    .onFinishChange(generateGalaxy)
+gui.add(parameters, "randomnessPower").min(1).max(10).step(0.001).onFinishChange(generateGalaxy);
 
-gui.addColor(parameters, 'insideColor')
-    .onFinishChange(generateGalaxy)
+gui.addColor(parameters, "insideColor").onFinishChange(generateGalaxy);
 
-gui.addColor(parameters, 'outsideColor')
-    .onFinishChange(generateGalaxy)
+gui.addColor(parameters, "outsideColor").onFinishChange(generateGalaxy);
 ```
 
 :::danger
@@ -429,15 +423,15 @@ gui.addColor(parameters, 'outsideColor')
 
 ```js
 const tick = () => {
-    const elapsedTime = clock.getElapsedTime()
+  const elapsedTime = clock.getElapsedTime();
 
-    // 整个银河绕 Y 轴缓慢旋转
-    points.rotation.y = elapsedTime * 0.1
+  // 整个银河绕 Y 轴缓慢旋转
+  points.rotation.y = elapsedTime * 0.1;
 
-    controls.update()
-    renderer.render(scene, camera)
-    window.requestAnimationFrame(tick)
-}
+  controls.update();
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(tick);
+};
 ```
 
 因为所有粒子都在一个 `Points` 对象中，旋转这个对象就等于旋转整个银河。
@@ -448,79 +442,88 @@ const tick = () => {
 
 ```js
 const generateGalaxy = () => {
-    // 销毁旧的银河
-    if (points !== null) {
-        geometry.dispose()
-        material.dispose()
-        scene.remove(points)
-    }
+  // 销毁旧的银河
+  if (points !== null) {
+    geometry.dispose();
+    material.dispose();
+    scene.remove(points);
+  }
 
-    // 创建几何体
-    geometry = new THREE.BufferGeometry()
-    const positions = new Float32Array(parameters.count * 3)
-    const colors = new Float32Array(parameters.count * 3)
+  // 创建几何体
+  geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(parameters.count * 3);
+  const colors = new Float32Array(parameters.count * 3);
 
-    const colorInside = new THREE.Color(parameters.insideColor)
-    const colorOutside = new THREE.Color(parameters.outsideColor)
+  const colorInside = new THREE.Color(parameters.insideColor);
+  const colorOutside = new THREE.Color(parameters.outsideColor);
 
-    for (let i = 0; i < parameters.count; i++) {
-        const i3 = i * 3
+  for (let i = 0; i < parameters.count; i++) {
+    const i3 = i * 3;
 
-        // 位置
-        const radius = Math.random() * parameters.radius
-        const spinAngle = radius * parameters.spin
-        const branchAngle = (i % parameters.branches) / parameters.branches * Math.PI * 2
+    // 位置
+    const radius = Math.random() * parameters.radius;
+    const spinAngle = radius * parameters.spin;
+    const branchAngle = ((i % parameters.branches) / parameters.branches) * Math.PI * 2;
 
-        const randomX = Math.pow(Math.random(), parameters.randomnessPower)
-            * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius
-        const randomY = Math.pow(Math.random(), parameters.randomnessPower)
-            * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius
-        const randomZ = Math.pow(Math.random(), parameters.randomnessPower)
-            * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius
+    const randomX =
+      Math.pow(Math.random(), parameters.randomnessPower) *
+      (Math.random() < 0.5 ? 1 : -1) *
+      parameters.randomness *
+      radius;
+    const randomY =
+      Math.pow(Math.random(), parameters.randomnessPower) *
+      (Math.random() < 0.5 ? 1 : -1) *
+      parameters.randomness *
+      radius;
+    const randomZ =
+      Math.pow(Math.random(), parameters.randomnessPower) *
+      (Math.random() < 0.5 ? 1 : -1) *
+      parameters.randomness *
+      radius;
 
-        positions[i3    ] = Math.cos(branchAngle + spinAngle) * radius + randomX
-        positions[i3 + 1] = randomY
-        positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ
+    positions[i3] = Math.cos(branchAngle + spinAngle) * radius + randomX;
+    positions[i3 + 1] = randomY;
+    positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
 
-        // 颜色
-        const mixedColor = colorInside.clone()
-        mixedColor.lerp(colorOutside, radius / parameters.radius)
+    // 颜色
+    const mixedColor = colorInside.clone();
+    mixedColor.lerp(colorOutside, radius / parameters.radius);
 
-        colors[i3    ] = mixedColor.r
-        colors[i3 + 1] = mixedColor.g
-        colors[i3 + 2] = mixedColor.b
-    }
+    colors[i3] = mixedColor.r;
+    colors[i3 + 1] = mixedColor.g;
+    colors[i3 + 2] = mixedColor.b;
+  }
 
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
-    // 材质
-    material = new THREE.PointsMaterial({
-        size: parameters.size,
-        sizeAttenuation: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-        vertexColors: true
-    })
+  // 材质
+  material = new THREE.PointsMaterial({
+    size: parameters.size,
+    sizeAttenuation: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    vertexColors: true,
+  });
 
-    // 粒子
-    points = new THREE.Points(geometry, material)
-    scene.add(points)
-}
+  // 粒子
+  points = new THREE.Points(geometry, material);
+  scene.add(points);
+};
 
 // 首次调用生成银河
-generateGalaxy()
+generateGalaxy();
 ```
 
 ## 性能优化建议
 
 ### 粒子数量的权衡
 
-| 粒子数 | 效果 | 性能 |
-|--------|------|------|
-| 1,000 ~ 10,000 | 稀疏，能看清单个粒子 | 任何设备流畅 |
-| 50,000 ~ 100,000 | 密集的银河效果 | 主流设备流畅 |
-| 500,000 ~ 1,000,000 | 非常密集 | 高端设备可以，低端设备可能卡顿 |
+| 粒子数              | 效果                 | 性能                           |
+| ------------------- | -------------------- | ------------------------------ |
+| 1,000 ~ 10,000      | 稀疏，能看清单个粒子 | 任何设备流畅                   |
+| 50,000 ~ 100,000    | 密集的银河效果       | 主流设备流畅                   |
+| 500,000 ~ 1,000,000 | 非常密集             | 高端设备可以，低端设备可能卡顿 |
 
 :::tip
 判断粒子大小是否合适的经验法则：当粒子小到远处看起来像"雾气"而非"方块"时，大小就合适了。粒子越小、数量越多，效果越好。

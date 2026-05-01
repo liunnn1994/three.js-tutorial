@@ -3,7 +3,7 @@ title: 51 导入与优化场景
 description: 将 glTF 模型导入 Three.js，替换为烘焙纹理，修复纹理 Bug，通过 Blender 合并几何体大幅优化渲染性能
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 <LessonPreview lesson="51-importing-and-optimizing-the-scene" />
 
@@ -38,22 +38,22 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 我们使用 GLTFLoader 加载模型，配合 DRACOLoader 进行 Draco 解压缩（上一课已经导出为 Draco 格式的 .glb 文件）。
 
 ```js
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 
 // 创建 Draco 解码器
-const dracoLoader = new DRACOLoader()
-dracoLoader.setDecoderPath('/draco/')
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath("/draco/");
 
 // 创建 GLTF 加载器并关联 Draco
-const gltfLoader = new GLTFLoader()
-gltfLoader.setDRACOLoader(dracoLoader)
+const gltfLoader = new GLTFLoader();
+gltfLoader.setDRACOLoader(dracoLoader);
 
 // 加载模型
-gltfLoader.load('/models/room.glb', (gltf) => {
-    const gltfScene = gltf.scene
-    scene.add(gltfScene)
-})
+gltfLoader.load("/models/room.glb", (gltf) => {
+  const gltfScene = gltf.scene;
+  scene.add(gltfScene);
+});
 ```
 
 ### 理解加载过程
@@ -75,7 +75,7 @@ gltfLoader.load('/models/room.glb', (gltf) => {
 
 当然，我们可以给场景添加灯光来解决这个问题。但等一下 -- 我们在第 50 课已经花了大量时间**烘焙光照**。烘焙的目的就是**不需要实时光照**，所有光影信息都已经保存在那张烘焙纹理里了。如果我们再添加灯光，就失去了烘焙的意义。
 
-:::tip 核心理念
+:::tip[核心理念]
 烘焙纹理 = 预先计算好的光照照片。使用烘焙纹理时，我们不希望 Three.js 的实时光照干扰它。我们需要的不是 PBR 材质，而是一个能把烘焙纹理直接"贴上去"的材质。
 :::
 
@@ -86,10 +86,10 @@ gltfLoader.load('/models/room.glb', (gltf) => {
 首先，使用 TextureLoader 加载在 Blender 中烘焙好的那张纹理图片：
 
 ```js
-import * as THREE from 'three'
+import * as THREE from "three";
 
 // 加载烘焙纹理
-const bakedTexture = new THREE.TextureLoader().load('/models/baked.jpg')
+const bakedTexture = new THREE.TextureLoader().load("/models/baked.jpg");
 ```
 
 这张 `baked.jpg` 包含了场景中所有物体的颜色、光照、阴影、环境遮蔽等信息 -- 一张图包含了所有视觉内容。
@@ -101,34 +101,34 @@ const bakedTexture = new THREE.TextureLoader().load('/models/baked.jpg')
 ```js
 // 使用烘焙纹理创建不受光照影响的材质
 const bakedMaterial = new THREE.MeshBasicMaterial({
-    map: bakedTexture
-})
+  map: bakedTexture,
+});
 ```
 
-| 材质类型 | 是否受光照影响 | 适用场景 |
-|---------|:-----------:|---------|
-| `MeshBasicMaterial` | 否 | 烘焙纹理、UI 元素、全纯色物体 |
-| `MeshStandardMaterial` | 是 | PBR 渲染、需要实时光照的场景 |
-| `MeshPhongMaterial` | 是 | 轻量级光照计算 |
-| `MeshLambertMaterial` | 是 | 最简单的光照模型 |
+| 材质类型               | 是否受光照影响 | 适用场景                      |
+| ---------------------- | :------------: | ----------------------------- |
+| `MeshBasicMaterial`    |       否       | 烘焙纹理、UI 元素、全纯色物体 |
+| `MeshStandardMaterial` |       是       | PBR 渲染、需要实时光照的场景  |
+| `MeshPhongMaterial`    |       是       | 轻量级光照计算                |
+| `MeshLambertMaterial`  |       是       | 最简单的光照模型              |
 
 ### 遍历场景替换材质
 
 接下来需要把模型中每个子对象的材质都替换成烘焙材质。这里使用 `traverse()` 方法递归遍历整个场景树：
 
 ```js
-gltfLoader.load('/models/room.glb', (gltf) => {
-    const gltfScene = gltf.scene
+gltfLoader.load("/models/room.glb", (gltf) => {
+  const gltfScene = gltf.scene;
 
-    // 遍历所有子对象，替换材质
-    gltfScene.traverse((child) => {
-        if (child.isMesh) {
-            child.material = bakedMaterial
-        }
-    })
+  // 遍历所有子对象，替换材质
+  gltfScene.traverse((child) => {
+    if (child.isMesh) {
+      child.material = bakedMaterial;
+    }
+  });
 
-    scene.add(gltfScene)
-})
+  scene.add(gltfScene);
+});
 ```
 
 **代码解析：**
@@ -137,7 +137,7 @@ gltfLoader.load('/models/room.glb', (gltf) => {
 - `child.isMesh` -- 检查当前节点是否是网格（Mesh），即包含几何体和材质的对象
 - `child.material = bakedMaterial` -- 将该网格的材质替换为我们的烘焙材质
 
-:::info traverse() 方法
+:::note[traverse() 方法]
 `traverse()` 是 Three.js 中 `Object3D` 的一个方法，它会对调用者以及它的所有后代（children、grandchildren、great-grandchildren...）执行回调函数。这是操作模型树中最常用的工具之一。在 glTF 模型中，对象通常是嵌套的（Group 嵌套 Group 嵌套 Mesh），所以 `traverse()` 比单纯的 `children.forEach()` 更可靠。
 :::
 
@@ -163,22 +163,22 @@ gltfLoader.load('/models/room.glb', (gltf) => {
 ### 解决方案
 
 ```js
-const bakedTexture = new THREE.TextureLoader().load('/models/baked.jpg')
-bakedTexture.flipY = false  // 关闭 Y 轴翻转，修复纹理颠倒问题
+const bakedTexture = new THREE.TextureLoader().load("/models/baked.jpg");
+bakedTexture.flipY = false; // 关闭 Y 轴翻转，修复纹理颠倒问题
 ```
 
-:::warning 经验教训
+:::caution[经验教训]
 这个 Bug 特别隐蔽，因为它只在你**使用烘焙纹理**时才会出现。普通的纹理贴图不会遇到这个问题（因为它们只需要翻转一次）。如果你从 Blender 烘焙纹理后看到方向不对，第一个要检查的就是 `flipY`。
 :::
 
 ### flipY 速查表
 
-| 场景 | flipY 值 | 说明 |
-|------|:-------:|------|
-| 普通纹理贴图 | `true`（默认） | Three.js 自动处理，无需手动设置 |
-| Blender 烘焙纹理 | `false` | Blender 已经翻转过，不能再翻转 |
-| Canvas 作为纹理 | `false` | Canvas 坐标系与 WebGL 一致 |
-| 视频作为纹理 | `false` | 视频帧的坐标系与 WebGL 一致 |
+| 场景             |    flipY 值    | 说明                            |
+| ---------------- | :------------: | ------------------------------- |
+| 普通纹理贴图     | `true`（默认） | Three.js 自动处理，无需手动设置 |
+| Blender 烘焙纹理 |    `false`     | Blender 已经翻转过，不能再翻转  |
+| Canvas 作为纹理  |    `false`     | Canvas 坐标系与 WebGL 一致      |
+| 视频作为纹理     |    `false`     | 视频帧的坐标系与 WebGL 一致     |
 
 ## 第二个 Bug：色彩空间（Color Space）
 
@@ -198,20 +198,24 @@ Three.js 默认假设纹理在线性空间中。但我们的烘焙纹理是一�
 将烘焙纹理标记为 sRGB 色彩空间：
 
 ```js
-const bakedTexture = new THREE.TextureLoader().load('/models/baked.jpg')
-bakedTexture.flipY = false
-bakedTexture.colorSpace = THREE.SRGBColorSpace
+const bakedTexture = new THREE.TextureLoader().load("/models/baked.jpg");
+bakedTexture.flipY = false;
+bakedTexture.colorSpace = THREE.SRGBColorSpace;
 ```
 
-:::tip Three.js 版本差异
+:::tip[Three.js 版本差异]
 在 Three.js r152 及更新版本中，使用 `colorSpace` 属性：
+
 ```js
-texture.colorSpace = THREE.SRGBColorSpace
+texture.colorSpace = THREE.SRGBColorSpace;
 ```
+
 在更老的版本中，使用 `encoding` 属性：
+
 ```js
-texture.encoding = THREE.sRGBEncoding
+texture.encoding = THREE.sRGBEncoding;
 ```
+
 如果你在代码中看到 `encoding`，说明使用的是旧版本 API，功能完全相同。
 :::
 
@@ -219,14 +223,14 @@ texture.encoding = THREE.sRGBEncoding
 
 只有**颜色类纹理**需要标记为 sRGB，其他数据类纹理不需要：
 
-| 纹理类型 | 是否设置 sRGB | 原因 |
-|---------|:------------:|------|
-| 颜色贴图 / 烘焙纹理 | 是 | 包含人眼看到的颜色 |
-| 法线贴图 | 否 | 方向向量数据，不是颜色 |
-| 粗糙度贴图 | 否 | 数值数据 |
-| 金属度贴图 | 否 | 数值数据 |
-| AO 贴图 | 否 | 遮蔽数值数据 |
-| 高度贴图 | 否 | 位移数值数据 |
+| 纹理类型            | 是否设置 sRGB | 原因                   |
+| ------------------- | :-----------: | ---------------------- |
+| 颜色贴图 / 烘焙纹理 |      是       | 包含人眼看到的颜色     |
+| 法线贴图            |      否       | 方向向量数据，不是颜色 |
+| 粗糙度贴图          |      否       | 数值数据               |
+| 金属度贴图          |      否       | 数值数据               |
+| AO 贴图             |      否       | 遮蔽数值数据           |
+| 高度贴图            |      否       | 位移数值数据           |
 
 ## 处理自发光物体
 
@@ -253,39 +257,39 @@ texture.encoding = THREE.sRGBEncoding
 在 JavaScript 中，使用数组的 `find()` 方法根据名称查找特定的子对象：
 
 ```js
-gltfLoader.load('/models/room.glb', (gltf) => {
-    const gltfScene = gltf.scene
+gltfLoader.load("/models/room.glb", (gltf) => {
+  const gltfScene = gltf.scene;
 
-    // 遍历所有子对象，替换为烘焙材质
-    gltfScene.traverse((child) => {
-        if (child.isMesh) {
-            child.material = bakedMaterial
-        }
-    })
+  // 遍历所有子对象，替换为烘焙材质
+  gltfScene.traverse((child) => {
+    if (child.isMesh) {
+      child.material = bakedMaterial;
+    }
+  });
 
-    // 查找特定的发光物体
-    const poleLightAMesh = gltfScene.children.find(
-        (child) => child.name === 'poleLightA'
-    )
-    const poleLightBMesh = gltfScene.children.find(
-        (child) => child.name === 'poleLightB'
-    )
-    const portalLightMesh = gltfScene.children.find(
-        (child) => child.name === 'PortalLight'
-    )
+  // 查找特定的发光物体
+  const poleLightAMesh = gltfScene.children.find(
+    (child) => child.name === "poleLightA",
+  );
+  const poleLightBMesh = gltfScene.children.find(
+    (child) => child.name === "poleLightB",
+  );
+  const portalLightMesh = gltfScene.children.find(
+    (child) => child.name === "PortalLight",
+  );
 
-    scene.add(gltfScene)
-})
+  scene.add(gltfScene);
+});
 ```
 
-:::info JavaScript .find() 方法
+:::note[JavaScript .find() 方法]
 `Array.prototype.find()` 接受一个回调函数，返回数组中**第一个**使回调函数返回 `true` 的元素。如果没有匹配的元素，则返回 `undefined`。
 
 ```js
 // 语法
 const result = array.find((element) => {
-    return element.name === 'targetName'
-})
+  return element.name === "targetName";
+});
 ```
 
 在本例中，`gltfScene.children` 是一个数组，包含了场景根节点的所有直接子对象。我们用它来找到名称匹配的特定网格。
@@ -297,13 +301,13 @@ const result = array.find((element) => {
 
 ```js
 // 发光物体的材质 -- 使用明亮的纯色
-const poleLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffcc })
-const portalLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff })
+const poleLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffcc });
+const portalLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
 // 替换材质
-if (poleLightAMesh) poleLightAMesh.material = poleLightMaterial
-if (poleLightBMesh) poleLightBMesh.material = poleLightMaterial
-if (portalLightMesh) portalLightMesh.material = portalLightMaterial
+if (poleLightAMesh) poleLightAMesh.material = poleLightMaterial;
+if (poleLightBMesh) poleLightBMesh.material = poleLightMaterial;
+if (portalLightMesh) portalLightMesh.material = portalLightMaterial;
 ```
 
 **为什么用 `if` 检查？** 因为 `.find()` 可能返回 `undefined`（如果 Blender 中没有这个名称的物体）。直接对 `undefined` 设置 `material` 会报错。加上 `if` 判断可以安全地处理这种情况。
@@ -312,70 +316,70 @@ if (portalLightMesh) portalLightMesh.material = portalLightMaterial
 
 `MeshBasicMaterial` 不受光照影响，这意味着发光物体的颜色**始终是明亮纯净的**。配合后期处理中的泛光效果（UnrealBloomPass），这些明亮区域会产生漂亮的辉光扩散，模拟真实的光源。
 
-| 效果 | 需要的材质 | 原因 |
-|------|----------|------|
-| 静态烘焙场景 | MeshBasicMaterial + 烘焙纹理 | 不需要光照，直接显示烘焙结果 |
-| 发光物体 | MeshBasicMaterial + 亮色 | 不受光照影响，配合 Bloom 产生辉光 |
-| 实时光照物体 | MeshStandardMaterial | 需要 PBR 光照计算 |
+| 效果         | 需要的材质                   | 原因                              |
+| ------------ | ---------------------------- | --------------------------------- |
+| 静态烘焙场景 | MeshBasicMaterial + 烘焙纹理 | 不需要光照，直接显示烘焙结果      |
+| 发光物体     | MeshBasicMaterial + 亮色     | 不受光照影响，配合 Bloom 产生辉光 |
+| 实时光照物体 | MeshStandardMaterial         | 需要 PBR 光照计算                 |
 
 ## 完整的模型加载代码
 
 将以上所有修复整合在一起，得到完整的加载代码：
 
 ```js
-import * as THREE from 'three'
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 
 // === Draco 解码器 ===
-const dracoLoader = new DRACOLoader()
-dracoLoader.setDecoderPath('/draco/')
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath("/draco/");
 
 // === GLTF 加载器 ===
-const gltfLoader = new GLTFLoader()
-gltfLoader.setDRACOLoader(dracoLoader)
+const gltfLoader = new GLTFLoader();
+gltfLoader.setDRACOLoader(dracoLoader);
 
 // === 加载烘焙纹理 ===
-const bakedTexture = new THREE.TextureLoader().load('/models/baked.jpg')
-bakedTexture.flipY = false              // 修复纹理翻转
-bakedTexture.colorSpace = THREE.SRGBColorSpace  // 修复颜色偏暗
+const bakedTexture = new THREE.TextureLoader().load("/models/baked.jpg");
+bakedTexture.flipY = false; // 修复纹理翻转
+bakedTexture.colorSpace = THREE.SRGBColorSpace; // 修复颜色偏暗
 
 // === 创建材质 ===
-const bakedMaterial = new THREE.MeshBasicMaterial({ map: bakedTexture })
-const poleLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffcc })
-const portalLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff })
+const bakedMaterial = new THREE.MeshBasicMaterial({ map: bakedTexture });
+const poleLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffcc });
+const portalLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
 // === 加载模型 ===
-gltfLoader.load('/models/room.glb', (gltf) => {
-    const gltfScene = gltf.scene
+gltfLoader.load("/models/room.glb", (gltf) => {
+  const gltfScene = gltf.scene;
 
-    // 遍历所有子对象，默认使用烘焙材质
-    gltfScene.traverse((child) => {
-        if (child.isMesh) {
-            child.material = bakedMaterial
-        }
-    })
+  // 遍历所有子对象，默认使用烘焙材质
+  gltfScene.traverse((child) => {
+    if (child.isMesh) {
+      child.material = bakedMaterial;
+    }
+  });
 
-    // 查找发光物体并替换为独立材质
-    const poleLightAMesh = gltfScene.children.find(
-        (child) => child.name === 'poleLightA'
-    )
-    const poleLightBMesh = gltfScene.children.find(
-        (child) => child.name === 'poleLightB'
-    )
-    const portalLightMesh = gltfScene.children.find(
-        (child) => child.name === 'PortalLight'
-    )
+  // 查找发光物体并替换为独立材质
+  const poleLightAMesh = gltfScene.children.find(
+    (child) => child.name === "poleLightA",
+  );
+  const poleLightBMesh = gltfScene.children.find(
+    (child) => child.name === "poleLightB",
+  );
+  const portalLightMesh = gltfScene.children.find(
+    (child) => child.name === "PortalLight",
+  );
 
-    if (poleLightAMesh) poleLightAMesh.material = poleLightMaterial
-    if (poleLightBMesh) poleLightBMesh.material = poleLightMaterial
-    if (portalLightMesh) portalLightMesh.material = portalLightMaterial
+  if (poleLightAMesh) poleLightAMesh.material = poleLightMaterial;
+  if (poleLightBMesh) poleLightBMesh.material = poleLightMaterial;
+  if (portalLightMesh) portalLightMesh.material = portalLightMaterial;
 
-    scene.add(gltfScene)
-})
+  scene.add(gltfScene);
+});
 ```
 
-:::tip 材质替换的顺序
+:::tip[材质替换的顺序]
 注意我们先给所有 Mesh 分配了烘焙材质，然后再给发光物体分配独立的发光材质。这个顺序很重要 -- 如果反过来，发光物体会先拿到烘焙材质，然后被覆盖。虽然结果一样，但"先统一设置默认值，再对特殊情况做覆盖"是一种更清晰的编程模式。
 :::
 
@@ -416,11 +420,11 @@ Spector.js 是一个浏览器扩展，用于分析 WebGL 的渲染过程。
 
 在合并几何体之前，场景有以下数据：
 
-| 指标 | 数值 |
-|------|------|
+| 指标                   | 数值       |
+| ---------------------- | ---------- |
 | 绘制调用（Draw Calls） | **173 次** |
-| 三角形数量 | 约 32,000 |
-| 帧率（FPS） | 因设备而异 |
+| 三角形数量             | 约 32,000  |
+| 帧率（FPS）            | 因设备而异 |
 
 **173 次绘制调用！** 对于一个静态的烘焙场景来说，这个数字太高了。每个独立的 Mesh、每个不同的材质都会产生额外的绘制调用。这意味着 GPU 要反复与 CPU 通信，造成大量的性能浪费。
 
@@ -456,6 +460,7 @@ Scene Collection
 **重要：不要复制发光物体。** 发光物体需要保持独立，因为它们在 Three.js 中使用不同的材质。
 
 操作步骤：
+
 1. 选中所有需要烘焙的普通物体
 2. 按 `Shift + D` 进行复制（不要用 `Alt + D` 关联复制）
 3. 将复制出的物体移动到 `merged` 集合中
@@ -476,7 +481,7 @@ Scene Collection
 2. 在 Material Properties 面板中，点击每个材质旁的 `-` 按钮删除
 3. 确认所有材质都被移除
 
-:::warning 为什么可以移除材质？
+:::caution[为什么可以移除材质？]
 因为我们已经在 Three.js 中使用 `MeshBasicMaterial` 和烘焙纹理来替代了原始材质。导出时即使物体没有材质也没关系，我们会在代码中给它赋值。
 :::
 
@@ -495,21 +500,22 @@ Scene Collection
    - 开启 Draco mesh compression
 
 导出后会得到一个新的 `.glb` 文件，里面包含：
+
 - 一个名为 `baked` 的合并大网格（包含所有普通物体的几何体）
 - 独立的发光物体网格
 
 ### 合并前后对比
 
-| 指标 | 合并前 | 合并后 |
-|------|--------|--------|
-| 绘制调用（Draw Calls） | **173 次** | **16 次** |
-| 网格数量 | 数十个 | 仅几个 |
-| 帧率 | 一般 | 显著提升 |
-| 可维护性 | 每个物体独立 | 烘焙物体为整体 |
+| 指标                   | 合并前       | 合并后         |
+| ---------------------- | ------------ | -------------- |
+| 绘制调用（Draw Calls） | **173 次**   | **16 次**      |
+| 网格数量               | 数十个       | 仅几个         |
+| 帧率                   | 一般         | 显著提升       |
+| 可维护性               | 每个物体独立 | 烘焙物体为整体 |
 
 **从 173 次降到 16 次 -- 性能提升了超过 10 倍！** 这就是合并几何体的威力。
 
-:::tip 为什么是 16 次而不是 1 次？
+:::tip[为什么是 16 次而不是 1 次？]
 即使合并了大部分物体，仍然有一些独立的对象需要单独绘制（发光物体等）。16 次绘制调用对于这个场景来说是一个非常健康的数字。在一般的项目中，将绘制调用控制在 100 次以内（移动设备控制在 50 次以内）是比较好的目标。
 :::
 
@@ -522,46 +528,45 @@ Scene Collection
 之前我们是遍历所有子对象给它们分配烘焙材质。现在所有普通物体已经合并为一个名为 `baked` 的网格，所以我们可以直接找到它：
 
 ```js
-gltfLoader.load('/models/room-merged.glb', (gltf) => {
-    const gltfScene = gltf.scene
+gltfLoader.load("/models/room-merged.glb", (gltf) => {
+  const gltfScene = gltf.scene;
 
-    // 找到合并后的烘焙网格
-    const bakedMesh = gltfScene.children.find(
-        (child) => child.name === 'baked'
-    )
-    if (bakedMesh) {
-        bakedMesh.material = bakedMaterial
-    }
+  // 找到合并后的烘焙网格
+  const bakedMesh = gltfScene.children.find((child) => child.name === "baked");
+  if (bakedMesh) {
+    bakedMesh.material = bakedMaterial;
+  }
 
-    // 找到发光物体
-    const poleLightAMesh = gltfScene.children.find(
-        (child) => child.name === 'poleLightA'
-    )
-    const poleLightBMesh = gltfScene.children.find(
-        (child) => child.name === 'poleLightB'
-    )
-    const portalLightMesh = gltfScene.children.find(
-        (child) => child.name === 'PortalLight'
-    )
+  // 找到发光物体
+  const poleLightAMesh = gltfScene.children.find(
+    (child) => child.name === "poleLightA",
+  );
+  const poleLightBMesh = gltfScene.children.find(
+    (child) => child.name === "poleLightB",
+  );
+  const portalLightMesh = gltfScene.children.find(
+    (child) => child.name === "PortalLight",
+  );
 
-    if (poleLightAMesh) poleLightAMesh.material = poleLightMaterial
-    if (poleLightBMesh) poleLightBMesh.material = poleLightMaterial
-    if (portalLightMesh) portalLightMesh.material = portalLightMaterial
+  if (poleLightAMesh) poleLightAMesh.material = poleLightMaterial;
+  if (poleLightBMesh) poleLightBMesh.material = poleLightMaterial;
+  if (portalLightMesh) portalLightMesh.material = portalLightMaterial;
 
-    scene.add(gltfScene)
-})
+  scene.add(gltfScene);
+});
 ```
 
 ### 合并前 vs 合并后的代码对比
 
-| 方面 | 合并前 | 合并后 |
-|------|--------|--------|
-| 定位烘焙物体 | `traverse()` 遍历所有 Mesh | `.find()` 直接找 `baked` |
-| 分配烘焙材质 | 在遍历中批量赋值 | 只赋值一次 |
-| 发光物体 | 同样用 `.find()` | 同样用 `.find()`（无变化） |
-| 绘制调用 | 173 次 | 16 次 |
+| 方面         | 合并前                     | 合并后                     |
+| ------------ | -------------------------- | -------------------------- |
+| 定位烘焙物体 | `traverse()` 遍历所有 Mesh | `.find()` 直接找 `baked`   |
+| 分配烘焙材质 | 在遍历中批量赋值           | 只赋值一次                 |
+| 发光物体     | 同样用 `.find()`           | 同样用 `.find()`（无变化） |
+| 绘制调用     | 173 次                     | 16 次                      |
 
-:::info 代码中的 find() 与 traverse()
+:::note[代码中的 find() 与 traverse()]
+
 - `.find()` -- 在直接子对象数组中查找，**不会递归**搜索嵌套的子节点
 - `.traverse()` -- 递归遍历**所有层级的后代**
 
@@ -610,10 +615,10 @@ dracoLoader.setDecoderPath('draco/')
 gltfLoader.load('models/room.glb', ...)
 ```
 
-| 路径类型 | 示例 | 根目录部署 | 子目录部署 |
-|---------|------|:--------:|:--------:|
-| 绝对路径 | `/models/room.glb` | 正常 | **断裂** |
-| 相对路径 | `models/room.glb` | 正常 | 正常 |
+| 路径类型 | 示例               | 根目录部署 | 子目录部署 |
+| -------- | ------------------ | :--------: | :--------: |
+| 绝对路径 | `/models/room.glb` |    正常    |  **断裂**  |
+| 相对路径 | `models/room.glb`  |    正常    |    正常    |
 
 :::caution 养成好习惯
 即使在本地开发时绝对路径能正常工作，也建议从项目一开始就使用相对路径。这样在部署时就不会遇到路径断裂的问题。这是一个容易忽略但非常重要的细节。
@@ -625,139 +630,137 @@ gltfLoader.load('models/room.glb', ...)
 
 **可能原因和解决方案：**
 
-| 原因 | 解决方案 |
-|------|---------|
-| 使用了 PBR 材质但没有灯光 | 替换为 `MeshBasicMaterial` |
-| 烘焙纹理路径错误 | 检查 `TextureLoader.load()` 的路径 |
-| 模型没有添加到场景 | 确认调用了 `scene.add()` |
-| 相机位置不对 | 检查相机是否在场景内部或背对场景 |
+| 原因                      | 解决方案                           |
+| ------------------------- | ---------------------------------- |
+| 使用了 PBR 材质但没有灯光 | 替换为 `MeshBasicMaterial`         |
+| 烘焙纹理路径错误          | 检查 `TextureLoader.load()` 的路径 |
+| 模型没有添加到场景        | 确认调用了 `scene.add()`           |
+| 相机位置不对              | 检查相机是否在场景内部或背对场景   |
 
 ### 问题：纹理方向不对
 
-| 原因 | 解决方案 |
-|------|---------|
-| 翻转了两次 | 设置 `bakedTexture.flipY = false` |
-| Blender 中烘焙方向设置 | 检查 Blender 的烘焙设置 |
+| 原因                   | 解决方案                          |
+| ---------------------- | --------------------------------- |
+| 翻转了两次             | 设置 `bakedTexture.flipY = false` |
+| Blender 中烘焙方向设置 | 检查 Blender 的烘焙设置           |
 
 ### 问题：颜色偏暗或不正确
 
-| 原因 | 解决方案 |
-|------|---------|
-| 色彩空间未设置 | 设置 `bakedTexture.colorSpace = THREE.SRGBColorSpace` |
+| 原因                 | 解决方案                                                |
+| -------------------- | ------------------------------------------------------- |
+| 色彩空间未设置       | 设置 `bakedTexture.colorSpace = THREE.SRGBColorSpace`   |
 | 渲染器色彩空间未设置 | 设置 `renderer.outputColorSpace = THREE.SRGBColorSpace` |
-| 使用了旧版 API | 用 `encoding` 替代 `colorSpace`（旧版 Three.js） |
+| 使用了旧版 API       | 用 `encoding` 替代 `colorSpace`（旧版 Three.js）        |
 
 ### 问题：.find() 返回 undefined
 
-| 原因 | 解决方案 |
-|------|---------|
-| Blender 中名称不匹配 | 仔细检查 Blender 中物体的名称，注意大小写和空格 |
-| 物体嵌套在 Group 中 | `.find()` 只搜索直接子对象，改用 `traverse()` 或 `getObjectByName()` |
-| 没有导出该物体 | 检查 Blender 导出时是否选择了正确的物体 |
+| 原因                 | 解决方案                                                             |
+| -------------------- | -------------------------------------------------------------------- |
+| Blender 中名称不匹配 | 仔细检查 Blender 中物体的名称，注意大小写和空格                      |
+| 物体嵌套在 Group 中  | `.find()` 只搜索直接子对象，改用 `traverse()` 或 `getObjectByName()` |
+| 没有导出该物体       | 检查 Blender 导出时是否选择了正确的物体                              |
 
 ### 问题：绘制调用过多
 
-| 原因 | 解决方案 |
-|------|---------|
-| 物体没有合并 | 在 Blender 中合并几何体 |
-| 使用了不同材质 | 尽量让更多物体共享同一材质 |
+| 原因           | 解决方案                     |
+| -------------- | ---------------------------- |
+| 物体没有合并   | 在 Blender 中合并几何体      |
+| 使用了不同材质 | 尽量让更多物体共享同一材质   |
 | 有大量细小物体 | 考虑合并或使用 InstancedMesh |
 
 ## 完整的最终代码
 
 ```js
-import * as THREE from 'three'
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 
 // === 场景、相机、渲染器基础设置 ===
-const scene = new THREE.Scene()
+const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
-    45,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    100
-)
-camera.position.set(4, 2, 5)
+  45,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  100,
+);
+camera.position.set(4, 2, 5);
 
 const renderer = new THREE.WebGLRenderer({
-    canvas: document.querySelector('canvas'),
-    antialias: true
-})
-renderer.setSize(window.innerWidth, window.innerHeight)
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-renderer.outputColorSpace = THREE.SRGBColorSpace
+  canvas: document.querySelector("canvas"),
+  antialias: true,
+});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 // === Draco 解码器 ===
-const dracoLoader = new DRACOLoader()
-dracoLoader.setDecoderPath('draco/')  // 使用相对路径
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath("draco/"); // 使用相对路径
 
 // === GLTF 加载器 ===
-const gltfLoader = new GLTFLoader()
-gltfLoader.setDRACOLoader(dracoLoader)
+const gltfLoader = new GLTFLoader();
+gltfLoader.setDRACOLoader(dracoLoader);
 
 // === 加载烘焙纹理 ===
-const bakedTexture = new THREE.TextureLoader().load('models/baked.jpg')
-bakedTexture.flipY = false               // 修复纹理翻转 Bug
-bakedTexture.colorSpace = THREE.SRGBColorSpace  // 设置正确的色彩空间
+const bakedTexture = new THREE.TextureLoader().load("models/baked.jpg");
+bakedTexture.flipY = false; // 修复纹理翻转 Bug
+bakedTexture.colorSpace = THREE.SRGBColorSpace; // 设置正确的色彩空间
 
 // === 创建材质 ===
 const bakedMaterial = new THREE.MeshBasicMaterial({
-    map: bakedTexture
-})
+  map: bakedTexture,
+});
 
 const poleLightMaterial = new THREE.MeshBasicMaterial({
-    color: 0xffffcc
-})
+  color: 0xffffcc,
+});
 
 const portalLightMaterial = new THREE.MeshBasicMaterial({
-    color: 0xffffff
-})
+  color: 0xffffff,
+});
 
 // === 加载模型 ===
-gltfLoader.load('models/room-merged.glb', (gltf) => {
-    const gltfScene = gltf.scene
+gltfLoader.load("models/room-merged.glb", (gltf) => {
+  const gltfScene = gltf.scene;
 
-    // 找到合并后的烘焙网格，分配烘焙材质
-    const bakedMesh = gltfScene.children.find(
-        (child) => child.name === 'baked'
-    )
-    if (bakedMesh) {
-        bakedMesh.material = bakedMaterial
-    }
+  // 找到合并后的烘焙网格，分配烘焙材质
+  const bakedMesh = gltfScene.children.find((child) => child.name === "baked");
+  if (bakedMesh) {
+    bakedMesh.material = bakedMaterial;
+  }
 
-    // 找到发光物体，分配独立的发光材质
-    const poleLightAMesh = gltfScene.children.find(
-        (child) => child.name === 'poleLightA'
-    )
-    const poleLightBMesh = gltfScene.children.find(
-        (child) => child.name === 'poleLightB'
-    )
-    const portalLightMesh = gltfScene.children.find(
-        (child) => child.name === 'PortalLight'
-    )
+  // 找到发光物体，分配独立的发光材质
+  const poleLightAMesh = gltfScene.children.find(
+    (child) => child.name === "poleLightA",
+  );
+  const poleLightBMesh = gltfScene.children.find(
+    (child) => child.name === "poleLightB",
+  );
+  const portalLightMesh = gltfScene.children.find(
+    (child) => child.name === "PortalLight",
+  );
 
-    if (poleLightAMesh) poleLightAMesh.material = poleLightMaterial
-    if (poleLightBMesh) poleLightBMesh.material = poleLightMaterial
-    if (portalLightMesh) portalLightMesh.material = portalLightMaterial
+  if (poleLightAMesh) poleLightAMesh.material = poleLightMaterial;
+  if (poleLightBMesh) poleLightBMesh.material = poleLightMaterial;
+  if (portalLightMesh) portalLightMesh.material = portalLightMaterial;
 
-    scene.add(gltfScene)
-})
+  scene.add(gltfScene);
+});
 ```
 
 ## 本课关键概念总结
 
-| 概念 | 关键点 |
-|------|--------|
-| GLTFLoader + DRACOLoader | 加载 Draco 压缩的 glTF 模型的标准方式 |
-| MeshBasicMaterial | 不受光照影响，适合配合烘焙纹理使用 |
-| `texture.flipY = false` | 修复 Blender 烘焙纹理的翻转 Bug |
-| `texture.colorSpace = THREE.SRGBColorSpace` | 确保烘焙纹理的颜色正确显示 |
-| `Array.find()` | 根据条件在数组中查找特定元素 |
-| `Object3D.traverse()` | 递归遍历场景树中的所有后代节点 |
-| 绘制调用（Draw Call） | GPU 渲染指令数量，直接影响性能 |
-| 几何体合并 | 在 Blender 中将多个 Mesh 合并为一个，大幅减少绘制调用 |
-| 相对路径 | 去掉开头的 `/`，确保子目录部署时路径正常 |
+| 概念                                        | 关键点                                                |
+| ------------------------------------------- | ----------------------------------------------------- |
+| GLTFLoader + DRACOLoader                    | 加载 Draco 压缩的 glTF 模型的标准方式                 |
+| MeshBasicMaterial                           | 不受光照影响，适合配合烘焙纹理使用                    |
+| `texture.flipY = false`                     | 修复 Blender 烘焙纹理的翻转 Bug                       |
+| `texture.colorSpace = THREE.SRGBColorSpace` | 确保烘焙纹理的颜色正确显示                            |
+| `Array.find()`                              | 根据条件在数组中查找特定元素                          |
+| `Object3D.traverse()`                       | 递归遍历场景树中的所有后代节点                        |
+| 绘制调用（Draw Call）                       | GPU 渲染指令数量，直接影响性能                        |
+| 几何体合并                                  | 在 Blender 中将多个 Mesh 合并为一个，大幅减少绘制调用 |
+| 相对路径                                    | 去掉开头的 `/`，确保子目录部署时路径正常              |
 
 ## 下一课预告
 

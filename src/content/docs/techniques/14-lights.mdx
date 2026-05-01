@@ -3,8 +3,7 @@ title: 14 光照
 description: 从零开始学习 Three.js 中的各种光源类型——为什么需要光照、每种光的原理是什么、如何配置参数、以及如何选择合适的光源
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 为什么 3D 场景需要光照？
 
@@ -16,11 +15,12 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 
 Three.js 提供了多种内置光源，每种光源模拟不同的真实光照情况。添加光源就像添加 `Mesh` 一样简单——实例化对应的类，然后 `scene.add(...)` 加入场景。
 
-:::warning 常见错误
+:::caution[常见错误]
 创建光源后**别忘了 `scene.add(light)`**，这是初学者最容易犯的错误之一。
 :::
 
 ---
+
 <LessonPreview lesson="14-lights" />
 
 ## AmbientLight（环境光）
@@ -37,26 +37,26 @@ Three.js 提供了多种内置光源，每种光源模拟不同的真实光照�
 ### 基本用法
 
 ```js
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.3)
-scene.add(ambientLight)
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+scene.add(ambientLight);
 ```
 
 ### 参数说明
 
-| 参数 | 说明 | 示例 |
-|------|------|------|
-| `color` | 光的颜色，使用十六进制值 | `0xffffff`（白色）、`0xff0000`（红色） |
-| `intensity` | 光照强度 | `0.3`（微弱的环境补充光） |
+| 参数        | 说明                     | 示例                                   |
+| ----------- | ------------------------ | -------------------------------------- |
+| `color`     | 光的颜色，使用十六进制值 | `0xffffff`（白色）、`0xff0000`（红色） |
+| `intensity` | 光照强度                 | `0.3`（微弱的环境补充光）              |
 
 ### 调试技巧
 
 你可以用 `lil-gui` 来实时调节环境光强度：
 
 ```js
-gui.add(ambientLight, 'intensity').min(0).max(1).step(0.01)
+gui.add(ambientLight, "intensity").min(0).max(1).step(0.01);
 ```
 
-:::tip 使用建议
+:::tip[使用建议]
 环境光的强度通常设置得很低（`0.1 ~ 0.5`），太高会让场景看起来像用了 `MeshBasicMaterial`，失去立体感。
 :::
 
@@ -75,17 +75,17 @@ gui.add(ambientLight, 'intensity').min(0).max(1).step(0.01)
 ### 基本用法
 
 ```js
-const directionalLight = new THREE.DirectionalLight(0x00fffc, 0.9)
-directionalLight.position.set(1, 0.25, 0)
-scene.add(directionalLight)
+const directionalLight = new THREE.DirectionalLight(0x00fffc, 0.9);
+directionalLight.position.set(1, 0.25, 0);
+scene.add(directionalLight);
 ```
 
 ### 参数说明
 
-| 参数 | 说明 | 示例 |
-|------|------|------|
-| `color` | 光的颜色 | `0x00fffc`（浅蓝白色） |
-| `intensity` | 光照强度 | `0.9` |
+| 参数        | 说明     | 示例                   |
+| ----------- | -------- | ---------------------- |
+| `color`     | 光的颜色 | `0x00fffc`（浅蓝白色） |
+| `intensity` | 光照强度 | `0.9`                  |
 
 ### 如何控制方向？
 
@@ -93,10 +93,10 @@ scene.add(directionalLight)
 
 ```js
 // 光从右侧照来
-directionalLight.position.set(1, 0.25, 0)
+directionalLight.position.set(1, 0.25, 0);
 
 // 光从左上方照来
-directionalLight.position.set(-2, 3, 1)
+directionalLight.position.set(-2, 3, 1);
 ```
 
 你可以把场景中心想象成一个点，然后从光源位置画一条指向场景中心的线，这条线的方向就是光照方向。
@@ -104,17 +104,18 @@ directionalLight.position.set(-2, 3, 1)
 ### 调试技巧
 
 ```js
-gui.add(directionalLight, 'intensity').min(0).max(3).step(0.001)
-gui.add(directionalLight.position, 'x').min(-5).max(5).step(0.001)
-gui.add(directionalLight.position, 'y').min(-5).max(5).step(0.001)
-gui.add(directionalLight.position, 'z').min(-5).max(5).step(0.001)
+gui.add(directionalLight, "intensity").min(0).max(3).step(0.001);
+gui.add(directionalLight.position, "x").min(-5).max(5).step(0.001);
+gui.add(directionalLight.position, "y").min(-5).max(5).step(0.001);
+gui.add(directionalLight.position, "z").min(-5).max(5).step(0.001);
 ```
 
-:::tip 使用建议
+:::tip[使用建议]
+
 - 平行光是户外场景中最常用的光源（模拟太阳）
 - 一盏平行光 + 一盏微弱环境光 = 最基础的户外光照方案
 - 在下一课 [Lesson 15 - Shadows](/docs/techniques/15-shadows) 中，我们会让平行光投射阴影
-:::
+  :::
 
 **参考文档**：[Three.js DirectionalLight](https://threejs.org/docs/#api/en/lights/DirectionalLight)
 
@@ -131,21 +132,22 @@ gui.add(directionalLight.position, 'z').min(-5).max(5).step(0.001)
 ### 基本用法
 
 ```js
-const hemisphereLight = new THREE.HemisphereLight(0xff0000, 0x0000ff, 3)
-scene.add(hemisphereLight)
+const hemisphereLight = new THREE.HemisphereLight(0xff0000, 0x0000ff, 3);
+scene.add(hemisphereLight);
 ```
 
 ### 参数说明
 
-| 参数 | 说明 | 示例 |
-|------|------|------|
-| `skyColor` | 天空颜色（从上方照射） | `0xff0000`（红色） |
+| 参数          | 说明                   | 示例               |
+| ------------- | ---------------------- | ------------------ |
+| `skyColor`    | 天空颜色（从上方照射） | `0xff0000`（红色） |
 | `groundColor` | 地面颜色（从下方照射） | `0x0000ff`（蓝色） |
-| `intensity` | 光照强度 | `3` |
+| `intensity`   | 光照强度               | `3`                |
 
 ### 颜色混合效果
 
 如果天空色设为红色，地面色设为蓝色：
+
 - 物体顶部呈现**红色**
 - 物体底部呈现**蓝色**
 - 中间部分呈现**紫色**（红色与蓝色的混合）
@@ -156,15 +158,16 @@ scene.add(hemisphereLight)
 
 ```js
 // 天空蓝色 + 草地绿色
-const hemisphereLight = new THREE.HemisphereLight(0x87ceeb, 0x556b2f, 0.6)
-scene.add(hemisphereLight)
+const hemisphereLight = new THREE.HemisphereLight(0x87ceeb, 0x556b2f, 0.6);
+scene.add(hemisphereLight);
 ```
 
-:::tip 使用建议
+:::tip[使用建议]
+
 - 半球光和环境光一样**没有方向性**，每个面都会被照亮
 - 半球光的颜色过渡效果比环境光更自然，性能也很低
 - 适合替代环境光来模拟户外的间接光照
-:::
+  :::
 
 **参考文档**：[Three.js HemisphereLight](https://threejs.org/docs/#api/en/lights/HemisphereLight)
 
@@ -179,19 +182,19 @@ scene.add(hemisphereLight)
 ### 基本用法
 
 ```js
-const pointLight = new THREE.PointLight(0xff9000, 1.5)
-pointLight.position.set(1, -0.5, 1)
-scene.add(pointLight)
+const pointLight = new THREE.PointLight(0xff9000, 1.5);
+pointLight.position.set(1, -0.5, 1);
+scene.add(pointLight);
 ```
 
 ### 参数说明
 
-| 参数 | 说明 | 示例 |
-|------|------|------|
-| `color` | 光的颜色 | `0xff9000`（暖橙色） |
-| `intensity` | 光照强度 | `1.5` |
-| `distance` | 光照最大距离（默认 `0` = 无限远） | `10` |
-| `decay` | 光的衰减速度（默认 `2` = 物理正确的平方反比衰减） | `2` |
+| 参数        | 说明                                              | 示例                 |
+| ----------- | ------------------------------------------------- | -------------------- |
+| `color`     | 光的颜色                                          | `0xff9000`（暖橙色） |
+| `intensity` | 光照强度                                          | `1.5`                |
+| `distance`  | 光照最大距离（默认 `0` = 无限远）                 | `10`                 |
+| `decay`     | 光的衰减速度（默认 `2` = 物理正确的平方反比衰减） | `2`                  |
 
 ### 距离（distance）
 
@@ -199,18 +202,19 @@ scene.add(pointLight)
 
 ```js
 // 光照范围限制在 3 个单位内
-const pointLight = new THREE.PointLight(0xff9000, 1.5, 3)
+const pointLight = new THREE.PointLight(0xff9000, 1.5, 3);
 ```
 
 ### 衰减（decay）
 
 `decay` 控制光从近到远的减弱速度。默认值 `2` 是物理正确的平方反比衰减（光强度与距离的平方成反比）。在物理模式下（`renderer.useLegacyLights = false`），衰减值 `2` 是推荐值。
 
-:::tip 使用建议
+:::tip[使用建议]
+
 - 点光源非常适合室内场景（台灯、路灯、火把）
 - 距离越近的物体越亮，远离的物体逐渐变暗——这是最"直觉化"的光源
 - 每个点光源支持投射阴影，但性能开销较大（见下文性能对比表）
-:::
+  :::
 
 **参考文档**：[Three.js PointLight](https://threejs.org/docs/#api/en/lights/PointLight)
 
@@ -227,15 +231,15 @@ const pointLight = new THREE.PointLight(0xff9000, 1.5, 3)
 ### 基本用法
 
 ```js
-import { RectAreaLightHelper } from 'three/examples/jsm/helpers/RectAreaLightHelper.js'
+import { RectAreaLightHelper } from "three/examples/jsm/helpers/RectAreaLightHelper.js";
 
-const rectAreaLight = new THREE.RectAreaLight(0x4e00ff, 6, 1, 1)
-rectAreaLight.position.set(-1.5, 0, 1.5)
+const rectAreaLight = new THREE.RectAreaLight(0x4e00ff, 6, 1, 1);
+rectAreaLight.position.set(-1.5, 0, 1.5);
 
 // 先设置位置，再设置朝向
-rectAreaLight.lookAt(new THREE.Vector3())
+rectAreaLight.lookAt(new THREE.Vector3());
 
-scene.add(rectAreaLight)
+scene.add(rectAreaLight);
 ```
 
 :::caution 重要：导入辅助工具
@@ -244,12 +248,12 @@ scene.add(rectAreaLight)
 
 ### 参数说明
 
-| 参数 | 说明 | 示例 |
-|------|------|------|
-| `color` | 光的颜色 | `0x4e00ff`（蓝紫色） |
-| `intensity` | 光照强度 | `6` |
-| `width` | 矩形面的宽度 | `1` |
-| `height` | 矩形面的高度 | `1` |
+| 参数        | 说明         | 示例                 |
+| ----------- | ------------ | -------------------- |
+| `color`     | 光的颜色     | `0x4e00ff`（蓝紫色） |
+| `intensity` | 光照强度     | `6`                  |
+| `width`     | 矩形面的宽度 | `1`                  |
+| `height`    | 矩形面的高度 | `1`                  |
 
 ### 朝向控制
 
@@ -257,9 +261,9 @@ scene.add(rectAreaLight)
 
 ```js
 // 先移动位置
-rectAreaLight.position.set(-1.5, 0, 1.5)
+rectAreaLight.position.set(-1.5, 0, 1.5);
 // 再设置朝向（看向场景中心）
-rectAreaLight.lookAt(new THREE.Vector3())
+rectAreaLight.lookAt(new THREE.Vector3());
 ```
 
 ### 材质兼容性
@@ -270,11 +274,12 @@ rectAreaLight.lookAt(new THREE.Vector3())
 
 `MeshPhysicalMaterial` 继承自 `MeshStandardMaterial`，所以两者都可以。
 
-:::tip 使用建议
+:::tip[使用建议]
+
 - 面光的视觉效果非常好，但**性能开销是所有光源中最高的**
 - 适合影棚场景、室内窗户光、走廊荧光灯等
 - 如果对性能敏感，考虑用其他光源替代
-:::
+  :::
 
 **参考文档**：[Three.js RectAreaLight](https://threejs.org/docs/#api/en/lights/RectAreaLight)
 
@@ -289,25 +294,32 @@ rectAreaLight.lookAt(new THREE.Vector3())
 ### 基本用法
 
 ```js
-const spotLight = new THREE.SpotLight(0x78ff00, 4.5, 10, Math.PI * 0.1, 0.25, 1)
-spotLight.position.set(0, 2, 3)
+const spotLight = new THREE.SpotLight(
+  0x78ff00,
+  4.5,
+  10,
+  Math.PI * 0.1,
+  0.25,
+  1,
+);
+spotLight.position.set(0, 2, 3);
 
 // 必须把 target 加入场景！
-spotLight.target.position.x = -0.75
-scene.add(spotLight)
-scene.add(spotLight.target)
+spotLight.target.position.x = -0.75;
+scene.add(spotLight);
+scene.add(spotLight.target);
 ```
 
 ### 参数说明
 
-| 参数 | 说明 | 示例 |
-|------|------|------|
-| `color` | 光的颜色 | `0x78ff00`（绿色） |
-| `intensity` | 光照强度 | `4.5` |
-| `distance` | 光照最大距离（`0` = 无限远） | `10` |
-| `angle` | 光束锥角（弧度），最大值 `Math.PI / 2` | `Math.PI * 0.1`（约 18 度） |
-| `penumbra` | 半影（边缘渐变），范围 `0 ~ 1` | `0.25` |
-| `decay` | 衰减速度 | `1` |
+| 参数        | 说明                                   | 示例                        |
+| ----------- | -------------------------------------- | --------------------------- |
+| `color`     | 光的颜色                               | `0x78ff00`（绿色）          |
+| `intensity` | 光照强度                               | `4.5`                       |
+| `distance`  | 光照最大距离（`0` = 无限远）           | `10`                        |
+| `angle`     | 光束锥角（弧度），最大值 `Math.PI / 2` | `Math.PI * 0.1`（约 18 度） |
+| `penumbra`  | 半影（边缘渐变），范围 `0 ~ 1`         | `0.25`                      |
+| `decay`     | 衰减速度                               | `1`                         |
 
 ### 光束角度（angle）
 
@@ -315,13 +327,13 @@ scene.add(spotLight.target)
 
 ```js
 // 窄光束（约 18 度）
-Math.PI * 0.1
+Math.PI * 0.1;
 
 // 中等光束（约 54 度）
-Math.PI * 0.3
+Math.PI * 0.3;
 
 // 宽光束（约 90 度）
-Math.PI * 0.5
+Math.PI * 0.5;
 ```
 
 `Math.PI * 0.5` 是最大值的近似（严格最大值是 `Math.PI / 2`）。
@@ -336,33 +348,34 @@ Math.PI * 0.5
 
 ```js
 // 锐利边缘
-spotLight.penumbra = 0
+spotLight.penumbra = 0;
 
 // 柔和边缘
-spotLight.penumbra = 0.5
+spotLight.penumbra = 0.5;
 ```
 
 ### Target（目标点）
 
 聚光灯使用一个**目标点（target）**来控制照射方向。这个 target 本质上是一个 `Object3D` 对象。
 
-:::warning 必须把 target 添加到场景中
+:::caution[必须把 target 添加到场景中]
 如果你修改了 `spotLight.target.position`，但场景中**没有** `scene.add(spotLight.target)`，那么光的方向**不会改变**。这是因为 Three.js 需要 target 在场景中才能正确计算方向。
 :::
 
 ```js
 // 设置目标位置
-spotLight.target.position.set(-0.75, 0, 0)
+spotLight.target.position.set(-0.75, 0, 0);
 
 // 必须添加到场景！
-scene.add(spotLight.target)
+scene.add(spotLight.target);
 ```
 
-:::tip 使用建议
+:::tip[使用建议]
+
 - 聚光灯非常适合舞台、探照灯、汽车大灯、手电筒等效果
 - `penumbra` 设为 `0.3 ~ 0.5` 通常能得到比较自然的效果
 - 在下一课中我们会让聚光灯投射阴影，效果非常像手电筒
-:::
+  :::
 
 **参考文档**：[Three.js SpotLight](https://threejs.org/docs/#api/en/lights/SpotLight)
 
@@ -375,8 +388,11 @@ scene.add(spotLight.target)
 ### HemisphereLightHelper
 
 ```js
-const hemisphereLightHelper = new THREE.HemisphereLightHelper(hemisphereLight, 0.2)
-scene.add(hemisphereLightHelper)
+const hemisphereLightHelper = new THREE.HemisphereLightHelper(
+  hemisphereLight,
+  0.2,
+);
+scene.add(hemisphereLightHelper);
 ```
 
 参数：第二个值是辅助图形的大小。会显示一个小型球体，上半部分是天空色，下半部分是地面色。
@@ -384,8 +400,11 @@ scene.add(hemisphereLightHelper)
 ### DirectionalLightHelper
 
 ```js
-const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight, 0.2)
-scene.add(directionalLightHelper)
+const directionalLightHelper = new THREE.DirectionalLightHelper(
+  directionalLight,
+  0.2,
+);
+scene.add(directionalLightHelper);
 ```
 
 会显示一个代表光照方向的小平面。这是**最实用的辅助工具之一**，可以直观看到光从哪个方向照来。
@@ -393,8 +412,8 @@ scene.add(directionalLightHelper)
 ### PointLightHelper
 
 ```js
-const pointLightHelper = new THREE.PointLightHelper(pointLight, 0.2)
-scene.add(pointLightHelper)
+const pointLightHelper = new THREE.PointLightHelper(pointLight, 0.2);
+scene.add(pointLightHelper);
 ```
 
 会在点光源位置显示一个小球体，标记光源的位置。
@@ -402,8 +421,8 @@ scene.add(pointLightHelper)
 ### SpotLightHelper
 
 ```js
-const spotLightHelper = new THREE.SpotLightHelper(spotLight)
-scene.add(spotLightHelper)
+const spotLightHelper = new THREE.SpotLightHelper(spotLight);
+scene.add(spotLightHelper);
 ```
 
 会显示一个锥形线框，代表聚光灯光束的范围。注意：SpotLightHelper **没有 size 参数**。
@@ -411,15 +430,15 @@ scene.add(spotLightHelper)
 ### RectAreaLightHelper
 
 ```js
-import { RectAreaLightHelper } from 'three/examples/jsm/helpers/RectAreaLightHelper.js'
+import { RectAreaLightHelper } from "three/examples/jsm/helpers/RectAreaLightHelper.js";
 
-const rectAreaLightHelper = new RectAreaLightHelper(rectAreaLight)
-scene.add(rectAreaLightHelper)
+const rectAreaLightHelper = new RectAreaLightHelper(rectAreaLight);
+scene.add(rectAreaLightHelper);
 ```
 
 会显示一个矩形线框，代表面光的位置和大小。
 
-:::tip 调试完成后记得隐藏或移除辅助工具
+:::tip[调试完成后记得隐藏或移除辅助工具]
 当你对光源位置满意后，可以通过设置 `helper.visible = false` 来隐藏辅助工具，或者直接注释掉相关代码。
 :::
 
@@ -431,14 +450,14 @@ scene.add(rectAreaLightHelper)
 
 光源的性能开销差异很大，以下是按性能消耗从低到高排列的对比：
 
-| 光源 | 性能消耗 | 支持阴影 | 典型用途 |
-|------|---------|---------|---------|
-| `AmbientLight` | **最低** | 否 | 模拟间接光照，作为基底亮度 |
-| `HemisphereLight` | 低 | 否 | 户外场景，天空/地面颜色混合 |
-| `DirectionalLight` | 中 | 是 | 户外太阳光 |
-| `PointLight` | 中 | 是 | 室内灯泡、火把、路灯 |
-| `SpotLight` | 高 | 是 | 手电筒、舞台灯、汽车灯 |
-| `RectAreaLight` | **最高** | 否 | 摄影棚柔光箱、窗户光、荧光灯 |
+| 光源               | 性能消耗 | 支持阴影 | 典型用途                     |
+| ------------------ | -------- | -------- | ---------------------------- |
+| `AmbientLight`     | **最低** | 否       | 模拟间接光照，作为基底亮度   |
+| `HemisphereLight`  | 低       | 否       | 户外场景，天空/地面颜色混合  |
+| `DirectionalLight` | 中       | 是       | 户外太阳光                   |
+| `PointLight`       | 中       | 是       | 室内灯泡、火把、路灯         |
+| `SpotLight`        | 高       | 是       | 手电筒、舞台灯、汽车灯       |
+| `RectAreaLight`    | **最高** | 否       | 摄影棚柔光箱、窗户光、荧光灯 |
 
 ### 关键性能准则
 
@@ -464,7 +483,7 @@ scene.add(rectAreaLightHelper)
 
 如果你从旧版本迁移代码，可能需要调整光照强度值。在旧版本中，一个 `intensity = 1` 的平行光可能已经足够亮，但在新的物理模式下你可能需要增大数值。
 
-:::info
+:::note
 关于光照强度的物理单位是一个复杂话题。作为初学者，你只需要知道：**调整 intensity 参数直到看起来合适就行**。不需要过度纠结数值背后的物理含义。
 :::
 
@@ -475,55 +494,65 @@ scene.add(rectAreaLightHelper)
 以下代码创建了本课中所有光源类型：
 
 ```js
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { RectAreaLightHelper } from 'three/examples/jsm/helpers/RectAreaLightHelper.js'
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { RectAreaLightHelper } from "three/examples/jsm/helpers/RectAreaLightHelper.js";
 
 // 场景
-const scene = new THREE.Scene()
+const scene = new THREE.Scene();
 
 // 材质（PBR 材质需要光照才能看到）
-const material = new THREE.MeshStandardMaterial({ roughness: 0.4 })
+const material = new THREE.MeshStandardMaterial({ roughness: 0.4 });
 
 // 物体
-const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), material)
-const cube = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.75, 0.75), material)
-const torus = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.2, 32, 64), material)
-const plane = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), material)
-plane.rotation.x = -Math.PI * 0.5
-plane.position.y = -0.65
-scene.add(sphere, cube, torus, plane)
+const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), material);
+const cube = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.75, 0.75), material);
+const torus = new THREE.Mesh(
+  new THREE.TorusGeometry(0.3, 0.2, 32, 64),
+  material,
+);
+const plane = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), material);
+plane.rotation.x = -Math.PI * 0.5;
+plane.position.y = -0.65;
+scene.add(sphere, cube, torus, plane);
 
 // 1. 环境光 - 微弱的基底光照
-const ambientLight = new THREE.AmbientLight(0xffffff, 1)
-scene.add(ambientLight)
+const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+scene.add(ambientLight);
 
 // 2. 平行光 - 模拟太阳
-const directionalLight = new THREE.DirectionalLight(0x00fffc, 0.9)
-directionalLight.position.set(1, 0.25, 0)
-scene.add(directionalLight)
+const directionalLight = new THREE.DirectionalLight(0x00fffc, 0.9);
+directionalLight.position.set(1, 0.25, 0);
+scene.add(directionalLight);
 
 // 3. 半球光 - 天空和地面颜色混合
-const hemisphereLight = new THREE.HemisphereLight(0xff0000, 0x0000ff, 3)
-scene.add(hemisphereLight)
+const hemisphereLight = new THREE.HemisphereLight(0xff0000, 0x0000ff, 3);
+scene.add(hemisphereLight);
 
 // 4. 点光源 - 模拟灯泡
-const pointLight = new THREE.PointLight(0xff9000, 1.5)
-pointLight.position.set(1, -0.5, 1)
-scene.add(pointLight)
+const pointLight = new THREE.PointLight(0xff9000, 1.5);
+pointLight.position.set(1, -0.5, 1);
+scene.add(pointLight);
 
 // 5. 矩形面光 - 模拟柔光箱
-const rectAreaLight = new THREE.RectAreaLight(0x4e00ff, 6, 1, 1)
-rectAreaLight.position.set(-1.5, 0, 1.5)
-rectAreaLight.lookAt(new THREE.Vector3())
-scene.add(rectAreaLight)
+const rectAreaLight = new THREE.RectAreaLight(0x4e00ff, 6, 1, 1);
+rectAreaLight.position.set(-1.5, 0, 1.5);
+rectAreaLight.lookAt(new THREE.Vector3());
+scene.add(rectAreaLight);
 
 // 6. 聚光灯 - 模拟手电筒
-const spotLight = new THREE.SpotLight(0x78ff00, 4.5, 10, Math.PI * 0.1, 0.25, 1)
-spotLight.position.set(0, 2, 3)
-spotLight.target.position.x = -0.75
-scene.add(spotLight)
-scene.add(spotLight.target)
+const spotLight = new THREE.SpotLight(
+  0x78ff00,
+  4.5,
+  10,
+  Math.PI * 0.1,
+  0.25,
+  1,
+);
+spotLight.position.set(0, 2, 3);
+spotLight.target.position.x = -0.75;
+scene.add(spotLight);
+scene.add(spotLight.target);
 ```
 
 **下一课预告**：在 [Lesson 15 - Shadows](/docs/techniques/15-shadows) 中，我们将在有光照的基础上学习如何添加阴影，让场景更加真实。

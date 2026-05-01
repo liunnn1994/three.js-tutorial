@@ -3,8 +3,7 @@ title: 43 切片模型着色器
 description: 使用着色器裁剪技术创建模型切片/横截面效果
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 切片效果概述
 
@@ -13,7 +12,6 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 实现这种效果的核心是 GLSL 中的 `discard` 关键字——它可以在片元着色器中丢弃特定的像素，使其不被渲染到屏幕上。通过判断像素的世界坐标与切面平面的关系，我们可以精确控制哪些像素保留、哪些丢弃。
 
 本课中，我们将这种效果应用在一个齿轮模型上。齿轮由外壳、齿轮和轴心三个部分组成，我们只对外壳部分应用切片效果，以揭示内部的齿轮结构。
-
 
 <LessonPreview lesson="43-sliced-model-shader" />
 
@@ -29,13 +27,13 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 
 ```js
 // 基本的光照和场景设置
-const directionalLight = new THREE.DirectionalLight(0xffffff, 2)
-directionalLight.position.set(5, 5, 5)
-directionalLight.castShadow = true
+const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+directionalLight.position.set(5, 5, 5);
+directionalLight.castShadow = true;
 
 // 环境贴图提供反射
-const environmentMap = await loadHDR('environment.hdr')
-scene.environment = environmentMap
+const environmentMap = await loadHDR("environment.hdr");
+scene.environment = environmentMap;
 ```
 
 ## 顶点着色器
@@ -143,30 +141,27 @@ void main() {
 
 ```js
 // 在动画循环中
-const clock = new THREE.Clock()
+const clock = new THREE.Clock();
 
 function animate() {
-    const elapsedTime = clock.getElapsedTime()
+  const elapsedTime = clock.getElapsedTime();
 
-    // 切面来回移动
-    material.uniforms.uSlicePosition.value =
-        Math.sin(elapsedTime * 0.5) * 2
+  // 切面来回移动
+  material.uniforms.uSlicePosition.value = Math.sin(elapsedTime * 0.5) * 2;
 
-    // 也可以根据鼠标位置控制切面
-    // material.uniforms.uSlicePosition.value = mouseY
+  // 也可以根据鼠标位置控制切面
+  // material.uniforms.uSlicePosition.value = mouseY
 
-    renderer.render(scene, camera)
-    requestAnimationFrame(animate)
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
 }
 ```
 
 使用 GUI 进行交互控制：
 
 ```js
-gui.add(material.uniforms.uSlicePosition, 'value')
-    .min(-3).max(3).step(0.01).name('切面位置')
-gui.add(material.uniforms.uSliceEdgeWidth, 'value')
-    .min(0.01).max(0.5).step(0.01).name('边缘宽度')
+gui.add(material.uniforms.uSlicePosition, "value").min(-3).max(3).step(0.01).name("切面位置");
+gui.add(material.uniforms.uSliceEdgeWidth, "value").min(0.01).max(0.5).step(0.01).name("边缘宽度");
 ```
 
 ## 多方向切片
@@ -235,6 +230,7 @@ color += glow * glowColor * glowIntensity;
 ```
 
 `smoothstep(0.0, edgeWidth, abs(sliceDistance))` 的行为：
+
 - 距离为 0 时，返回 0（完全在边缘）
 - 距离为 edgeWidth 时，返回 1（完全远离边缘）
 - 中间值平滑插值
@@ -264,12 +260,12 @@ if (noisySliceDistance > 0.0) discard;
 如果你的需求只是简单的平面裁剪（不需要在切面上绘制特殊效果），Three.js 提供了内置的 `clippingPlanes` 功能：
 
 ```js
-renderer.localClippingEnabled = true
+renderer.localClippingEnabled = true;
 
-const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0.5)
-material.clippingPlanes = [plane]
-material.clipShadows = true
-material.side = THREE.DoubleSide  // 切面处需要双面渲染
+const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0.5);
+material.clippingPlanes = [plane];
+material.clipShadows = true;
+material.side = THREE.DoubleSide; // 切面处需要双面渲染
 ```
 
 :::tip
@@ -285,20 +281,20 @@ material.side = THREE.DoubleSide  // 切面处需要双面渲染
 对于加载的 GLTF 模型，我们需要遍历模型的子网格，只对特定部分（如外壳）应用切片效果：
 
 ```js
-const loader = new GLTFLoader()
-loader.load('gears.glb', (gltf) => {
-    gltf.scene.traverse((child) => {
-        if (child.isMesh) {
-            // 根据名称判断是否需要应用切片
-            if (child.name === 'outerHull') {
-                child.material = slicedMaterial  // 应用切片材质
-            } else {
-                child.material = normalMaterial  // 正常材质
-            }
-        }
-    })
-    scene.add(gltf.scene)
-})
+const loader = new GLTFLoader();
+loader.load("gears.glb", (gltf) => {
+  gltf.scene.traverse((child) => {
+    if (child.isMesh) {
+      // 根据名称判断是否需要应用切片
+      if (child.name === "outerHull") {
+        child.material = slicedMaterial; // 应用切片材质
+      } else {
+        child.material = normalMaterial; // 正常材质
+      }
+    }
+  });
+  scene.add(gltf.scene);
+});
 ```
 
 :::tip

@@ -3,8 +3,7 @@ title: 21 导入模型
 description: 使用 GLTFLoader 和 DRACOLoader 加载外部 3D 模型到 Three.js 场景
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 为什么要导入模型？
 
@@ -25,26 +24,28 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 ```
 
 通常的团队分工是：
+
 1. **3D 设计师**在 Blender 等软件中创建模型
 2. 导出为标准格式文件
 3. **前端开发者**用 Three.js 加载并显示这个文件
 
 如果你一个人做，也可以自己学习 Blender 来创建模型。Three.js Journey 课程后面也会有 Blender 的专门课程。
+
 <LessonPreview lesson="21-imported-models" />
 
 ## 3D 模型格式概览
 
 3D 文件格式非常多，因为不同的需求催生了不同的解决方案：
 
-| 格式 | 特点 | 推荐程度 |
-|------|------|----------|
-| **glTF / GLB** | Web 3D 标准，Khronos Group 制定 | ★★★★★ 强烈推荐 |
-| FBX | Autodesk 系列软件常用，功能丰富 | ★★★ 可用但不推荐 |
-| OBJ | 非常古老，简单但不支持动画 | ★★ 仅简单场景 |
-| STL | 3D 打印常用，只有几何没有材质 | ★ 仅 3D 打印 |
-| PLY | 点云数据，常用于粒子系统 | ★★ 特定场景 |
-| Collada (.dae) | 开源标准，已被 glTF 取代 | ★ 已过时 |
-| 3DS | 3ds Max 专用，较老旧 | ★ 已过时 |
+| 格式           | 特点                            | 推荐程度         |
+| -------------- | ------------------------------- | ---------------- |
+| **glTF / GLB** | Web 3D 标准，Khronos Group 制定 | ★★★★★ 强烈推荐   |
+| FBX            | Autodesk 系列软件常用，功能丰富 | ★★★ 可用但不推荐 |
+| OBJ            | 非常古老，简单但不支持动画      | ★★ 仅简单场景    |
+| STL            | 3D 打印常用，只有几何没有材质   | ★ 仅 3D 打印     |
+| PLY            | 点云数据，常用于粒子系统        | ★★ 特定场景      |
+| Collada (.dae) | 开源标准，已被 glTF 取代        | ★ 已过时         |
+| 3DS            | 3ds Max 专用，较老旧            | ★ 已过时         |
 
 选择格式时需要考虑以下因素：
 
@@ -138,12 +139,12 @@ Duck.gltf    ← 单个 JSON 文件，内部嵌入了所有数据
 
 ### 各格式对比
 
-| 格式 | 文件数 | 文件大小 | 可编辑纹理 | 推荐场景 |
-|------|--------|----------|-----------|----------|
-| glTF Default | 多个 | 中等 | 可以 | 需要经常修改纹理 |
-| glTF Binary (.glb) | 1个 | 中等 | 不行 | 生产环境部署 |
-| glTF Draco | 多个 | 最小 | 可以 | 网络带宽受限 |
-| glTF Embedded | 1个 | 最大 | 可以 | 快速原型测试 |
+| 格式               | 文件数 | 文件大小 | 可编辑纹理 | 推荐场景         |
+| ------------------ | ------ | -------- | ---------- | ---------------- |
+| glTF Default       | 多个   | 中等     | 可以       | 需要经常修改纹理 |
+| glTF Binary (.glb) | 1个    | 中等     | 不行       | 生产环境部署     |
+| glTF Draco         | 多个   | 最小     | 可以       | 网络带宽受限     |
+| glTF Embedded      | 1个    | 最大     | 可以       | 快速原型测试     |
 
 :::tip
 **生产环境推荐使用 `.glb` 格式** -- 单个文件，加载简单，部署不容易出错。如果文件太大，再考虑 Draco 压缩。
@@ -156,43 +157,43 @@ Duck.gltf    ← 单个 JSON 文件，内部嵌入了所有数据
 GLTFLoader 不是 Three.js 核心库的一部分（因为加载器代码很多，会让核心库太臃肿），需要从扩展目录导入：
 
 ```js
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 ```
 
 Three.js 的 `examples/jsm/loaders/` 目录中有很多加载器：
 
-| 加载器 | 用途 |
-|--------|------|
-| `GLTFLoader` | 加载 glTF/GLB 模型 |
-| `DRACOLoader` | Draco 压缩模型解码 |
-| `FBXLoader` | 加载 FBX 模型 |
-| `OBJLoader` | 加载 OBJ 模型 |
-| `RGBELoader` | 加载 HDR 环境贴图 |
-| `SVGLoader` | 加载 SVG 矢量图 |
-| `TextureLoader` | 加载纹理图片 |
+| 加载器          | 用途               |
+| --------------- | ------------------ |
+| `GLTFLoader`    | 加载 glTF/GLB 模型 |
+| `DRACOLoader`   | Draco 压缩模型解码 |
+| `FBXLoader`     | 加载 FBX 模型      |
+| `OBJLoader`     | 加载 OBJ 模型      |
+| `RGBELoader`    | 加载 HDR 环境贴图  |
+| `SVGLoader`     | 加载 SVG 矢量图    |
+| `TextureLoader` | 加载纹理图片       |
 
 ### 基本加载方式
 
 ```js
-const gltfLoader = new GLTFLoader()
+const gltfLoader = new GLTFLoader();
 
 gltfLoader.load(
-    '/models/Duck/glTF-Binary/Duck.glb',  // 模型文件路径
-    (gltf) => {
-        // 加载成功回调
-        console.log('模型加载成功！')
-        console.log(gltf)
-        scene.add(gltf.scene)
-    },
-    (progress) => {
-        // 加载进度回调
-        console.log('加载进度：', (progress.loaded / progress.total * 100) + '%')
-    },
-    (error) => {
-        // 加载错误回调
-        console.error('模型加载失败：', error)
-    }
-)
+  "/models/Duck/glTF-Binary/Duck.glb", // 模型文件路径
+  (gltf) => {
+    // 加载成功回调
+    console.log("模型加载成功！");
+    console.log(gltf);
+    scene.add(gltf.scene);
+  },
+  (progress) => {
+    // 加载进度回调
+    console.log("加载进度：", (progress.loaded / progress.total) * 100 + "%");
+  },
+  (error) => {
+    // 加载错误回调
+    console.error("模型加载失败：", error);
+  },
+);
 ```
 
 三个回调函数：
@@ -201,7 +202,7 @@ gltfLoader.load(
 2. **进度回调**：接收 `progress` 对象，可以用来显示加载进度条
 3. **错误回调**：加载失败时触发
 
-:::warning 注意路径
+:::caution路径
 模型文件路径从 `static/`（或 `public/`）目录开始算，**不要**在路径前面加 `static/`。比如文件在 `static/models/Duck.glb`，路径就写 `/models/Duck.glb`。
 :::
 
@@ -250,9 +251,9 @@ gltf.scene (Group)                    ← 根 Group
 **重要**：加载模型只是获取了数据，你必须手动将模型添加到场景中：
 
 ```js
-gltfLoader.load('/models/Duck.glb', (gltf) => {
-    scene.add(gltf.scene)  // 必须手动添加到场景！
-})
+gltfLoader.load("/models/Duck.glb", (gltf) => {
+  scene.add(gltf.scene); // 必须手动添加到场景！
+});
 ```
 
 ### 添加模型的几种方式
@@ -260,7 +261,7 @@ gltfLoader.load('/models/Duck.glb', (gltf) => {
 #### 方式 1：添加整个 scene（推荐）
 
 ```js
-scene.add(gltf.scene)
+scene.add(gltf.scene);
 ```
 
 这是最简单的方式。整个场景（包括相机、网格等）都被添加进来。
@@ -268,9 +269,9 @@ scene.add(gltf.scene)
 #### 方式 2：遍历并添加子元素
 
 ```js
-gltf.scene.children.forEach(child => {
-    scene.add(child)
-})
+gltf.scene.children.forEach((child) => {
+  scene.add(child);
+});
 ```
 
 这样可以跳过根 Group，把子元素直接放到场景中。注意这会**保留原始缩放**。
@@ -280,15 +281,15 @@ gltf.scene.children.forEach(child => {
 ```js
 // 遍历找到你想要的 Mesh
 gltf.scene.traverse((child) => {
-    if (child.isMesh) {
-        scene.add(child)
-    }
-})
+  if (child.isMesh) {
+    scene.add(child);
+  }
+});
 ```
 
 `traverse()` 方法会递归遍历整个模型树，可以用来查找特定类型的子对象。
 
-:::warning 关于缩放的陷阱
+:::caution[关于缩放的陷阱]
 很多从 Blender 等软件导出的模型有一个非常小的缩放值（比如 `0.01`），这是因为 Blender 使用米作为单位，而模型可能很小。如果你只添加了内部的 Mesh 而跳过了包含缩放的父级 Group，模型会变得 100 倍大！
 
 **建议**：先添加 `gltf.scene`，观察效果，再根据需要调整。
@@ -299,76 +300,77 @@ gltf.scene.traverse((child) => {
 加载模型后，你可能需要调整它的位置和大小：
 
 ```js
-gltfLoader.load('/models/Duck.glb', (gltf) => {
-    const model = gltf.scene
+gltfLoader.load("/models/Duck.glb", (gltf) => {
+  const model = gltf.scene;
 
-    // 调整缩放（如果模型太大或太小）
-    model.scale.set(0.5, 0.5, 0.5)
+  // 调整缩放（如果模型太大或太小）
+  model.scale.set(0.5, 0.5, 0.5);
 
-    // 调整位置（让模型站在地面上而不是陷入地下）
-    model.position.y = -1.2
+  // 调整位置（让模型站在地面上而不是陷入地下）
+  model.position.y = -1.2;
 
-    // 调整旋转（如果模型朝向不对）
-    model.rotation.y = Math.PI  // 旋转 180 度
+  // 调整旋转（如果模型朝向不对）
+  model.rotation.y = Math.PI; // 旋转 180 度
 
-    scene.add(model)
-})
+  scene.add(model);
+});
 ```
 
-:::tip 调试技巧
+:::tip[调试技巧]
 加载模型后，第一时间检查三件事：
+
 1. **位置**：模型在场景的哪个位置？可能需要调整 `position.y` 让它站在地面上
 2. **缩放**：模型的大小是否合适？使用 `model.scale` 调整
 3. **旋转**：模型是否面向正确的方向？可能需要调整 `rotation.y`
-:::
+   :::
 
 ## 访问模型的不同部分
 
 使用 `traverse()` 方法可以遍历模型的所有子对象，对每个部分进行不同的处理：
 
 ```js
-gltfLoader.load('/models/Duck.glb', (gltf) => {
-    gltf.scene.traverse((child) => {
-        // 给所有 Mesh 开启阴影
-        if (child.isMesh) {
-            child.castShadow = true
-            child.receiveShadow = true
-        }
+gltfLoader.load("/models/Duck.glb", (gltf) => {
+  gltf.scene.traverse((child) => {
+    // 给所有 Mesh 开启阴影
+    if (child.isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
 
-        // 打印所有子节点的名称
-        console.log(child.name, child.type)
-    })
+    // 打印所有子节点的名称
+    console.log(child.name, child.type);
+  });
 
-    scene.add(gltf.scene)
-})
+  scene.add(gltf.scene);
+});
 ```
 
 常见操作：
 
 ```js
 // 查找特定名称的子对象
-const wheel = gltf.scene.getObjectByName('front_wheel')
+const wheel = gltf.scene.getObjectByName("front_wheel");
 if (wheel) {
-    wheel.rotation.x += 0.01  // 旋转轮子
+  wheel.rotation.x += 0.01; // 旋转轮子
 }
 
 // 修改特定材质的颜色
 gltf.scene.traverse((child) => {
-    if (child.isMesh && child.name === 'body') {
-        child.material.color.set('#ff0000')  // 改成红色
-    }
-})
+  if (child.isMesh && child.name === "body") {
+    child.material.color.set("#ff0000"); // 改成红色
+  }
+});
 
 // 替换材质
 gltf.scene.traverse((child) => {
-    if (child.isMesh) {
-        child.material = new THREE.MeshStandardMaterial({
-            color: '#00ff00',
-            metalness: 0.5,
-            roughness: 0.3
-        })
-    }
-})
+  if (child.isMesh) {
+    child.material = new THREE.MeshStandardMaterial({
+      color: "#00ff00",
+      metalness: 0.5,
+      roughness: 0.3,
+    });
+  }
+});
 ```
 
 ## DRACOLoader 压缩模型
@@ -378,21 +380,21 @@ gltf.scene.traverse((child) => {
 ### 设置 DRACOLoader
 
 ```js
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 // 1. 创建 DRACOLoader 并设置解码器路径
-const dracoLoader = new DRACOLoader()
-dracoLoader.setDecoderPath('/draco/')  // Draco 解码器文件所在的路径
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath("/draco/"); // Draco 解码器文件所在的路径
 
 // 2. 将 DRACOLoader 传给 GLTFLoader
-const gltfLoader = new GLTFLoader()
-gltfLoader.setDRACOLoader(dracoLoader)
+const gltfLoader = new GLTFLoader();
+gltfLoader.setDRACOLoader(dracoLoader);
 
 // 3. 正常加载模型
-gltfLoader.load('/models/model-draco.glb', (gltf) => {
-    scene.add(gltf.scene)
-})
+gltfLoader.load("/models/model-draco.glb", (gltf) => {
+  scene.add(gltf.scene);
+});
 ```
 
 ### Draco 解码器文件
@@ -413,61 +415,64 @@ static/
 或者使用 CDN：
 
 ```js
-dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/')
-dracoLoader.setDecoderConfig({ type: 'js' })  // 使用 JS 解码器（兼容性更好）
+dracoLoader.setDecoderPath(
+  "https://www.gstatic.com/draco/versioned/decoders/1.5.6/",
+);
+dracoLoader.setDecoderConfig({ type: "js" }); // 使用 JS 解码器（兼容性更好）
 ```
 
-:::tip 何时使用 Draco？
+:::tip[何时使用 Draco？]
+
 - 模型文件 > 1MB 时，建议使用 Draco 压缩
 - 模型文件 < 500KB 时，Draco 压缩的收益不明显，可能不值得增加复杂度
 - Draco 只压缩**几何数据**（顶点、法线等），不压缩纹理。纹理优化需要另外处理
-:::
+  :::
 
 ## 模型动画
 
 如果模型包含骨骼动画（比如一个走路的人物），可以使用 Three.js 的 `AnimationMixer` 来播放：
 
 ```js
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-const gltfLoader = new GLTFLoader()
-let mixer = null
+const gltfLoader = new GLTFLoader();
+let mixer = null;
 
-gltfLoader.load('/models/Fox/glTF/Fox.gltf', (gltf) => {
-    // 缩放模型到合适大小
-    gltf.scene.scale.set(0.025, 0.025, 0.025)
+gltfLoader.load("/models/Fox/glTF/Fox.gltf", (gltf) => {
+  // 缩放模型到合适大小
+  gltf.scene.scale.set(0.025, 0.025, 0.025);
 
-    // 添加到场景
-    scene.add(gltf.scene)
+  // 添加到场景
+  scene.add(gltf.scene);
 
-    // 创建动画混合器（AnimationMixer）
-    mixer = new THREE.AnimationMixer(gltf.scene)
+  // 创建动画混合器（AnimationMixer）
+  mixer = new THREE.AnimationMixer(gltf.scene);
 
-    // 获取动画剪辑并播放
-    // gltf.animations 是一个数组，可能包含多个动画
-    // 例如：[Walk, Run, Idle, Survey]
-    const action = mixer.clipAction(gltf.animations[2])
-    action.play()
-})
+  // 获取动画剪辑并播放
+  // gltf.animations 是一个数组，可能包含多个动画
+  // 例如：[Walk, Run, Idle, Survey]
+  const action = mixer.clipAction(gltf.animations[2]);
+  action.play();
+});
 
 // 在动画循环中更新混合器
-const clock = new THREE.Clock()
-let previousTime = 0
+const clock = new THREE.Clock();
+let previousTime = 0;
 
 const tick = () => {
-    const elapsedTime = clock.getElapsedTime()
-    const deltaTime = elapsedTime - previousTime
-    previousTime = elapsedTime
+  const elapsedTime = clock.getElapsedTime();
+  const deltaTime = elapsedTime - previousTime;
+  previousTime = elapsedTime;
 
-    // 更新动画（必须在每帧调用！）
-    if (mixer) {
-        mixer.update(deltaTime)
-    }
+  // 更新动画（必须在每帧调用！）
+  if (mixer) {
+    mixer.update(deltaTime);
+  }
 
-    controls.update()
-    renderer.render(scene, camera)
-    window.requestAnimationFrame(tick)
-}
+  controls.update();
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(tick);
+};
 ```
 
 ### 动画相关概念
@@ -479,26 +484,26 @@ const tick = () => {
 ### 动画操作
 
 ```js
-const mixer = new THREE.AnimationMixer(gltf.scene)
+const mixer = new THREE.AnimationMixer(gltf.scene);
 
 // 播放不同的动画
-const walkAction = mixer.clipAction(gltf.animations[0])
-const runAction = mixer.clipAction(gltf.animations[1])
-const idleAction = mixer.clipAction(gltf.animations[2])
+const walkAction = mixer.clipAction(gltf.animations[0]);
+const runAction = mixer.clipAction(gltf.animations[1]);
+const idleAction = mixer.clipAction(gltf.animations[2]);
 
 // 播放动画
-walkAction.play()
+walkAction.play();
 
 // 平滑过渡到另一个动画
-walkAction.crossFadeTo(runAction, 0.5, true)  // 0.5 秒过渡
-runAction.play()
+walkAction.crossFadeTo(runAction, 0.5, true); // 0.5 秒过渡
+runAction.play();
 
 // 暂停/恢复
-action.paused = true
-action.paused = false
+action.paused = true;
+action.paused = false;
 
 // 调整播放速度
-action.timeScale = 2  // 两倍速
+action.timeScale = 2; // 两倍速
 ```
 
 :::tip
@@ -513,12 +518,12 @@ glTF 模型通常使用 PBR（基于物理的渲染）材质，这在导出时�
 
 ```js
 // 至少需要环境光和方向光
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
-scene.add(ambientLight)
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
-directionalLight.position.set(5, 5, 5)
-scene.add(directionalLight)
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+directionalLight.position.set(5, 5, 5);
+scene.add(directionalLight);
 ```
 
 ## 兼容旧版本的导入路径
@@ -527,10 +532,10 @@ scene.add(directionalLight)
 
 ```js
 // 旧版（可能已不工作）
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 // 新版（推荐）
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 ```
 
 注意最后的 `.js` 后缀。根据你的构建工具（Vite、Webpack 等），可能需要也可能不需要。如果遇到导入错误，尝试加上或去掉 `.js`。
@@ -550,12 +555,13 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 glTF 使用 sRGB 色彩空间，Three.js 可能需要设置：
 
 ```js
-renderer.outputColorSpace = THREE.SRGBColorSpace
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 ```
 
 ### 模型方向不对
 
 不同 3D 软件使用不同的坐标系：
+
 - **Blender**：Y 轴朝上
 - **Three.js**：Y 轴朝上（一致）
 - **3ds Max / Unity**：Z 轴朝上
@@ -563,9 +569,9 @@ renderer.outputColorSpace = THREE.SRGBColorSpace
 如果模型朝向不对，通常需要旋转：
 
 ```js
-model.rotation.y = Math.PI  // 翻转 180 度
+model.rotation.y = Math.PI; // 翻转 180 度
 // 或者交换轴
-model.rotation.x = -Math.PI * 0.5
+model.rotation.x = -Math.PI * 0.5;
 ```
 
 ### 文件路径错误
@@ -579,20 +585,20 @@ model.rotation.x = -Math.PI * 0.5
 使用 `LoadingManager` 可以在加载过程中显示进度条：
 
 ```js
-import { LoadingManager } from 'three'
+import { LoadingManager } from "three";
 
-const loadingManager = new LoadingManager()
+const loadingManager = new LoadingManager();
 
 loadingManager.onProgress = (url, loaded, total) => {
-    const percent = (loaded / total * 100).toFixed(0)
-    console.log(`加载进度：${percent}%`)
-}
+  const percent = ((loaded / total) * 100).toFixed(0);
+  console.log(`加载进度：${percent}%`);
+};
 
 loadingManager.onLoad = () => {
-    console.log('所有资源加载完成！')
-}
+  console.log("所有资源加载完成！");
+};
 
-const gltfLoader = new GLTFLoader(loadingManager)
+const gltfLoader = new GLTFLoader(loadingManager);
 ```
 
 ## 免费模型资源
@@ -606,20 +612,21 @@ const gltfLoader = new GLTFLoader(loadingManager)
 
 ### 免费模型网站
 
-| 网站 | 说明 | 链接 |
-|------|------|------|
-| **Sketchfab** | 最大的 3D 模型分享平台，筛选 "Downloadable" 可找到免费模型 | [sketchfab.com](https://sketchfab.com) |
-| **Poly Pizza** | 免费低多边形模型，适合卡通风格项目 | [poly.pizza](https://poly.pizza) |
-| **Quaternius** | 免费低多边形资产包，有角色、环境、道具 | [quaternius.com](https://quaternius.com) |
-| **ambientCG** | 免费高质量 PBR 材质和模型（CC0 协议） | [ambientcg.com](https://ambientcg.com) |
-| **Turbosquid** | 大量免费和付费模型（需要筛选 Free） | [sketchfab.com](https://www.turbosquid.com) |
+| 网站           | 说明                                                       | 链接                                        |
+| -------------- | ---------------------------------------------------------- | ------------------------------------------- |
+| **Sketchfab**  | 最大的 3D 模型分享平台，筛选 "Downloadable" 可找到免费模型 | [sketchfab.com](https://sketchfab.com)      |
+| **Poly Pizza** | 免费低多边形模型，适合卡通风格项目                         | [poly.pizza](https://poly.pizza)            |
+| **Quaternius** | 免费低多边形资产包，有角色、环境、道具                     | [quaternius.com](https://quaternius.com)    |
+| **ambientCG**  | 免费高质量 PBR 材质和模型（CC0 协议）                      | [ambientcg.com](https://ambientcg.com)      |
+| **Turbosquid** | 大量免费和付费模型（需要筛选 Free）                        | [sketchfab.com](https://www.turbosquid.com) |
 
-:::tip 许可证注意
+:::tip[许可证注意]
 使用免费模型时，务必检查其**使用许可证**：
+
 - **CC0**：可以商用，无需署名
 - **CC BY**：可以商用，需要署名
 - **自定义许可证**：可能有使用限制
-:::
+  :::
 
 ## 模型优化建议
 
@@ -650,109 +657,117 @@ const gltfLoader = new GLTFLoader(loadingManager)
 ## 完整示例代码
 
 ```js
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 
 // --- 基础设置 ---
-const scene = new THREE.Scene()
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100)
-camera.position.set(2, 2, 2)
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(
+  75,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  100,
+);
+camera.position.set(2, 2, 2);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true })
-renderer.setSize(window.innerWidth, window.innerHeight)
-renderer.shadowMap.enabled = true
-document.body.appendChild(renderer.domElement)
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
 
-const controls = new OrbitControls(camera, renderer.domElement)
-controls.target.set(0, 0.75, 0)
-controls.enableDamping = true
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.75, 0);
+controls.enableDamping = true;
 
 // --- Draco 压缩支持 ---
-const dracoLoader = new DRACOLoader()
-dracoLoader.setDecoderPath('/draco/')
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath("/draco/");
 
-const gltfLoader = new GLTFLoader()
-gltfLoader.setDRACOLoader(dracoLoader)
+const gltfLoader = new GLTFLoader();
+gltfLoader.setDRACOLoader(dracoLoader);
 
 // --- 加载模型 ---
-let mixer = null
+let mixer = null;
 
 gltfLoader.load(
-    '/models/Fox/glTF/Fox.gltf',
-    (gltf) => {
-        // 缩放到合适大小
-        gltf.scene.scale.set(0.025, 0.025, 0.025)
+  "/models/Fox/glTF/Fox.gltf",
+  (gltf) => {
+    // 缩放到合适大小
+    gltf.scene.scale.set(0.025, 0.025, 0.025);
 
-        // 添加到场景
-        scene.add(gltf.scene)
+    // 添加到场景
+    scene.add(gltf.scene);
 
-        // 开启阴影
-        gltf.scene.traverse((child) => {
-            if (child.isMesh) {
-                child.castShadow = true
-                child.receiveShadow = true
-            }
-        })
+    // 开启阴影
+    gltf.scene.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
 
-        // 播放动画
-        mixer = new THREE.AnimationMixer(gltf.scene)
-        const action = mixer.clipAction(gltf.animations[2])
-        action.play()
-    },
-    (progress) => {
-        if (progress.total > 0) {
-            console.log('加载进度：', Math.round(progress.loaded / progress.total * 100) + '%')
-        }
-    },
-    (error) => {
-        console.error('模型加载失败：', error)
+    // 播放动画
+    mixer = new THREE.AnimationMixer(gltf.scene);
+    const action = mixer.clipAction(gltf.animations[2]);
+    action.play();
+  },
+  (progress) => {
+    if (progress.total > 0) {
+      console.log(
+        "加载进度：",
+        Math.round((progress.loaded / progress.total) * 100) + "%",
+      );
     }
-)
+  },
+  (error) => {
+    console.error("模型加载失败：", error);
+  },
+);
 
 // --- 地面 ---
 const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(10, 10),
-    new THREE.MeshStandardMaterial({ color: '#444444' })
-)
-floor.receiveShadow = true
-floor.rotation.x = -Math.PI * 0.5
-scene.add(floor)
+  new THREE.PlaneGeometry(10, 10),
+  new THREE.MeshStandardMaterial({ color: "#444444" }),
+);
+floor.receiveShadow = true;
+floor.rotation.x = -Math.PI * 0.5;
+scene.add(floor);
 
 // --- 灯光 ---
-scene.add(new THREE.AmbientLight(0xffffff, 2.4))
+scene.add(new THREE.AmbientLight(0xffffff, 2.4));
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8)
-directionalLight.castShadow = true
-directionalLight.shadow.mapSize.set(1024, 1024)
-directionalLight.shadow.camera.far = 15
-directionalLight.shadow.camera.left = -7
-directionalLight.shadow.camera.top = 7
-directionalLight.shadow.camera.right = 7
-directionalLight.shadow.camera.bottom = -7
-directionalLight.position.set(-5, 5, 0)
-scene.add(directionalLight)
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8);
+directionalLight.castShadow = true;
+directionalLight.shadow.mapSize.set(1024, 1024);
+directionalLight.shadow.camera.far = 15;
+directionalLight.shadow.camera.left = -7;
+directionalLight.shadow.camera.top = 7;
+directionalLight.shadow.camera.right = 7;
+directionalLight.shadow.camera.bottom = -7;
+directionalLight.position.set(-5, 5, 0);
+scene.add(directionalLight);
 
 // --- 动画循环 ---
-const clock = new THREE.Clock()
-let previousTime = 0
+const clock = new THREE.Clock();
+let previousTime = 0;
 
 const tick = () => {
-    const elapsedTime = clock.getElapsedTime()
-    const deltaTime = elapsedTime - previousTime
-    previousTime = elapsedTime
+  const elapsedTime = clock.getElapsedTime();
+  const deltaTime = elapsedTime - previousTime;
+  previousTime = elapsedTime;
 
-    // 更新模型动画
-    if (mixer) {
-        mixer.update(deltaTime)
-    }
+  // 更新模型动画
+  if (mixer) {
+    mixer.update(deltaTime);
+  }
 
-    controls.update()
-    renderer.render(scene, camera)
-    window.requestAnimationFrame(tick)
-}
-tick()
+  controls.update();
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(tick);
+};
+tick();
 ```
 
 ## 参考链接

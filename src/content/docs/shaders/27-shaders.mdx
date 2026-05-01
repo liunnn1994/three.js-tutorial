@@ -3,8 +3,7 @@ title: 27 着色器基础
 description: 从零开始学习 GPU 着色器编程：GLSL 语言、顶点/片元着色器、ShaderMaterial 使用
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 什么是着色器
 
@@ -32,6 +31,7 @@ JavaScript 代码
 ### GPU vs CPU
 
 为什么用 GPU？因为 GPU 有数千个核心，可以**同时**处理大量顶点和像素。一个拥有 200 万个三角面的模型，GPU 可以在瞬间完成所有顶点和像素的计算。
+
 <LessonPreview lesson="27-shaders" />
 
 ## ShaderMaterial
@@ -39,22 +39,23 @@ JavaScript 代码
 Three.js 提供了 `ShaderMaterial` 让你编写自定义着色器：
 
 ```js
-import testVertexShader from './shaders/test/vertex.glsl'
-import testFragmentShader from './shaders/test/fragment.glsl'
+import testVertexShader from "./shaders/test/vertex.glsl";
+import testFragmentShader from "./shaders/test/fragment.glsl";
 
 const material = new THREE.ShaderMaterial({
-    vertexShader: testVertexShader,
-    fragmentShader: testFragmentShader,
-    uniforms: {
-        uTime: { value: 0 },
-        uColor: { value: new THREE.Color('orange') }
-    }
-})
+  vertexShader: testVertexShader,
+  fragmentShader: testFragmentShader,
+  uniforms: {
+    uTime: { value: 0 },
+    uColor: { value: new THREE.Color("orange") },
+  },
+});
 ```
 
 ### 为什么用单独的 .glsl 文件
 
 将着色器代码放在独立的 `.glsl` 文件中，比写在 JS 字符串中更好：
+
 - 语法高亮（VS Code 安装 "Shader languages support" 扩展）
 - 代码可读性
 - 便于维护
@@ -86,21 +87,21 @@ uniforms: {
 
 ```js
 const tick = () => {
-    const elapsedTime = clock.getElapsedTime()
-    material.uniforms.uTime.value = elapsedTime
-    // ...
-}
+  const elapsedTime = clock.getElapsedTime();
+  material.uniforms.uTime.value = elapsedTime;
+  // ...
+};
 ```
 
 ## Attributes（属性）
 
 Attribute 是**每个顶点**的数据。Three.js 内置了三个 attribute：
 
-| 名称 | 类型 | 说明 |
-|------|------|------|
-| `position` | vec3 | 顶点的 3D 坐标 |
-| `uv` | vec2 | 纹理坐标（0-1 范围） |
-| `normal` | vec3 | 顶点法线方向 |
+| 名称       | 类型 | 说明                 |
+| ---------- | ---- | -------------------- |
+| `position` | vec3 | 顶点的 3D 坐标       |
+| `uv`       | vec2 | 纹理坐标（0-1 范围） |
+| `normal`   | vec3 | 顶点法线方向         |
 
 ### 自定义 Attribute
 
@@ -108,12 +109,12 @@ Attribute 是**每个顶点**的数据。Three.js 内置了三个 attribute：
 
 ```js
 // JavaScript 端 — 创建自定义 attribute
-const count = geometry.attributes.position.count
-const randoms = new Float32Array(count)
+const count = geometry.attributes.position.count;
+const randoms = new Float32Array(count);
 for (let i = 0; i < count; i++) {
-    randoms[i] = Math.random()
+  randoms[i] = Math.random();
 }
-geometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1))
+geometry.setAttribute("aRandom", new THREE.BufferAttribute(randoms, 1));
 ```
 
 ```glsl
@@ -214,16 +215,16 @@ void main() {
 
 ## GLSL 数据类型速查
 
-| 类型 | 说明 | 示例 |
-|------|------|------|
-| `float` | 浮点数 | `1.0`, `0.5`, `3.14` |
-| `int` | 整数 | `1`, `42` |
-| `bool` | 布尔值 | `true`, `false` |
-| `vec2` | 二维向量 | `vec2(1.0, 0.5)` |
-| `vec3` | 三维向量 | `vec3(1.0, 0.0, 0.5)` |
-| `vec4` | 四维向量 | `vec4(1.0, 0.0, 0.5, 1.0)` |
-| `mat2/3/4` | 矩阵 | `mat4(1.0)` |
-| `sampler2D` | 纹理采样器 | `texture2D(sampler, uv)` |
+| 类型        | 说明       | 示例                       |
+| ----------- | ---------- | -------------------------- |
+| `float`     | 浮点数     | `1.0`, `0.5`, `3.14`       |
+| `int`       | 整数       | `1`, `42`                  |
+| `bool`      | 布尔值     | `true`, `false`            |
+| `vec2`      | 二维向量   | `vec2(1.0, 0.5)`           |
+| `vec3`      | 三维向量   | `vec3(1.0, 0.0, 0.5)`      |
+| `vec4`      | 四维向量   | `vec4(1.0, 0.0, 0.5, 1.0)` |
+| `mat2/3/4`  | 矩阵       | `mat4(1.0)`                |
+| `sampler2D` | 纹理采样器 | `texture2D(sampler, uv)`   |
 
 ### 向量操作
 
@@ -250,6 +251,7 @@ GLSL 中 `1` 是整数，`1.0` 是浮点数。大部分 GLSL 函数要求浮点�
 着色器在 GPU 上运行，无法用 `console.log` 调试。常用技巧：
 
 1. **用颜色可视化值** — 将数值映射到颜色通道
+
    ```glsl
    gl_FragColor = vec4(vec3(someValue), 1.0);
    ```
@@ -264,6 +266,6 @@ GLSL 中 `1` 是整数，`1.0` 是浮点数。大部分 GLSL 函数要求浮点�
 
 - [The Book of Shaders](https://thebookofshaders.com/) — GLSL 着色器入门教程（强烈推荐）
 - [Three.js ShaderMaterial 文档](https://threejs.org/docs/#api/en/materials/ShaderMaterial)
-- [GLSL 参考](https://www.khronos.org/opengl/wiki/Core_Language_(GLSL))
+- [GLSL 参考](<https://www.khronos.org/opengl/wiki/Core_Language_(GLSL)>)
 - [Shaderific — GLSL 函数参考](https://shaderific.blogspot.com/p/list-of-glsl-functions.html)
 - [Shadertoy](https://www.shadertoy.com/) — 在线着色器编辑器和社区

@@ -7,6 +7,7 @@
 - **`public/vendor/`** — Three.js、lil-gui、gsap 等库文件
 
 现有问题：
+
 1. `src/lesson-code/` 目录**只有源码文件，无 static/ 子目录**，缺少纹理、模型、HDR 等静态资产
 2. `code/` 目录中的源码引用静态资产时使用 `/textures/...`、`/models/...` 等绝对路径，这些路径需要在 `public/` 下有对应文件
 3. 当前 41 个已有的 preview HTML 是简化版，不包含完整的资源加载代码
@@ -38,6 +39,7 @@
 ### 1. 静态资源存放策略：按章节命名空间存入 `public/`
 
 **选择**：将静态资源按章节组织到 `public/assets/<chapter>/` 下，例如：
+
 ```
 public/assets/10-textures/textures/door/color.jpg
 public/assets/10-textures/textures/minecraft.png
@@ -46,6 +48,7 @@ public/assets/21-imported-models/draco/draco_decoder.js
 ```
 
 **替代方案**：
+
 - 全部平铺到 `public/textures/`、`public/models/` — 不同章节可能有同名文件冲突（多个章节都使用 `door` 纹理）
 - 使用 `src/assets/` — Astro 会处理这些文件（添加哈希），无法通过绝对路径引用
 
@@ -56,6 +59,7 @@ public/assets/21-imported-models/draco/draco_decoder.js
 **选择**：基于 `code/<chapter>-final/src/script.js` 和 `code/<chapter>/src/script.js` 重建 preview HTML，将资源路径从 `/textures/...` 重写为 `/assets/<chapter>/textures/...`，并使用 importmap 引用 vendor 库。
 
 **替代方案**：
+
 - 直接使用 `code/` 中的 HTML 文件 — 这些文件体积巨大（10-200MB），因为内嵌了 base64 资源
 - 用 Vite 构建生成 — 引入额外构建步骤，增加复杂度
 
@@ -64,6 +68,7 @@ public/assets/21-imported-models/draco/draco_decoder.js
 ### 3. LessonPreview 组件适配
 
 **选择**：修改 `LessonPreview.astro`，支持工作版和最终版切换。通过 `version` prop 区分：
+
 ```astro
 <LessonPreview lesson="10-textures" />
 <LessonPreview lesson="10-textures-final" />
@@ -76,6 +81,7 @@ public/assets/21-imported-models/draco/draco_decoder.js
 **选择**：将 Blender 源文件（.blend）和大型 HDR 文件放入 `public/downloads/<chapter>/`，在 MDX 中以链接形式提供下载。
 
 涉及资源：
+
 - `code/resources/portal.blend` → `public/downloads/23-custom-models-blender/portal.blend`
 - `code/32-coffee-smoke-shader-resources/` → `public/downloads/32-coffee-smoke-shader/`
 - `code/40-particles-morphing-shader-resources/` → `public/downloads/40-particles-morphing-shader/`
@@ -87,12 +93,12 @@ public/assets/21-imported-models/draco/draco_decoder.js
 
 以下章节的 code/ 源码过于简单（只有基础 Three.js 设置，未展示章节主题内容），需要根据教学目标编写完整示例：
 
-| 章节 | 当前状态 | 需要补充 |
-|------|---------|---------|
-| 03-first-threejs-project | 代码完整 | 无需补充，已有完整教学代码在 MDX 中 |
-| 10-textures | 源码无纹理加载 | 补充完整的纹理加载、UV、属性设置代码 |
-| 21-imported-models | 源码无模型加载 | 补充 GLTFLoader、DRACOLoader、模型动画代码 |
-| 其他 41 个已有章节 | preview HTML 简化 | 从 `-final` 版本重建完整 preview |
+| 章节                     | 当前状态          | 需要补充                                   |
+| ------------------------ | ----------------- | ------------------------------------------ |
+| 03-first-threejs-project | 代码完整          | 无需补充，已有完整教学代码在 MDX 中        |
+| 10-textures              | 源码无纹理加载    | 补充完整的纹理加载、UV、属性设置代码       |
+| 21-imported-models       | 源码无模型加载    | 补充 GLTFLoader、DRACOLoader、模型动画代码 |
+| 其他 41 个已有章节       | preview HTML 简化 | 从 `-final` 版本重建完整 preview           |
 
 ## Risks / Trade-offs
 

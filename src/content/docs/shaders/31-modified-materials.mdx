@@ -3,8 +3,7 @@ title: 31 修改材质
 description: 通过 onBeforeCompile 钩子注入自定义着色器代码，在不重写整个着色器的情况下修改内置材质行为
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 概述
 
@@ -18,15 +17,16 @@ Three.js 提供了两种方式来修改内置材质：
 :::tip
 `onBeforeCompile` 的核心优势：保留内置材质的所有功能（光照、阴影、法线贴图、纹理等），只需要注入少量自定义代码就能实现效果。这比从零复现材质要简单得多。
 :::
+
 <LessonPreview lesson="31-modified-materials" />
 
 ## ShaderMaterial vs RawShaderMaterial vs onBeforeCompile
 
-| 方式 | 自动注入 uniforms/attributes | 需要手写 | 适用场景 |
-|------|----------------------------|---------|---------|
-| `ShaderMaterial` | 是（`modelMatrix`、`projectionMatrix` 等） | 顶点/片元着色器主体 | 完全自定义的效果 |
-| `RawShaderMaterial` | 否（一切手动） | 所有 uniforms、attributes 和着色器 | 需要完全控制 |
-| `onBeforeCompile` | 是（内置材质的全部功能） | 只需注入的部分代码 | 在内置材质基础上微调 |
+| 方式                | 自动注入 uniforms/attributes               | 需要手写                           | 适用场景             |
+| ------------------- | ------------------------------------------ | ---------------------------------- | -------------------- |
+| `ShaderMaterial`    | 是（`modelMatrix`、`projectionMatrix` 等） | 顶点/片元着色器主体                | 完全自定义的效果     |
+| `RawShaderMaterial` | 否（一切手动）                             | 所有 uniforms、attributes 和着色器 | 需要完全控制         |
+| `onBeforeCompile`   | 是（内置材质的全部功能）                   | 只需注入的部分代码                 | 在内置材质基础上微调 |
 
 ## onBeforeCompile 基本用法
 
@@ -34,18 +34,18 @@ Three.js 提供了两种方式来修改内置材质：
 
 ```js
 const material = new THREE.MeshStandardMaterial({
-    color: '#aaaaaa',
-    metalness: 0.5,
-    roughness: 0.5
-})
+  color: "#aaaaaa",
+  metalness: 0.5,
+  roughness: 0.5,
+});
 
 material.onBeforeCompile = (shader) => {
-    // shader.vertexShader — 顶点着色器完整源码（字符串）
-    // shader.fragmentShader — 片元着色器完整源码（字符串）
-    // shader.uniforms — 所有 uniform 变量
-    console.log('vertexShader:', shader.vertexShader)
-    console.log('fragmentShader:', shader.fragmentShader)
-}
+  // shader.vertexShader — 顶点着色器完整源码（字符串）
+  // shader.fragmentShader — 片元着色器完整源码（字符串）
+  // shader.uniforms — 所有 uniform 变量
+  console.log("vertexShader:", shader.vertexShader);
+  console.log("fragmentShader:", shader.fragmentShader);
+};
 ```
 
 :::caution
@@ -61,26 +61,26 @@ material.onBeforeCompile = (shader) => {
 
 ```js
 // 保存 shader 引用，用于在动画循环中更新 uniform
-let materialShader = null
+let materialShader = null;
 
 material.onBeforeCompile = (shader) => {
-    // 添加自定义 uniform
-    shader.uniforms.uTime = { value: 0 }
+  // 添加自定义 uniform
+  shader.uniforms.uTime = { value: 0 };
 
-    materialShader = shader
-}
+  materialShader = shader;
+};
 ```
 
 然后在动画循环中更新：
 
 ```js
 const animate = () => {
-    const elapsedTime = clock.getElapsedTime()
-    if (materialShader) {
-        materialShader.uniforms.uTime.value = elapsedTime
-    }
-    // ...
-}
+  const elapsedTime = clock.getElapsedTime();
+  if (materialShader) {
+    materialShader.uniforms.uTime.value = elapsedTime;
+  }
+  // ...
+};
 ```
 
 ## 着色器块（Chunk）替换
@@ -101,29 +101,29 @@ Three.js 的内置着色器使用 `#include` 指令将代码组织成多个可�
 
 ```js
 material.onBeforeCompile = (shader) => {
-    shader.uniforms.uTime = { value: 0 }
+  shader.uniforms.uTime = { value: 0 };
 
-    // 在 common 块之后声明 uniform
-    shader.vertexShader = shader.vertexShader.replace(
-        '#include <common>',
-        `
+  // 在 common 块之后声明 uniform
+  shader.vertexShader = shader.vertexShader.replace(
+    "#include <common>",
+    `
         #include <common>
         uniform float uTime;
-        `
-    )
+        `,
+  );
 
-    // 在 begin_vertex 块之后修改顶点位置
-    shader.vertexShader = shader.vertexShader.replace(
-        '#include <begin_vertex>',
-        `
+  // 在 begin_vertex 块之后修改顶点位置
+  shader.vertexShader = shader.vertexShader.replace(
+    "#include <begin_vertex>",
+    `
         #include <begin_vertex>
         transformed.y += sin(transformed.x * 3.0 + uTime) * 0.2;
         transformed.z += sin(transformed.z * 2.0 + uTime * 0.7) * 0.1;
-        `
-    )
+        `,
+  );
 
-    materialShader = shader
-}
+  materialShader = shader;
+};
 ```
 
 **逐步解析：**
@@ -141,22 +141,22 @@ material.onBeforeCompile = (shader) => {
 
 ### 顶点着色器块
 
-| 块名 | 作用 | 典型用法 |
-|------|------|---------|
-| `#include <common>` | 通用变量和函数定义 | 声明自定义 uniform |
-| `#include <begin_vertex>` | 初始化 `transformed = position` | 顶点位移、波浪、扭曲 |
-| `#include <morphtarget_vertex>` | MorphTarget 混合 | 在形变之后修改顶点 |
-| `#include <skinning_vertex>` | 骨骼动画变换 | 在蒙皮之后修改顶点 |
-| `#include <project_vertex>` | MVP 变换和 `gl_Position` 赋值 | 修改最终投影位置 |
+| 块名                            | 作用                            | 典型用法             |
+| ------------------------------- | ------------------------------- | -------------------- |
+| `#include <common>`             | 通用变量和函数定义              | 声明自定义 uniform   |
+| `#include <begin_vertex>`       | 初始化 `transformed = position` | 顶点位移、波浪、扭曲 |
+| `#include <morphtarget_vertex>` | MorphTarget 混合                | 在形变之后修改顶点   |
+| `#include <skinning_vertex>`    | 骨骼动画变换                    | 在蒙皮之后修改顶点   |
+| `#include <project_vertex>`     | MVP 变换和 `gl_Position` 赋值   | 修改最终投影位置     |
 
 ### 片元着色器块
 
-| 块名 | 作用 | 典型用法 |
-|------|------|---------|
-| `#include <common>` | 通用定义 | 声明自定义 uniform/函数 |
-| `#include <color_fragment>` | 颜色计算 | 修改最终颜色 |
-| `#include <output_fragment>` | 最终输出（含色调映射） | 在最终输出前修改颜色 |
-| `#include <emissivemap_fragment>` | 自发光贴图 | 添加自定义自发光效果 |
+| 块名                              | 作用                   | 典型用法                |
+| --------------------------------- | ---------------------- | ----------------------- |
+| `#include <common>`               | 通用定义               | 声明自定义 uniform/函数 |
+| `#include <color_fragment>`       | 颜色计算               | 修改最终颜色            |
+| `#include <output_fragment>`      | 最终输出（含色调映射） | 在最终输出前修改颜色    |
+| `#include <emissivemap_fragment>` | 自发光贴图             | 添加自定义自发光效果    |
 
 ## 实战技巧
 
@@ -176,8 +176,8 @@ node_modules/three/src/renderers/shaders/ShaderChunk/
 
 ```js
 shader.vertexShader = shader.vertexShader.replace(
-    '#include <common>',
-    `
+  "#include <common>",
+  `
     #include <common>
 
     // 注入噪声函数
@@ -185,8 +185,8 @@ shader.vertexShader = shader.vertexShader.replace(
         // ... noise implementation ...
     }
     uniform float uTime;
-    `
-)
+    `,
+);
 ```
 
 ### 替换而非覆盖
@@ -196,21 +196,21 @@ shader.vertexShader = shader.vertexShader.replace(
 ```js
 // 正确：保留原始内容，在其后追加
 shader.vertexShader = shader.vertexShader.replace(
-    '#include <begin_vertex>',
-    `
+  "#include <begin_vertex>",
+  `
     #include <begin_vertex>
     // 自定义代码
     transformed.y += sin(uTime) * 0.1;
-    `
-)
+    `,
+);
 
 // 错误：删除了原始内容
 shader.vertexShader = shader.vertexShader.replace(
-    '#include <begin_vertex>',
-    `
+  "#include <begin_vertex>",
+  `
     // 缺少 #include <begin_vertex>，transformed 变量未定义
-    `
-)
+    `,
+);
 ```
 
 ## 注意事项

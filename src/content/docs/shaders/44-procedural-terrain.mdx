@@ -3,8 +3,7 @@ title: 44 程序化地形着色器
 description: 使用噪声函数生成程序化地形和山脉
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 程序化地形概述
 
@@ -15,6 +14,7 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 ### 项目的特殊之处
 
 本课有一个独特的视觉元素：地形被放置在一个中间挖了洞的"盒子"（边框）中，水面上有模糊反射效果。这个盒子的形状使用 `three-bvh-csg`（构造实体几何）库通过布尔运算创建——从一个大盒子中"挖掉"一个较小的盒子。
+
 <LessonPreview lesson="44-procedural-terrain-shader" />
 
 ## 基本原理
@@ -56,18 +56,21 @@ float fbm(vec3 p) {
 ### FBM 参数详解
 
 **八度数（Octaves）**：
+
 - 控制噪声叠加的层数
 - 值越大，地形细节越丰富（从大山到小石头都有）
 - 典型值：4-8。超过 8 后视觉差异很小，但 GPU 开销增加
 - 在着色器中，循环上限必须用常量，所以我们用 `for (int i = 0; i < 8; i++)` 配合 `if (i >= uOctaves) break;`
 
 **持续度（Persistence）**：
+
 - 控制每层振幅的衰减速度
 - 值为 0.5 时，每层振幅减半（最常用）
 - 值越大，高频细节越突出，地形越"尖锐"
 - 值越小，地形越"平滑圆润"
 
 **间隙度（Lacunarity）**：
+
 - 控制每层频率的增长速度
 - 值为 2.0 时，每层频率翻倍（最常用）
 - 值越大，各层间的频率跨度越大
@@ -207,13 +210,13 @@ void main() {
 
 地形着色的关键是根据高度值在不同的"带"之间平滑过渡：
 
-| 高度范围 | 地形类型 | 颜色 |
-|----------|---------|------|
-| h < -0.3 | 深水 | 深蓝色 |
-| -0.3 ~ -0.1 | 水深过渡 | 深蓝 → 浅蓝 |
-| -0.1 ~ 0.0 | 浅水/沙滩 | 浅蓝 → 沙色 |
-| 0.0 ~ 0.3 | 草地/岩石 | 绿色 → 灰色 |
-| 0.3+ | 岩石/积雪 | 灰色 → 白色 |
+| 高度范围    | 地形类型  | 颜色        |
+| ----------- | --------- | ----------- |
+| h < -0.3    | 深水      | 深蓝色      |
+| -0.3 ~ -0.1 | 水深过渡  | 深蓝 → 浅蓝 |
+| -0.1 ~ 0.0  | 浅水/沙滩 | 浅蓝 → 沙色 |
+| 0.0 ~ 0.3   | 草地/岩石 | 绿色 → 灰色 |
+| 0.3+        | 岩石/积雪 | 灰色 → 白色 |
 
 `mix()` 函数实现了相邻层之间的平滑过渡。第三个参数是混合因子，需要归一化到 0-1 范围。例如 `(h + 0.3) / 0.2` 将 `h` 从 `[-0.3, -0.1]` 映射到 `[0, 1]`。
 
@@ -240,19 +243,19 @@ if (h > 0.0 && h < 0.3) {
 
 ```js
 // 创建水面
-const waterGeometry = new THREE.PlaneGeometry(10, 10, 1, 1)
-waterGeometry.rotateX(-Math.PI / 2)
+const waterGeometry = new THREE.PlaneGeometry(10, 10, 1, 1);
+waterGeometry.rotateX(-Math.PI / 2);
 const waterMaterial = new THREE.MeshPhysicalMaterial({
-    color: new THREE.Color('#003366'),
-    metalness: 0.0,
-    roughness: 0.1,
-    transmission: 0.5,   // 透射（折射效果）
-    transparent: true,
-    opacity: 0.7
-})
-const water = new THREE.Mesh(waterGeometry, waterMaterial)
-water.position.y = -0.1  // 稍低于沙滩高度
-scene.add(water)
+  color: new THREE.Color("#003366"),
+  metalness: 0.0,
+  roughness: 0.1,
+  transmission: 0.5, // 透射（折射效果）
+  transparent: true,
+  opacity: 0.7,
+});
+const water = new THREE.Mesh(waterGeometry, waterMaterial);
+water.position.y = -0.1; // 稍低于沙滩高度
+scene.add(water);
 ```
 
 ### 水面反射
@@ -260,19 +263,16 @@ scene.add(water)
 Three.js 提供了 `Reflector` 类来实现平面反射。将 Reflector 放在水面的位置，它会把上方的场景渲染为纹理并映射到水面上，模拟反射效果：
 
 ```js
-import { Reflector } from 'three/examples/jsm/objects/Reflector.js'
+import { Reflector } from "three/examples/jsm/objects/Reflector.js";
 
-const waterReflector = new Reflector(
-    new THREE.PlaneGeometry(10, 10),
-    {
-        clipBias: 0.003,
-        textureWidth: window.innerWidth * 0.5,
-        textureHeight: window.innerHeight * 0.5,
-        color: new THREE.Color(0x777777)
-    }
-)
-waterReflector.rotation.x = -Math.PI / 2
-waterReflector.position.y = -0.1
+const waterReflector = new Reflector(new THREE.PlaneGeometry(10, 10), {
+  clipBias: 0.003,
+  textureWidth: window.innerWidth * 0.5,
+  textureHeight: window.innerHeight * 0.5,
+  color: new THREE.Color(0x777777),
+});
+waterReflector.rotation.x = -Math.PI / 2;
+waterReflector.position.y = -0.1;
 ```
 
 ## 边框盒子的布尔运算
@@ -280,28 +280,26 @@ waterReflector.position.y = -0.1
 本课的边框盒子使用 `three-bvh-csg` 库通过布尔运算创建。CSG（Constructive Solid Geometry，构造实体几何）允许我们对几何体执行"并集"、"差集"、"交集"等布尔操作：
 
 ```js
-import { Brush, Evaluator, SUBTRACTION } from 'three-bvh-csg'
+import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
 
 // 安装：npm install three-bvh-csg@0.0.16
 
 // 创建两个"刷子"（参与布尔运算的几何体）
-const boardBrush = new Brush(new THREE.BoxGeometry(11, 2, 11))
-const holeBrush = new Brush(new THREE.BoxGeometry(9, 2.5, 9))
-holeBrush.position.y = 0.5  // 稍微抬高，使洞上下都有
+const boardBrush = new Brush(new THREE.BoxGeometry(11, 2, 11));
+const holeBrush = new Brush(new THREE.BoxGeometry(9, 2.5, 9));
+holeBrush.position.y = 0.5; // 稍微抬高，使洞上下都有
 
 // 创建评估器并执行差集运算
-const evaluator = new Evaluator()
-const boardGeometry = evaluator.evaluate(
-    boardBrush, holeBrush, SUBTRACTION
-).geometry
+const evaluator = new Evaluator();
+const boardGeometry = evaluator.evaluate(boardBrush, holeBrush, SUBTRACTION).geometry;
 
 // 将结果应用到网格上
 const boardMaterial = new THREE.MeshStandardMaterial({
-    color: '#1a1a2e',
-    metalness: 0.5,
-    roughness: 0.3
-})
-const board = new THREE.Mesh(boardGeometry, boardMaterial)
+  color: "#1a1a2e",
+  metalness: 0.5,
+  roughness: 0.3,
+});
+const board = new THREE.Mesh(boardGeometry, boardMaterial);
 ```
 
 `SUBTRACTION` 运算从 `boardBrush`（大盒子）中减去 `holeBrush`（小盒子），得到一个中间有洞的盒子形状。
@@ -315,16 +313,11 @@ const board = new THREE.Mesh(boardGeometry, boardMaterial)
 通过 GUI 实时调整地形参数是调试和创作的关键：
 
 ```js
-gui.add(material.uniforms.uElevation, 'value')
-    .min(0).max(5).step(0.01).name('高度')
-gui.add(material.uniforms.uFrequency, 'value')
-    .min(0.1).max(10).step(0.01).name('频率')
-gui.add(material.uniforms.uOctaves, 'value')
-    .min(1).max(8).step(1).name('八度数')
-gui.add(material.uniforms.uLacunarity, 'value')
-    .min(1).max(4).step(0.01).name('间隙度')
-gui.add(material.uniforms.uPersistence, 'value')
-    .min(0).max(1).step(0.01).name('持续度')
+gui.add(material.uniforms.uElevation, "value").min(0).max(5).step(0.01).name("高度");
+gui.add(material.uniforms.uFrequency, "value").min(0.1).max(10).step(0.01).name("频率");
+gui.add(material.uniforms.uOctaves, "value").min(1).max(8).step(1).name("八度数");
+gui.add(material.uniforms.uLacunarity, "value").min(1).max(4).step(0.01).name("间隙度");
+gui.add(material.uniforms.uPersistence, "value").min(0).max(1).step(0.01).name("持续度");
 ```
 
 ## 平面网格的细分
@@ -333,10 +326,10 @@ gui.add(material.uniforms.uPersistence, 'value')
 
 ```js
 // 低细分：地形粗糙，多边形明显
-const lowDetail = new THREE.PlaneGeometry(10, 10, 32, 32)
+const lowDetail = new THREE.PlaneGeometry(10, 10, 32, 32);
 
 // 高细分：地形平滑，细节丰富
-const highDetail = new THREE.PlaneGeometry(10, 10, 512, 512)
+const highDetail = new THREE.PlaneGeometry(10, 10, 512, 512);
 ```
 
 细分度需要与 FBM 的最高频率匹配。如果最高频率对应的波长小于两个顶点之间的间距，就会出现锯齿和走样。作为经验法则，平面网格的细分数应该至少是 `最高频率 x 平面尺寸` 的 2-4 倍。

@@ -3,8 +3,7 @@ title: 37 半调着色器
 description: 使用点阵图案创建漫画风格的半调渲染效果
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 半调效果简介
 
@@ -13,6 +12,7 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 在数字艺术领域，半调效果如今主要被用来营造**复古氛围**。你可以在许多现代作品中看到这种风格的运用，其中最著名的例子莫过于动画电影《蜘蛛侠：平行宇宙》（Spider-Verse），片中大量使用了半调点阵来渲染角色和场景，完美地融合了老派漫画风格与现代 3D 技术。艺术家 Yann Sculpt 也曾用同样效果创作了令人惊艳的格温·斯泰西（Gwen Stacy）角色，展示了半调在当代插画中的无限可能。
 
 在本课中，我们将使用自定义着色器在 WebGL 中重新实现这种经典的半调效果，并将其应用于 3D 几何体上。
+
 <LessonPreview lesson="37-halftone-shading-shaders" />
 
 ## 核心原理
@@ -100,14 +100,14 @@ void main() {
 
 ```js
 const material = new THREE.ShaderMaterial({
-    vertexShader: halftoneVertexShader,
-    fragmentShader: halftoneFragmentShader,
-    uniforms: {
-        uColor: { value: new THREE.Color('#ff4444') },
-        uLightPosition: { value: new THREE.Vector3(2, 2, 2) },
-        uDotFrequency: { value: 30.0 }
-    }
-})
+  vertexShader: halftoneVertexShader,
+  fragmentShader: halftoneFragmentShader,
+  uniforms: {
+    uColor: { value: new THREE.Color("#ff4444") },
+    uLightPosition: { value: new THREE.Vector3(2, 2, 2) },
+    uDotFrequency: { value: 30.0 },
+  },
+});
 ```
 
 各 uniform 参数的含义：

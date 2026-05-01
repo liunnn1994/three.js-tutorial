@@ -3,8 +3,7 @@ title: 32 咖啡烟雾着色器
 description: 使用粒子系统和噪声纹理创建逼真的咖啡烟雾效果
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 概述
 
@@ -14,15 +13,14 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 在片元着色器中直接调用 Perlin 噪声函数对性能非常不利——每个片元都要执行大量噪声计算代码。大多数游戏引擎（以及 Web 端）都使用预计算的噪声纹理来替代，性能远优于函数计算。
 :::
 
-
 <LessonPreview lesson="32-coffee-smoke-shader" />
 
 ## 噪声纹理 vs 噪声函数
 
-| 方式 | 性能 | 灵活性 | 适用场景 |
-|------|------|--------|---------|
-| 噪声函数（GLSL 代码） | 差（每个片元大量计算） | 高（可以动态调整参数） | 顶点着色器中少量使用 |
-| 噪声纹理（预计算图片） | 好（GPU 硬件加速纹理采样） | 中（需要预生成纹理） | 片元着色器中大量使用 |
+| 方式                   | 性能                       | 灵活性                 | 适用场景             |
+| ---------------------- | -------------------------- | ---------------------- | -------------------- |
+| 噪声函数（GLSL 代码）  | 差（每个片元大量计算）     | 高（可以动态调整参数） | 顶点着色器中少量使用 |
+| 噪声纹理（预计算图片） | 好（GPU 硬件加速纹理采样） | 中（需要预生成纹理）   | 片元着色器中大量使用 |
 
 课程使用了一张 128x128 的 Perlin 噪声纹理。你可以通过以下方式获取或创建噪声纹理：
 
@@ -39,26 +37,27 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 ## 粒子系统设置
 
 ```js
-const count = 500
-const positions = new Float32Array(count * 3)
-const scales = new Float32Array(count)
-const randoms = new Float32Array(count)
+const count = 500;
+const positions = new Float32Array(count * 3);
+const scales = new Float32Array(count);
+const randoms = new Float32Array(count);
 
 for (let i = 0; i < count; i++) {
-    positions[i * 3]     = (Math.random() - 0.5) * 0.5   // X：在杯口范围内随机分布
-    positions[i * 3 + 1] = Math.random() * 2              // Y：从 0 到 2 的高度
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 0.5   // Z：在杯口范围内随机分布
+  positions[i * 3] = (Math.random() - 0.5) * 0.5; // X：在杯口范围内随机分布
+  positions[i * 3 + 1] = Math.random() * 2; // Y：从 0 到 2 的高度
+  positions[i * 3 + 2] = (Math.random() - 0.5) * 0.5; // Z：在杯口范围内随机分布
 
-    scales[i] = Math.random()     // 粒子大小随机
-    randoms[i] = Math.random()    // 生命周期随机偏移
+  scales[i] = Math.random(); // 粒子大小随机
+  randoms[i] = Math.random(); // 生命周期随机偏移
 }
 
-geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-geometry.setAttribute('aScale', new THREE.BufferAttribute(scales, 1))
-geometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1))
+geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+geometry.setAttribute("aScale", new THREE.BufferAttribute(scales, 1));
+geometry.setAttribute("aRandom", new THREE.BufferAttribute(randoms, 1));
 ```
 
 每个粒子有两个自定义 attribute：
+
 - `aScale` — 控制粒子的大小（每个粒子大小不同）
 - `aRandom` — 控制生命周期的随机偏移（避免所有粒子同步运动）
 
@@ -150,11 +149,11 @@ void main() {
 
 **与银河片元着色器的对比：**
 
-| 方面 | 银河（第 30 课） | 咖啡烟雾（本课） |
-|------|----------------|----------------|
-| 边缘衰减指数 | `pow(strength, 1.5)` | `pow(strength, 2.0)` |
-| 最终透明度 | `strength`（较亮） | `strength * vAlpha * 0.5`（更柔和） |
-| 颜色 | `vColor`（多色） | `vec3(0.95)`（单色灰白） |
+| 方面         | 银河（第 30 课）     | 咖啡烟雾（本课）                    |
+| ------------ | -------------------- | ----------------------------------- |
+| 边缘衰减指数 | `pow(strength, 1.5)` | `pow(strength, 2.0)`                |
+| 最终透明度   | `strength`（较亮）   | `strength * vAlpha * 0.5`（更柔和） |
+| 颜色         | `vColor`（多色）     | `vec3(0.95)`（单色灰白）            |
 
 `pow(strength, 2.0)` 产生更柔和的衰减曲线（烟雾边缘比银河更模糊），最终乘以 `0.5` 让整体更加通透。
 
@@ -162,16 +161,16 @@ void main() {
 
 ```js
 const material = new THREE.ShaderMaterial({
-    vertexShader,
-    fragmentShader,
-    uniforms: {
-        uTime: { value: 0 },
-        uPixelRatio: { value: renderer.getPixelRatio() }
-    },
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending
-})
+  vertexShader,
+  fragmentShader,
+  uniforms: {
+    uTime: { value: 0 },
+    uPixelRatio: { value: renderer.getPixelRatio() },
+  },
+  transparent: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+});
 ```
 
 **关键属性说明：**
@@ -203,9 +202,9 @@ void main() {
 
 ```js
 // JavaScript 中加载噪声纹理
-const textureLoader = new THREE.TextureLoader()
-const noiseTexture = textureLoader.load('/textures/perlinNoise.png')
-material.uniforms.uNoiseTexture = { value: noiseTexture }
+const textureLoader = new THREE.TextureLoader();
+const noiseTexture = textureLoader.load("/textures/perlinNoise.png");
+material.uniforms.uNoiseTexture = { value: noiseTexture };
 ```
 
 这种方法在片元着色器中只需要一次纹理采样（一条指令），远比执行完整的 Perlin 噪声函数高效。

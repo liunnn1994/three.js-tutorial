@@ -3,14 +3,14 @@ title: 28 着色器图案
 description: 使用 GLSL 数学函数创建程序化视觉效果图案 — 波浪、棋盘格、噪声等
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 什么是着色器图案
 
 着色器图案是纯粹用数学函数生成的视觉效果，不需要任何纹理图片。这种技术叫做**程序化生成**（Procedural Generation）。
 
 优势：文件大小几乎为零（只有数学公式）、可以无限缩放、可以动态变化。
+
 <LessonPreview lesson="28-shader-patterns" />
 
 ## UV 坐标 — 图案的基础
@@ -60,6 +60,7 @@ smoothstep(edge0, edge1, x)    // 平滑过渡（软边缘）
 ```
 
 `step` 和 `smoothstep` 是创建图案的核心函数：
+
 - `step(0.5, vUv.x)` — 屏幕左半黑色，右半白色
 - `smoothstep(0.4, 0.6, vUv.x)` — 中间有柔和过渡的分界
 

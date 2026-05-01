@@ -3,13 +3,11 @@ title: 40 粒子变形着色器
 description: 实现粒子在不同形状之间的平滑变形
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 粒子变形简介
 
 在本课中，我们将创建一个粒子变形动画 — 粒子群从一个形状（如球体）平滑过渡到另一个形状（如苏珊娜猴头、立方体或文字），最终呈现完整的文字图案。这种效果在网页设计、数据可视化和创意编码中非常流行，能够产生极具视觉冲击力的过渡动画。
-
 
 <LessonPreview lesson="40-particles-morphing-shader" />
 
@@ -24,6 +22,7 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 3. **逐帧重复** — 上述两个步骤需要在**每一帧**都执行一次，且以 60fps 运行时，意味着每秒要进行 60 次完整的计算和数据传输。
 
 相比之下，使用着色器的方式：
+
 - 只需将初始位置和目标位置**一次性**发送给 GPU
 - 通过一个 `progress` uniform 控制插值进度
 - 所有粒子的插值计算在 GPU 上**并行执行**，几乎没有性能开销
@@ -60,11 +59,11 @@ progress = 1  -->  完全显示目标形状
 我们需要为每个粒子准备多个形状对应的目标位置。由于所有粒子数量相同，每个形状都需要精确相同数量的位置坐标：
 
 ```js
-const count = 10000
-const positions = new Float32Array(count * 3)     // 初始/当前形状的顶点位置
-const targetPositions = new Float32Array(count * 3)  // 目标形状的顶点位置
-const scales = new Float32Array(count)             // 每个粒子的随机缩放
-const randoms = new Float32Array(count)            // 每个粒子的随机参数
+const count = 10000;
+const positions = new Float32Array(count * 3); // 初始/当前形状的顶点位置
+const targetPositions = new Float32Array(count * 3); // 目标形状的顶点位置
+const scales = new Float32Array(count); // 每个粒子的随机缩放
+const randoms = new Float32Array(count); // 每个粒子的随机参数
 ```
 
 对于内置的几何形状（如球体、环面），可以在 JavaScript 中程序化生成顶点位置：
@@ -72,13 +71,13 @@ const randoms = new Float32Array(count)            // 每个粒子的随机参�
 ```js
 // 生成球体上的随机点
 for (let i = 0; i < count; i++) {
-    const theta = Math.random() * Math.PI * 2  // 经度 [0, 2PI]
-    const phi = Math.acos(2 * Math.random() - 1)  // 纬度 [0, PI]
-    const r = Math.random() * 1.5  // 随机半径
+  const theta = Math.random() * Math.PI * 2; // 经度 [0, 2PI]
+  const phi = Math.acos(2 * Math.random() - 1); // 纬度 [0, PI]
+  const r = Math.random() * 1.5; // 随机半径
 
-    positions[i * 3]     = r * Math.sin(phi) * Math.cos(theta)
-    positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta)
-    positions[i * 3 + 2] = r * Math.cos(phi)
+  positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+  positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+  positions[i * 3 + 2] = r * Math.cos(phi);
 }
 ```
 
@@ -142,35 +141,35 @@ noise *= (1.0 - abs(uMorphProgress * 2.0 - 1.0));
 使用 GSAP 来动画化 `uMorphProgress`，并在动画完成后更新属性数据：
 
 ```js
-const shapes = [targetA, targetB, targetC]
-let currentShapeIndex = 0
-let nextShapeIndex = 1
+const shapes = [targetA, targetB, targetC];
+let currentShapeIndex = 0;
+let nextShapeIndex = 1;
 
 function morphTo(targetIndex) {
-    nextShapeIndex = targetIndex
+  nextShapeIndex = targetIndex;
 
-    // GSAP 动画 progress 从 0 到 1
-    gsap.to(material.uniforms.uMorphProgress, {
-        value: 1,
-        duration: 2,
-        ease: 'power2.inOut',
-        onComplete: () => {
-            // 动画完成后：将目标形状变为新的初始形状
-            currentShapeIndex = nextShapeIndex
+  // GSAP 动画 progress 从 0 到 1
+  gsap.to(material.uniforms.uMorphProgress, {
+    value: 1,
+    duration: 2,
+    ease: "power2.inOut",
+    onComplete: () => {
+      // 动画完成后：将目标形状变为新的初始形状
+      currentShapeIndex = nextShapeIndex;
 
-            // 更新 position 属性为当前目标形状
-            const geometry = particles.geometry
-            geometry.attributes.position.array.set(shapes[currentShapeIndex])
-            geometry.attributes.position.needsUpdate = true
+      // 更新 position 属性为当前目标形状
+      const geometry = particles.geometry;
+      geometry.attributes.position.array.set(shapes[currentShapeIndex]);
+      geometry.attributes.position.needsUpdate = true;
 
-            // 重置 progress
-            material.uniforms.uMorphProgress.value = 0
+      // 重置 progress
+      material.uniforms.uMorphProgress.value = 0;
 
-            // 更新 positionTarget 为下一个目标形状
-            geometry.attributes.positionTarget.array.set(shapes[nextShapeIndex])
-            geometry.attributes.positionTarget.needsUpdate = true
-        }
-    })
+      // 更新 positionTarget 为下一个目标形状
+      geometry.attributes.positionTarget.array.set(shapes[nextShapeIndex]);
+      geometry.attributes.positionTarget.needsUpdate = true;
+    },
+  });
 }
 ```
 
@@ -186,14 +185,14 @@ function morphTo(targetIndex) {
 
 ```js
 // UI 按钮
-const buttons = document.querySelectorAll('.morph-button')
+const buttons = document.querySelectorAll(".morph-button");
 buttons.forEach((button, index) => {
-    button.addEventListener('click', () => {
-        if (index !== currentShapeIndex) {
-            morphTo(index)
-        }
-    })
-})
+  button.addEventListener("click", () => {
+    if (index !== currentShapeIndex) {
+      morphTo(index);
+    }
+  });
+});
 ```
 
 也可以添加一个自动播放模式，让粒子在不同形状之间不断循环变形，形成一个引人注目的展示动画。
@@ -275,19 +274,19 @@ void main() {
 
 ```js
 function sampleGeometry(geometry, targetCount) {
-    const sourcePositions = geometry.attributes.position.array
-    const sourceCount = sourcePositions.length / 3
-    const targetPositions = new Float32Array(targetCount * 3)
+  const sourcePositions = geometry.attributes.position.array;
+  const sourceCount = sourcePositions.length / 3;
+  const targetPositions = new Float32Array(targetCount * 3);
 
-    for (let i = 0; i < targetCount; i++) {
-        // 从源几何体中随机选取一个顶点
-        const sourceIndex = Math.floor(Math.random() * sourceCount) * 3
-        targetPositions[i * 3]     = sourcePositions[sourceIndex]
-        targetPositions[i * 3 + 1] = sourcePositions[sourceIndex + 1]
-        targetPositions[i * 3 + 2] = sourcePositions[sourceIndex + 2]
-    }
+  for (let i = 0; i < targetCount; i++) {
+    // 从源几何体中随机选取一个顶点
+    const sourceIndex = Math.floor(Math.random() * sourceCount) * 3;
+    targetPositions[i * 3] = sourcePositions[sourceIndex];
+    targetPositions[i * 3 + 1] = sourcePositions[sourceIndex + 1];
+    targetPositions[i * 3 + 2] = sourcePositions[sourceIndex + 2];
+  }
 
-    return targetPositions
+  return targetPositions;
 }
 ```
 
@@ -299,35 +298,38 @@ function sampleGeometry(geometry, targetCount) {
 
 ```js
 function normalizePositions(positions) {
-    // 找到边界框
-    let minX = Infinity, maxX = -Infinity
-    let minY = Infinity, maxY = -Infinity
-    let minZ = Infinity, maxZ = -Infinity
+  // 找到边界框
+  let minX = Infinity,
+    maxX = -Infinity;
+  let minY = Infinity,
+    maxY = -Infinity;
+  let minZ = Infinity,
+    maxZ = -Infinity;
 
-    for (let i = 0; i < positions.length; i += 3) {
-        minX = Math.min(minX, positions[i])
-        maxX = Math.max(maxX, positions[i])
-        minY = Math.min(minY, positions[i + 1])
-        maxY = Math.max(maxY, positions[i + 1])
-        minZ = Math.min(minZ, positions[i + 2])
-        maxZ = Math.max(maxZ, positions[i + 2])
-    }
+  for (let i = 0; i < positions.length; i += 3) {
+    minX = Math.min(minX, positions[i]);
+    maxX = Math.max(maxX, positions[i]);
+    minY = Math.min(minY, positions[i + 1]);
+    maxY = Math.max(maxY, positions[i + 1]);
+    minZ = Math.min(minZ, positions[i + 2]);
+    maxZ = Math.max(maxZ, positions[i + 2]);
+  }
 
-    // 计算中心和缩放因子
-    const centerX = (minX + maxX) / 2
-    const centerY = (minY + maxY) / 2
-    const centerZ = (minZ + maxZ) / 2
-    const maxDim = Math.max(maxX - minX, maxY - minY, maxZ - minZ)
-    const scale = 2.0 / maxDim  // 归一化到 [-1, 1] 范围
+  // 计算中心和缩放因子
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  const centerZ = (minZ + maxZ) / 2;
+  const maxDim = Math.max(maxX - minX, maxY - minY, maxZ - minZ);
+  const scale = 2.0 / maxDim; // 归一化到 [-1, 1] 范围
 
-    // 应用变换
-    for (let i = 0; i < positions.length; i += 3) {
-        positions[i]     = (positions[i] - centerX) * scale
-        positions[i + 1] = (positions[i + 1] - centerY) * scale
-        positions[i + 2] = (positions[i + 2] - centerZ) * scale
-    }
+  // 应用变换
+  for (let i = 0; i < positions.length; i += 3) {
+    positions[i] = (positions[i] - centerX) * scale;
+    positions[i + 1] = (positions[i + 1] - centerY) * scale;
+    positions[i + 2] = (positions[i + 2] - centerZ) * scale;
+  }
 
-    return positions
+  return positions;
 }
 ```
 

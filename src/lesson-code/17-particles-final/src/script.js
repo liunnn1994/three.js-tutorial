@@ -1,184 +1,196 @@
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import GUI from 'lil-gui'
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import GUI from "lil-gui";
 
 /**
  * Base
  */
 // Debug
-const gui = new GUI()
+const gui = new GUI();
 const params = {
-    size: 0.1,
-    sizeAttenuation: true,
-    count: 50000,
-    color: '#ff88cc',
-    blending: 'AdditiveBlending',
-    depthWrite: false,
-    animSpeed: 1,
-    regenerate: () =>
-    {
-        const newPositions = new Float32Array(params.count * 3)
-        const newColors = new Float32Array(params.count * 3)
-        for(let i = 0; i < params.count * 3; i++)
-        {
-            newPositions[i] = (Math.random() - 0.5) * 10
-            newColors[i] = Math.random()
-        }
-        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(newPositions, 3))
-        particlesGeometry.setAttribute('color', new THREE.BufferAttribute(newColors, 3))
-        particlesGeometry.attributes.position.needsUpdate = true
-        particlesGeometry.attributes.color.needsUpdate = true
+  size: 0.1,
+  sizeAttenuation: true,
+  count: 50000,
+  color: "#ff88cc",
+  blending: "AdditiveBlending",
+  depthWrite: false,
+  animSpeed: 1,
+  regenerate: () => {
+    const newPositions = new Float32Array(params.count * 3);
+    const newColors = new Float32Array(params.count * 3);
+    for (let i = 0; i < params.count * 3; i++) {
+      newPositions[i] = (Math.random() - 0.5) * 10;
+      newColors[i] = Math.random();
     }
-}
+    particlesGeometry.setAttribute("position", new THREE.BufferAttribute(newPositions, 3));
+    particlesGeometry.setAttribute("color", new THREE.BufferAttribute(newColors, 3));
+    particlesGeometry.attributes.position.needsUpdate = true;
+    particlesGeometry.attributes.color.needsUpdate = true;
+  },
+};
 
-gui.add(params, 'size').min(0.01).max(0.5).step(0.01).name('Particle Size').onChange(() =>
-{
-    particlesMaterial.size = params.size
-})
-gui.add(params, 'sizeAttenuation').name('Size Attenuation').onChange(() =>
-{
-    particlesMaterial.sizeAttenuation = params.sizeAttenuation
-})
-gui.add(params, 'count').min(1000).max(200000).step(1000).name('Particle Count')
-gui.add(params, 'regenerate').name('Regenerate Particles')
-gui.addColor(params, 'color').name('Color').onChange(() =>
-{
-    particlesMaterial.color.set(params.color)
-})
-gui.add(params, 'blending', { AdditiveBlending: THREE.AdditiveBlending, NormalBlending: THREE.NormalBlending }).name('Blending').onChange(() =>
-{
-    particlesMaterial.blending = params.blending
-    particlesMaterial.needsUpdate = true
-})
-gui.add(params, 'depthWrite').name('Depth Write').onChange(() =>
-{
-    particlesMaterial.depthWrite = params.depthWrite
-})
-gui.add(params, 'animSpeed').min(0).max(5).step(0.1).name('Animation Speed')
+gui
+  .add(params, "size")
+  .min(0.01)
+  .max(0.5)
+  .step(0.01)
+  .name("Particle Size")
+  .onChange(() => {
+    particlesMaterial.size = params.size;
+  });
+gui
+  .add(params, "sizeAttenuation")
+  .name("Size Attenuation")
+  .onChange(() => {
+    particlesMaterial.sizeAttenuation = params.sizeAttenuation;
+  });
+gui.add(params, "count").min(1000).max(200000).step(1000).name("Particle Count");
+gui.add(params, "regenerate").name("Regenerate Particles");
+gui
+  .addColor(params, "color")
+  .name("Color")
+  .onChange(() => {
+    particlesMaterial.color.set(params.color);
+  });
+gui
+  .add(params, "blending", {
+    AdditiveBlending: THREE.AdditiveBlending,
+    NormalBlending: THREE.NormalBlending,
+  })
+  .name("Blending")
+  .onChange(() => {
+    particlesMaterial.blending = params.blending;
+    particlesMaterial.needsUpdate = true;
+  });
+gui
+  .add(params, "depthWrite")
+  .name("Depth Write")
+  .onChange(() => {
+    particlesMaterial.depthWrite = params.depthWrite;
+  });
+gui.add(params, "animSpeed").min(0).max(5).step(0.1).name("Animation Speed");
 
 // Canvas
-const canvas = document.querySelector('canvas.webgl')
+const canvas = document.querySelector("canvas.webgl");
 
 // Scene
-const scene = new THREE.Scene()
+const scene = new THREE.Scene();
 
 /**
  * Textures
  */
-const textureLoader = new THREE.TextureLoader()
-const particleTexture = textureLoader.load('/assets/17-particles-final/textures/particles/1.png')
+const textureLoader = new THREE.TextureLoader();
+const particleTexture = textureLoader.load("/assets/17-particles-final/textures/particles/1.png");
 
 /**
  * Particles
  */
 // Geometry
-const particlesGeometry = new THREE.BufferGeometry()
-const count = 50000
+const particlesGeometry = new THREE.BufferGeometry();
+const count = 50000;
 
-const positions = new Float32Array(count * 3)
-const colors = new Float32Array(count * 3)
+const positions = new Float32Array(count * 3);
+const colors = new Float32Array(count * 3);
 
-for(let i = 0; i < count * 3; i++)
-{
-    positions[i] = (Math.random() - 0.5) * 10
-    colors[i] = Math.random()
+for (let i = 0; i < count * 3; i++) {
+  positions[i] = (Math.random() - 0.5) * 10;
+  colors[i] = Math.random();
 }
 
-particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+particlesGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+particlesGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
 // Material
-const particlesMaterial = new THREE.PointsMaterial()
+const particlesMaterial = new THREE.PointsMaterial();
 
-particlesMaterial.size = 0.1
-particlesMaterial.sizeAttenuation = true
+particlesMaterial.size = 0.1;
+particlesMaterial.sizeAttenuation = true;
 
-particlesMaterial.color = new THREE.Color('#ff88cc')
+particlesMaterial.color = new THREE.Color("#ff88cc");
 
-particlesMaterial.transparent = true
-particlesMaterial.alphaMap = particleTexture
+particlesMaterial.transparent = true;
+particlesMaterial.alphaMap = particleTexture;
 // particlesMaterial.alphaTest = 0.01
 // particlesMaterial.depthTest = false
-particlesMaterial.depthWrite = false
-particlesMaterial.blending = THREE.AdditiveBlending
+particlesMaterial.depthWrite = false;
+particlesMaterial.blending = THREE.AdditiveBlending;
 
-particlesMaterial.vertexColors = true
+particlesMaterial.vertexColors = true;
 
 // Points
-const particles = new THREE.Points(particlesGeometry, particlesMaterial)
-scene.add(particles)
+const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+scene.add(particles);
 
 /**
  * Sizes
  */
 const sizes = {
-    width: window.innerWidth,
-    height: window.innerHeight
-}
+  width: window.innerWidth,
+  height: window.innerHeight,
+};
 
-window.addEventListener('resize', () =>
-{
-    // Update sizes
-    sizes.width = window.innerWidth
-    sizes.height = window.innerHeight
+window.addEventListener("resize", () => {
+  // Update sizes
+  sizes.width = window.innerWidth;
+  sizes.height = window.innerHeight;
 
-    // Update camera
-    camera.aspect = sizes.width / sizes.height
-    camera.updateProjectionMatrix()
+  // Update camera
+  camera.aspect = sizes.width / sizes.height;
+  camera.updateProjectionMatrix();
 
-    // Update renderer
-    renderer.setSize(sizes.width, sizes.height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-})
+  // Update renderer
+  renderer.setSize(sizes.width, sizes.height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+});
 
 /**
  * Camera
  */
 // Base camera
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-camera.position.z = 3
-scene.add(camera)
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
+camera.position.z = 3;
+scene.add(camera);
 
 // Controls
-const controls = new OrbitControls(camera, canvas)
-controls.enableDamping = true
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
 
 /**
  * Renderer
  */
 const renderer = new THREE.WebGLRenderer({
-    canvas: canvas
-})
-renderer.setSize(sizes.width, sizes.height)
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  canvas: canvas,
+});
+renderer.setSize(sizes.width, sizes.height);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
  * Animate
  */
-const clock = new THREE.Clock()
+const clock = new THREE.Clock();
 
-const tick = () =>
-{
-    const elapsedTime = clock.getElapsedTime()
+const tick = () => {
+  const elapsedTime = clock.getElapsedTime();
 
-    // Update particles
-    for(let i = 0; i < count; i++)
-    {
-        let i3 = i * 3
+  // Update particles
+  for (let i = 0; i < count; i++) {
+    let i3 = i * 3;
 
-        const x = particlesGeometry.attributes.position.array[i3]
-        particlesGeometry.attributes.position.array[i3 + 1] = Math.sin(elapsedTime * params.animSpeed + x)
-    }
-    particlesGeometry.attributes.position.needsUpdate = true
+    const x = particlesGeometry.attributes.position.array[i3];
+    particlesGeometry.attributes.position.array[i3 + 1] = Math.sin(
+      elapsedTime * params.animSpeed + x,
+    );
+  }
+  particlesGeometry.attributes.position.needsUpdate = true;
 
-    // Update controls
-    controls.update()
+  // Update controls
+  controls.update();
 
-    // Render
-    renderer.render(scene, camera)
+  // Render
+  renderer.render(scene, camera);
 
-    // Call tick again on the next frame
-    window.requestAnimationFrame(tick)
-}
+  // Call tick again on the next frame
+  window.requestAnimationFrame(tick);
+};
 
-tick()
+tick();

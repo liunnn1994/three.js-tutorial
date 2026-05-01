@@ -3,8 +3,7 @@ title: 29 汹涌大海
 description: 使用自定义着色器创建动态海浪效果，包含多层正弦波叠加和 Simplex 噪声细节
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 概述
 
@@ -15,6 +14,7 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 :::tip
 512x512 的细分意味着平面有超过 26 万个顶点。即使如此，因为所有运算都在 GPU 上进行，性能依然很好。如果性能不足，可以适当降低到 256x256。
 :::
+
 <LessonPreview lesson="29-raging-sea" />
 
 ## 项目结构
@@ -36,42 +36,42 @@ src/
 首先创建平面和 ShaderMaterial：
 
 ```js
-const waterGeometry = new THREE.PlaneGeometry(2, 2, 512, 512)
+const waterGeometry = new THREE.PlaneGeometry(2, 2, 512, 512);
 
 const waterMaterial = new THREE.ShaderMaterial({
-    vertexShader: waterVertexShader,
-    fragmentShader: waterFragmentShader,
-    uniforms: {
-        uTime: { value: 0 },
-        uBigWavesElevation: { value: 0.2 },
-        uBigWavesFrequency: { value: new THREE.Vector2(4, 1.5) },
-        uBigWavesSpeed: { value: 0.75 },
-        uSmallWavesElevation: { value: 0.15 },
-        uSmallWavesFrequency: { value: 3 },
-        uSmallWavesSpeed: { value: 0.2 },
-        uSmallIterations: { value: 4 },
-        uDepthColor: { value: new THREE.Color('#186691') },
-        uSurfaceColor: { value: new THREE.Color('#9bd8ff') },
-        uColorOffset: { value: 0.08 },
-        uColorMultiplier: { value: 5 }
-    }
-})
+  vertexShader: waterVertexShader,
+  fragmentShader: waterFragmentShader,
+  uniforms: {
+    uTime: { value: 0 },
+    uBigWavesElevation: { value: 0.2 },
+    uBigWavesFrequency: { value: new THREE.Vector2(4, 1.5) },
+    uBigWavesSpeed: { value: 0.75 },
+    uSmallWavesElevation: { value: 0.15 },
+    uSmallWavesFrequency: { value: 3 },
+    uSmallWavesSpeed: { value: 0.2 },
+    uSmallIterations: { value: 4 },
+    uDepthColor: { value: new THREE.Color("#186691") },
+    uSurfaceColor: { value: new THREE.Color("#9bd8ff") },
+    uColorOffset: { value: 0.08 },
+    uColorMultiplier: { value: 5 },
+  },
+});
 
-const water = new THREE.Mesh(waterGeometry, waterMaterial)
-water.rotation.x = -Math.PI * 0.5
-scene.add(water)
+const water = new THREE.Mesh(waterGeometry, waterMaterial);
+water.rotation.x = -Math.PI * 0.5;
+scene.add(water);
 ```
 
 **关键参数说明：**
 
-| 参数 | 类型 | 作用 |
-|------|------|------|
-| `uBigWavesElevation` | `float` | 大波浪的高度（振幅） |
-| `uBigWavesFrequency` | `vec2` | 大波浪在 x 轴和 z 轴方向的频率 |
-| `uBigWavesSpeed` | `float` | 大波浪的移动速度 |
-| `uSmallWavesElevation` | `float` | 小波浪（噪声细节）的振幅 |
-| `uSmallWavesFrequency` | `float` | 小波浪的频率 |
-| `uSmallIterations` | `int` | 噪声叠加的层数（FBM 迭代次数） |
+| 参数                   | 类型    | 作用                           |
+| ---------------------- | ------- | ------------------------------ |
+| `uBigWavesElevation`   | `float` | 大波浪的高度（振幅）           |
+| `uBigWavesFrequency`   | `vec2`  | 大波浪在 x 轴和 z 轴方向的频率 |
+| `uBigWavesSpeed`       | `float` | 大波浪的移动速度               |
+| `uSmallWavesElevation` | `float` | 小波浪（噪声细节）的振幅       |
+| `uSmallWavesFrequency` | `float` | 小波浪的频率                   |
+| `uSmallIterations`     | `int`   | 噪声叠加的层数（FBM 迭代次数） |
 
 :::caution
 平面默认朝向摄像机（XY 平面），需要绕 X 轴旋转 `-Math.PI / 2` 使其水平放置。注意要在应用模型矩阵之后、修改顶点位置之前考虑这一旋转。我们习惯先应用 `modelMatrix`，再在模型空间中修改顶点。
@@ -155,13 +155,13 @@ void main() {
 
 **分形布朗运动（FBM）解析：**
 
-| 要素 | 说明 |
-|------|------|
-| `for (float i = 1.0; i <= 4.0; i++)` | 4 层噪声叠加，每层频率递增 |
-| `uSmallWavesFrequency * i` | 每层的频率更高（更小的波浪细节） |
-| `uSmallWavesElevation / i` | 每层的振幅递减（大细节影响大，小细节影响小） |
-| `abs(snoise(...))` | 取绝对值，让噪声产生尖锐的波峰而不是平滑起伏 |
-| `-=` | 从总高度中**减去**，产生向下凹陷的细节 |
+| 要素                                 | 说明                                         |
+| ------------------------------------ | -------------------------------------------- |
+| `for (float i = 1.0; i <= 4.0; i++)` | 4 层噪声叠加，每层频率递增                   |
+| `uSmallWavesFrequency * i`           | 每层的频率更高（更小的波浪细节）             |
+| `uSmallWavesElevation / i`           | 每层的振幅递减（大细节影响大，小细节影响小） |
+| `abs(snoise(...))`                   | 取绝对值，让噪声产生尖锐的波峰而不是平滑起伏 |
+| `-=`                                 | 从总高度中**减去**，产生向下凹陷的细节       |
 
 :::tip
 FBM 是计算机图形学中最常用的技术之一。它的核心思想是：将不同频率、不同振幅的噪声叠加在一起。低频的大起伏 + 高频的小细节 = 看起来自然的表面。你可以尝试修改迭代次数（`uSmallIterations`）来看效果变化。
@@ -204,27 +204,27 @@ void main() {
 在 `animate` 函数中更新 `uTime`：
 
 ```js
-const clock = new THREE.Clock()
+const clock = new THREE.Clock();
 
 const animate = () => {
-    const elapsedTime = clock.getElapsedTime()
-    waterMaterial.uniforms.uTime.value = elapsedTime
-    controls.update()
-    renderer.render(scene, camera)
-    requestAnimationFrame(animate)
-}
-animate()
+  const elapsedTime = clock.getElapsedTime();
+  waterMaterial.uniforms.uTime.value = elapsedTime;
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+};
+animate();
 ```
 
 ## 关键技术总结
 
-| 技术 | 实现方式 | 效果 |
-|------|----------|------|
-| 大波浪 | 双方向 `sin` 波相乘 | 主要的海面起伏 |
-| 小波浪 | Simplex 噪声 FBM 叠加 | 波浪表面的精细细节 |
-| `abs()` 取绝对值 | 让噪声只产生向下的凹陷 | 尖锐的波峰效果 |
-| 颜色混合 | `mix()` + `clamp()` | 根据高度混合深浅颜色 |
-| 深度偏移 | `uColorOffset` | 调整颜色渐变的基准线 |
+| 技术             | 实现方式               | 效果                 |
+| ---------------- | ---------------------- | -------------------- |
+| 大波浪           | 双方向 `sin` 波相乘    | 主要的海面起伏       |
+| 小波浪           | Simplex 噪声 FBM 叠加  | 波浪表面的精细细节   |
+| `abs()` 取绝对值 | 让噪声只产生向下的凹陷 | 尖锐的波峰效果       |
+| 颜色混合         | `mix()` + `clamp()`    | 根据高度混合深浅颜色 |
+| 深度偏移         | `uColorOffset`         | 调整颜色渐变的基准线 |
 
 :::tip
 调试着色器时的好习惯：不要试图一次性写完整个着色器。先写一个基本的顶点着色器确保平面正常显示，然后逐步添加大波浪、小波浪，最后处理颜色。建议先在 JavaScript 内联写着色器代码，确认效果后再移到单独的 `.glsl` 文件中。

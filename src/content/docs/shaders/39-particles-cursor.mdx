@@ -3,8 +3,7 @@ title: 39 粒子光标动画着色器
 description: 实现粒子跟随光标运动的交互效果
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 光标交互粒子简介
 
@@ -14,7 +13,7 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 
 1. **2D Canvas 作为纹理** — 我们将使用一张 2D Canvas 渲染的图像作为纹理，控制粒子的外观（大小和颜色）。这展示了如何将普通的 2D Canvas 绘制内容转换为 WebGL 纹理使用。
 2. **鼠标交互着色器** — 通过将鼠标位置传入着色器 uniform，在 GPU 上实时计算每个粒子与鼠标的距离和受力，实现高性能的交互效果。
-<LessonPreview lesson="39-particles-cursor-animation-shader" />
+   <LessonPreview lesson="39-particles-cursor-animation-shader" />
 
 ## 项目设置
 
@@ -69,19 +68,19 @@ void main() {
 
 ```js
 const material = new THREE.ShaderMaterial({
-    uniforms: {
-        uTime: { value: 0 },
-        uMouse: { value: new THREE.Vector2(0, 0) },
-        uSize: { value: 30 * renderer.getPixelRatio() },
-        uTexture: { value: null }   // 粒子控制纹理
-    }
-})
+  uniforms: {
+    uTime: { value: 0 },
+    uMouse: { value: new THREE.Vector2(0, 0) },
+    uSize: { value: 30 * renderer.getPixelRatio() },
+    uTexture: { value: null }, // 粒子控制纹理
+  },
+});
 
 // 将鼠标位置归一化到 [-1, 1] 范围
-window.addEventListener('mousemove', (event) => {
-    material.uniforms.uMouse.value.x = (event.clientX / sizes.width) * 2 - 1
-    material.uniforms.uMouse.value.y = -(event.clientY / sizes.height) * 2 + 1
-})
+window.addEventListener("mousemove", (event) => {
+  material.uniforms.uMouse.value.x = (event.clientX / sizes.width) * 2 - 1;
+  material.uniforms.uMouse.value.y = -(event.clientY / sizes.height) * 2 + 1;
+});
 ```
 
 坐标转换的关键点：

@@ -3,8 +3,7 @@ title: 48 HTML 与 WebGL 混合
 description: 将 HTML/CSS 元素与 Three.js 场景无缝结合——兴趣点跟踪、射线遮挡检测与滚动驱动动画
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## HTML + WebGL 混合
 
@@ -13,6 +12,7 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 :::tip
 虽然 HTML + WebGL 混合非常强大，但它确实会带来一定的性能开销。尽量控制 DOM 元素的数量，将繁重的视觉效果交给 WebGL/着色器处理。
 :::
+
 <LessonPreview lesson="48-mixing-html-and-webgl" />
 
 ## 透明背景画布
@@ -21,32 +21,30 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 
 ```js
 const renderer = new THREE.WebGLRenderer({
-    canvas,
-    alpha: true,     // 启用透明背景
-    antialias: true
-})
-renderer.setClearColor(0x000000, 0) // 完全透明
+  canvas,
+  alpha: true, // 启用透明背景
+  antialias: true,
+});
+renderer.setClearColor(0x000000, 0); // 完全透明
 ```
 
 ```css
-canvas.webgl
-{
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 1;
+canvas.webgl {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1;
 }
 
-.content
-{
-    position: relative;
-    z-index: 2;
-    pointer-events: none;       /* 让鼠标事件穿透到 canvas */
+.content {
+  position: relative;
+  z-index: 2;
+  pointer-events: none; /* 让鼠标事件穿透到 canvas */
 }
 
-.content a, .content button
-{
-    pointer-events: auto;       /* 可交互元素恢复鼠标事件 */
+.content a,
+.content button {
+  pointer-events: auto; /* 可交互元素恢复鼠标事件 */
 }
 ```
 
@@ -71,46 +69,44 @@ Three.js 的 `Vector3.project(camera)` 方法可以将世界坐标转换为**归
 ```js
 // 定义兴趣点数据
 const points = [
-    {
-        position: new THREE.Vector3(-0.3, 0.5, -0.6), // 3D 位置
-        element: document.querySelector('.point-0')      // 对应的 DOM 元素
-    },
-    {
-        position: new THREE.Vector3(0.5, 0.8, -1.6),
-        element: document.querySelector('.point-1')
-    },
-    {
-        position: new THREE.Vector3(1.6, -1.3, -0.7),
-        element: document.querySelector('.point-2')
-    }
-]
+  {
+    position: new THREE.Vector3(-0.3, 0.5, -0.6), // 3D 位置
+    element: document.querySelector(".point-0"), // 对应的 DOM 元素
+  },
+  {
+    position: new THREE.Vector3(0.5, 0.8, -1.6),
+    element: document.querySelector(".point-1"),
+  },
+  {
+    position: new THREE.Vector3(1.6, -1.3, -0.7),
+    element: document.querySelector(".point-2"),
+  },
+];
 
 // 在 tick 函数中每帧更新
-const tick = () =>
-{
-    controls.update() // 先更新控制器（移动摄像机）
+const tick = () => {
+  controls.update(); // 先更新控制器（移动摄像机）
 
-    for (const point of points)
-    {
-        // 1. 克隆位置（避免修改原始数据）
-        const screenPosition = point.position.clone()
+  for (const point of points) {
+    // 1. 克隆位置（避免修改原始数据）
+    const screenPosition = point.position.clone();
 
-        // 2. 投影到 NDC
-        screenPosition.project(camera)
+    // 2. 投影到 NDC
+    screenPosition.project(camera);
 
-        // 3. 转换为屏幕像素坐标
-        //    NDC [-1, 1] → 像素 [0, width] / [0, height]
-        //    除以 2 是因为 NDC 以 0 为中心，范围是 2（从 -1 到 1）
-        const translateX = screenPosition.x * sizes.width * 0.5
-        const translateY = -screenPosition.y * sizes.height * 0.5 // y 轴取反
+    // 3. 转换为屏幕像素坐标
+    //    NDC [-1, 1] → 像素 [0, width] / [0, height]
+    //    除以 2 是因为 NDC 以 0 为中心，范围是 2（从 -1 到 1）
+    const translateX = screenPosition.x * sizes.width * 0.5;
+    const translateY = -screenPosition.y * sizes.height * 0.5; // y 轴取反
 
-        // 4. 更新 DOM 元素位置
-        point.element.style.transform = `translate(${translateX}px, ${translateY}px)`
-    }
+    // 4. 更新 DOM 元素位置
+    point.element.style.transform = `translate(${translateX}px, ${translateY}px)`;
+  }
 
-    renderer.render(scene, camera)
-    requestAnimationFrame(tick)
-}
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+};
 ```
 
 :::caution
@@ -136,72 +132,62 @@ const tick = () =>
 ```
 
 ```js
-const raycaster = new THREE.Raycaster()
-let sceneReady = false
+const raycaster = new THREE.Raycaster();
+let sceneReady = false;
 
 // 在 onLoad 中延迟启用兴趣点检测
-loadingManager.onLoad = () =>
-{
-    window.setTimeout(() =>
-    {
-        sceneReady = true
-    }, 3000) // 等待覆盖层完全消失后再显示兴趣点
-}
+loadingManager.onLoad = () => {
+  window.setTimeout(() => {
+    sceneReady = true;
+  }, 3000); // 等待覆盖层完全消失后再显示兴趣点
+};
 
-const tick = () =>
-{
-    controls.update()
+const tick = () => {
+  controls.update();
 
-    if (sceneReady)
-    {
-        for (const point of points)
-        {
-            const screenPosition = point.position.clone()
-            screenPosition.project(camera)
+  if (sceneReady) {
+    for (const point of points) {
+      const screenPosition = point.position.clone();
+      screenPosition.project(camera);
 
-            // 将 NDC 坐标转换为屏幕坐标（同上）
-            const translateX = screenPosition.x * sizes.width * 0.5
-            const translateY = -screenPosition.y * sizes.height * 0.5
-            point.element.style.transform = `translate(${translateX}px, ${translateY}px)`
+      // 将 NDC 坐标转换为屏幕坐标（同上）
+      const translateX = screenPosition.x * sizes.width * 0.5;
+      const translateY = -screenPosition.y * sizes.height * 0.5;
+      point.element.style.transform = `translate(${translateX}px, ${translateY}px)`;
 
-            // 射线遮挡检测
-            raycaster.setFromCamera(screenPosition, camera)
-            const intersects = raycaster.intersectObjects(scene.children, true)
+      // 射线遮挡检测
+      raycaster.setFromCamera(screenPosition, camera);
+      const intersects = raycaster.intersectObjects(scene.children, true);
 
-            if (intersects.length === 0)
-            {
-                // 没有任何物体遮挡
-                point.element.classList.add('visible')
-            }
-            else
-            {
-                const intersectionDistance = intersects[0].distance
-                const pointDistance = point.position.distanceTo(camera.position)
+      if (intersects.length === 0) {
+        // 没有任何物体遮挡
+        point.element.classList.add("visible");
+      } else {
+        const intersectionDistance = intersects[0].distance;
+        const pointDistance = point.position.distanceTo(camera.position);
 
-                if (intersectionDistance < pointDistance)
-                {
-                    // 交点比兴趣点更近 → 被遮挡
-                    point.element.classList.remove('visible')
-                }
-                else
-                {
-                    // 兴趣点更近 → 可见
-                    point.element.classList.add('visible')
-                }
-            }
+        if (intersectionDistance < pointDistance) {
+          // 交点比兴趣点更近 → 被遮挡
+          point.element.classList.remove("visible");
+        } else {
+          // 兴趣点更近 → 可见
+          point.element.classList.add("visible");
         }
+      }
     }
+  }
 
-    renderer.render(scene, camera)
-    requestAnimationFrame(tick)
-}
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+};
 ```
 
 :::tip
+
 - 只创建**一个** `Raycaster` 实例并在循环中复用，不要每帧都 `new Raycaster()`，否则会产生不必要的 GC 压力。
 - `intersects[0]` 是距离摄像机最近的交点（Three.js 保证交点数组按距离排序），所以只需检查第一个。
 - `intersectObjects(scene.children, true)` 的第二个参数 `true` 表示**递归**检测子对象，确保 GLTF 模型内部的子网格也能被检测到。
-:::
+  :::
 
 :::caution
 在模型加载完成之前，`scene.children` 中可能还没有模型。如果在模型未加载时执行射线检测，`intersects.length` 始终为 0，所有兴趣点都会显示。解决方案是使用 `sceneReady` 标志位，在模型加载并经过一段时间后再开始检测。
@@ -213,80 +199,71 @@ const tick = () =>
 
 ```html
 <div class="point point-0">
-    <div class="label">1</div>
-    <div class="text">
-        损坏头盔 - 轻量化复合材料外壳
-    </div>
+  <div class="label">1</div>
+  <div class="text">损坏头盔 - 轻量化复合材料外壳</div>
 </div>
 ```
 
 ```css
-.point
-{
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    /* transform 由 JavaScript 控制 */
+.point {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  /* transform 由 JavaScript 控制 */
 }
 
-.point .label
-{
-    position: absolute;
-    top: -20px;
-    left: -20px;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.5);
-    color: white;
-    font-family: Helvetica, Arial, sans-serif;
-    font-size: 14px;
-    font-weight: 100;
-    text-align: center;
-    line-height: 40px;
-    cursor: help; /* 使用问号光标，增强沉浸感 */
+.point .label {
+  position: absolute;
+  top: -20px;
+  left: -20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 100;
+  text-align: center;
+  line-height: 40px;
+  cursor: help; /* 使用问号光标，增强沉浸感 */
 }
 
 /* 默认隐藏标签 */
-.point .label
-{
-    transform: scale(0);
-    transition: transform 0.3s ease;
+.point .label {
+  transform: scale(0);
+  transition: transform 0.3s ease;
 }
 
 /* 当兴趣点可见时，标签缩放出现 */
-.point.visible .label
-{
-    transform: scale(1);
+.point.visible .label {
+  transform: scale(1);
 }
 
 /* 默认隐藏文本 */
-.point .text
-{
-    position: absolute;
-    top: 30px;
-    left: -120px;
-    width: 240px;
-    padding: 20px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
-    color: white;
-    font-family: Helvetica, Arial, sans-serif;
-    font-size: 0.3em;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+.point .text {
+  position: absolute;
+  top: 30px;
+  left: -120px;
+  width: 240px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  color: white;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.3em;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 /* 悬停时显示文本 */
-.point:hover .text
-{
-    opacity: 1;
+.point:hover .text {
+  opacity: 1;
 }
 
 /* 阻止文本区域的鼠标事件，避免误触发悬停 */
-.point .text
-{
-    pointer-events: none;
+.point .text {
+  pointer-events: none;
 }
 ```
 
@@ -302,17 +279,15 @@ const tick = () =>
 
 ```css
 /* 正确 — transition 在元素本身上 */
-.point .text
-{
-    opacity: 0;
-    transition: opacity 0.3s ease; /* 淡入和淡出都有过渡 */
+.point .text {
+  opacity: 0;
+  transition: opacity 0.3s ease; /* 淡入和淡出都有过渡 */
 }
 
 /* 错误 — transition 只在 hover 激活时生效，淡出时没有过渡 */
-.point:hover .text
-{
-    opacity: 1;
-    transition: opacity 0.3s ease;
+.point:hover .text {
+  opacity: 1;
+  transition: opacity 0.3s ease;
 }
 ```
 
@@ -325,50 +300,45 @@ const tick = () =>
 HTML 页面的滚动位置可以驱动 3D 场景变化：
 
 ```js
-window.addEventListener('scroll', () =>
-{
-    const scrollProgress = window.scrollY / (document.body.scrollHeight - window.innerHeight)
-    camera.position.y = scrollProgress * 10
-    mesh.rotation.y = scrollProgress * Math.PI * 2
-})
+window.addEventListener("scroll", () => {
+  const scrollProgress = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+  camera.position.y = scrollProgress * 10;
+  mesh.rotation.y = scrollProgress * Math.PI * 2;
+});
 ```
 
 ### 滚动驱动 + CSS 3D 视差
 
 ```css
-.scene
-{
-    perspective: 1000px;
-    overflow-x: hidden;
-    overflow-y: auto;
+.scene {
+  perspective: 1000px;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
-.parallax-layer
-{
-    transform: translateZ(var(--depth)) scale(var(--scale));
-    /* 不同深度值创建视差效果 */
+.parallax-layer {
+  transform: translateZ(var(--depth)) scale(var(--scale));
+  /* 不同深度值创建视差效果 */
 }
 ```
 
 ```js
-window.addEventListener('mousemove', (e) =>
-{
-    const mouse = {
-        x: e.clientX / sizes.width,
-        y: e.clientY / sizes.height
-    }
+window.addEventListener("mousemove", (e) => {
+  const mouse = {
+    x: e.clientX / sizes.width,
+    y: e.clientY / sizes.height,
+  };
 
-    // 更新 3D 视差
-    cameraGroup.position.x = (mouse.x - 0.5) * 2
-    cameraGroup.position.y = -(mouse.y - 0.5) * 2
+  // 更新 3D 视差
+  cameraGroup.position.x = (mouse.x - 0.5) * 2;
+  cameraGroup.position.y = -(mouse.y - 0.5) * 2;
 
-    // 更新 HTML 视差
-    document.querySelectorAll('[data-parallax]').forEach(el =>
-    {
-        const speed = el.dataset.parallax
-        el.style.transform = `translate(${mouse.x * speed}px, ${mouse.y * speed}px)`
-    })
-})
+  // 更新 HTML 视差
+  document.querySelectorAll("[data-parallax]").forEach((el) => {
+    const speed = el.dataset.parallax;
+    el.style.transform = `translate(${mouse.x * speed}px, ${mouse.y * speed}px)`;
+  });
+});
 ```
 
 ## 3D 对象跟踪 HTML 元素
@@ -376,23 +346,22 @@ window.addEventListener('mousemove', (e) =>
 如果反过来，需要让 3D 对象跟随 HTML 元素的位置：
 
 ```js
-function updateObjectPosition(htmlElement, mesh)
-{
-    const rect = htmlElement.getBoundingClientRect()
+function updateObjectPosition(htmlElement, mesh) {
+  const rect = htmlElement.getBoundingClientRect();
 
-    // 将屏幕坐标转换为 NDC
-    const x = (rect.left + rect.width / 2) / sizes.width * 2 - 1
-    const y = -(rect.top + rect.height / 2) / sizes.height * 2 + 1
+  // 将屏幕坐标转换为 NDC
+  const x = ((rect.left + rect.width / 2) / sizes.width) * 2 - 1;
+  const y = (-(rect.top + rect.height / 2) / sizes.height) * 2 + 1;
 
-    // 从 NDC 反投影到 3D 空间
-    const vector = new THREE.Vector3(x, y, 0.5)
-    vector.unproject(camera)
+  // 从 NDC 反投影到 3D 空间
+  const vector = new THREE.Vector3(x, y, 0.5);
+  vector.unproject(camera);
 
-    const dir = vector.sub(camera.position).normalize()
-    const distance = -camera.position.z / dir.z
-    const pos = camera.position.clone().add(dir.multiplyScalar(distance))
+  const dir = vector.sub(camera.position).normalize();
+  const distance = -camera.position.z / dir.z;
+  const pos = camera.position.clone().add(dir.multiplyScalar(distance));
 
-    mesh.position.copy(pos)
+  mesh.position.copy(pos);
 }
 ```
 

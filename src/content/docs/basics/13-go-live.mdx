@@ -3,7 +3,7 @@ title: 13 部署上线
 description: 将 Three.js 项目构建并部署到线上，让全世界都能看到你的 3D 作品
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 <LessonPreview lesson="13-go-live" />
 
@@ -41,6 +41,7 @@ your-project/
 ```
 
 这些文件中有大量的东西是开发时才需要的：
+
 - `node_modules/` 包含了 Three.js、Vite 等所有依赖，这些文件可能有好几百 MB
 - `src/` 里的代码使用了 ES Module 的 `import/export` 语法，浏览器虽然支持这种语法，但还需要网络请求一个一个去加载
 - `vite.config.js`、`package.json` 这些配置文件是给开发工具用的，和最终用户毫无关系
@@ -93,6 +94,7 @@ npm run preview
 ```
 
 这个命令会启动一个本地服务器，加载 `dist/` 目录中的文件，模拟真实的线上环境。请在浏览器中仔细检查：
+
 - 页面是否正常加载
 - 3D 效果是否正确渲染
 - 纹理和字体是否正常显示
@@ -108,16 +110,15 @@ npm run preview
 
 ```js
 export default {
-    root: 'src/',             // 入口文件在 src/ 目录
-    publicDir: '../static/',  // 静态资源在 static/ 目录
-    base: './',               // 使用相对路径（重要！）
-    build:
-    {
-        outDir: '../dist',    // 构建输出到 dist/ 目录
-        emptyOutDir: true,    // 构建前清空 dist
-        sourcemap: true       // 生成 sourcemap（方便调试）
-    },
-}
+  root: "src/", // 入口文件在 src/ 目录
+  publicDir: "../static/", // 静态资源在 static/ 目录
+  base: "./", // 使用相对路径（重要！）
+  build: {
+    outDir: "../dist", // 构建输出到 dist/ 目录
+    emptyOutDir: true, // 构建前清空 dist
+    sourcemap: true, // 生成 sourcemap（方便调试）
+  },
+};
 ```
 
 其中 `base: './'` 非常重要，它告诉 Vite 使用**相对路径**来引用资源。这意味着无论你的网站部署在域名根目录（如 `https://example.com/`）还是子目录（如 `https://example.com/my-project/`），资源路径都能正确解析。
@@ -127,6 +128,7 @@ export default {
 最传统的方式是：构建完成后，手动将 `dist/` 文件夹里的所有文件上传到一台服务器上。这种方式需要你自己购买和配置服务器，适用于像 OVH、1&1 这类传统主机托管服务。
 
 步骤如下：
+
 1. 运行 `npm run build` 生成 `dist/` 文件夹
 2. 购买一台主机/服务器
 3. 通过 FTP 或控制面板将 `dist/` 中的文件上传到服务器
@@ -180,7 +182,7 @@ Vercel 对 Three.js 项目特别友好。我们的大多数项目只是一个简
    - **Continue with Email** -- 使用邮箱注册（最简单，适合初学者）
 3. 如果用邮箱注册，Vercel 会发送一封验证邮件，点击邮件中的 **Verify** 按钮完成验证
 
-:::info
+:::note
 关于 Git 和 GitHub 的简要说明：Git 是一个版本控制工具，它可以记录你的代码变更历史。GitHub 是一个托管 Git 仓库的在线平台。如果你还不熟悉 Git，不用着急，用邮箱注册 Vercel 完全可以。等以后学会了 Git，随时可以在 Vercel 设置中关联你的 GitHub 账号。
 :::
 
@@ -196,7 +198,7 @@ npm install vercel --save-dev
 
 这会将 Vercel CLI 安装为项目的开发依赖。它的好处是：如果你把项目分享给别人，对方只需要运行 `npm install` 就会自动安装 Vercel CLI，无需再单独安装。
 
-:::info
+:::note
 你也可以选择全局安装：`npm install -g vercel`。全局安装后，在任意项目目录中都可以直接使用 `vercel` 命令。缺点是：如果你把项目分享给别人，对方不会自动获得这个依赖，需要自己单独安装。
 :::
 
@@ -215,6 +217,7 @@ npm install vercel --save-dev
 ```
 
 `--prod` 参数表示部署到生产环境（正式版本），而不是预览环境。Vercel 支持两种环境：
+
 - **Production（生产环境）** -- 正式对外发布的版本，访问你的域名就是看到这个版本
 - **Preview（预览环境）** -- 用于测试的临时版本，每次部署都会生成一个临时的预览链接
 
@@ -253,6 +256,7 @@ Vercel 可能无法自动检测到正确的构建配置，此时会询问是否�
 使用**方向键**上下移动，按**空格**选择你要修改的选项，然后按**回车**确认。
 
 关键配置项：
+
 - **Build Command** -- 构建命令，默认是 `npm run build`，通常不需要修改
 - **Output Directory** -- 输出目录，Vercel 默认值是 `public`，但我们的项目输出到 `dist`，所以需要改为 `dist`
 - **Development Command** -- 开发命令，我们不需要，直接跳过
@@ -292,6 +296,7 @@ npm run deploy
 5. 确认 Output Directory 为 `dist`，点击 **Deploy**
 
 连接 GitHub 后的好处：
+
 - **自动部署** -- 每次你向 GitHub 推送代码，Vercel 会自动检测更新并重新部署
 - **Pull Request 预览** -- 每次创建 PR 都会生成一个预览链接，方便团队审查
 - **版本回退** -- 可以一键回退到任意历史部署版本
@@ -353,7 +358,7 @@ Vercel 对自定义域名的支持非常友好，提供了详细的配置指南�
 
 Pro 计划提供免费试用，你可以先试用再决定是否升级。
 
-:::info
+:::note
 顺便说一下，Three.js Journey 课程与 Vercel 没有任何商业合作关系。推荐 Vercel 仅仅是因为它确实好用、免费、适合我们的 Three.js 项目。
 :::
 
@@ -390,11 +395,11 @@ Netlify 还有一个特色功能：你可以直接把 `dist/` 文件夹**拖拽*
 
 ```js
 export default {
-    base: '/your-repo-name/',
-    build: {
-        outDir: 'dist'
-    }
-}
+  base: "/your-repo-name/",
+  build: {
+    outDir: "dist",
+  },
+};
 ```
 
 然后使用 [GitHub Actions](https://docs.github.com/en/actions) 自动部署：
@@ -416,7 +421,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
       - run: npm ci
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
@@ -432,23 +437,24 @@ GitHub Pages 部署后，网站的 URL 会是 `https://your-username.github.io/y
 ### Cloudflare Pages
 
 [Cloudflare Pages](https://pages.cloudflare.com/) 是 Cloudflare 提供的免费静态网站托管服务，优势是：
+
 - 极快的全球 CDN（Cloudflare 的网络遍布全球）
 - 无限带宽（对静态资源）
 - 构建命令设为 `npm run build`，输出目录设为 `dist`
 
 ### 各方案对比
 
-| 特性 | Vercel | Netlify | GitHub Pages | Cloudflare Pages |
-|------|--------|---------|--------------|------------------|
-| 免费计划 | 有（Hobby） | 有（Starter） | 有 | 有 |
-| 自定义域名 | 支持 | 支持 | 支持 | 支持 |
-| 自动 HTTPS | 支持 | 支持 | 支持 | 支持 |
-| CI/CD 自动部署 | 支持 | 支持 | 支持（需配置 Actions） | 支持 |
-| 全球 CDN | 支持 | 支持 | 有限 | 非常快 |
-| 带宽限制 | 有 | 有 | 100GB/月 | 无限 |
-| 构建时间限制 | 有 | 有 | 无限制 | 无限 |
-| 拖拽部署 | 不支持 | 支持 | 不支持 | 不支持 |
-| 学习曲线 | 低 | 低 | 中 | 低 |
+| 特性           | Vercel      | Netlify       | GitHub Pages           | Cloudflare Pages |
+| -------------- | ----------- | ------------- | ---------------------- | ---------------- |
+| 免费计划       | 有（Hobby） | 有（Starter） | 有                     | 有               |
+| 自定义域名     | 支持        | 支持          | 支持                   | 支持             |
+| 自动 HTTPS     | 支持        | 支持          | 支持                   | 支持             |
+| CI/CD 自动部署 | 支持        | 支持          | 支持（需配置 Actions） | 支持             |
+| 全球 CDN       | 支持        | 支持          | 有限                   | 非常快           |
+| 带宽限制       | 有          | 有            | 100GB/月               | 无限             |
+| 构建时间限制   | 有          | 有            | 无限制                 | 无限             |
+| 拖拽部署       | 不支持      | 支持          | 不支持                 | 不支持           |
+| 学习曲线       | 低          | 低            | 中                     | 低               |
 
 ## 处理静态资源
 
@@ -458,7 +464,7 @@ GitHub Pages 部署后，网站的 URL 会是 `https://your-username.github.io/y
 
 ```js
 // vite.config.js
-publicDir: '../static/'
+publicDir: "../static/";
 ```
 
 构建时，Vite 会将 `static/` 目录中的所有文件原封不动地复制到 `dist/` 的对应位置。
@@ -469,14 +475,14 @@ publicDir: '../static/'
 
 ```js
 // 纹理
-const textureLoader = new THREE.TextureLoader()
-const texture = textureLoader.load('/textures/door/color.jpg')
+const textureLoader = new THREE.TextureLoader();
+const texture = textureLoader.load("/textures/door/color.jpg");
 
 // 字体
-const fontLoader = new FontLoader()
-fontLoader.load('/fonts/helvetiker_regular.typeface.json', (font) => {
-    // ...
-})
+const fontLoader = new FontLoader();
+fontLoader.load("/fonts/helvetiker_regular.typeface.json", (font) => {
+  // ...
+});
 ```
 
 由于我们在 `vite.config.js` 中设置了 `base: './'`，构建后这些路径会自动转换为相对路径，确保在任何部署环境中都能正确工作。
@@ -504,8 +510,8 @@ fontLoader.load('/fonts/helvetiker_regular.typeface.json', (font) => {
 
 ```js
 // Vite 通过 import.meta.env 访问环境变量
-const apiUrl = import.meta.env.VITE_API_URL
-console.log('API 地址:', apiUrl)
+const apiUrl = import.meta.env.VITE_API_URL;
+console.log("API 地址:", apiUrl);
 ```
 
 :::warning
@@ -521,7 +527,7 @@ Vite 要求自定义环境变量必须以 `VITE_` 开头才能在客户端代码
 在高分辨率设备上，WebGL 的渲染分辨率可能非常高，导致性能下降：
 
 ```js
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 ```
 
 将像素比限制为 2，在大多数设备上都能获得清晰的视觉效果，同时避免在 3x、4x 设备上浪费性能。
@@ -531,11 +537,11 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 确保你的 3D 画布能正确适配不同的屏幕尺寸。这部分我们在 [全屏与自适应](/docs/basics/fullscreen-resizing) 课程中已经讲过了：
 
 ```js
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight
-    camera.updateProjectionMatrix()
-    renderer.setSize(window.innerWidth, window.innerHeight)
-})
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
 ```
 
 ### 加载体验
@@ -543,18 +549,18 @@ window.addEventListener('resize', () => {
 3D 项目的资源文件通常较大（纹理、模型、字体），用户可能需要等待较长时间。建议添加一个加载界面：
 
 ```js
-const loadingManager = new THREE.LoadingManager()
+const loadingManager = new THREE.LoadingManager();
 loadingManager.onLoad = () => {
-    // 隐藏加载界面，显示 3D 场景
-    document.querySelector('.loading-screen').style.display = 'none'
-}
+  // 隐藏加载界面，显示 3D 场景
+  document.querySelector(".loading-screen").style.display = "none";
+};
 loadingManager.onProgress = (url, loaded, total) => {
-    // 更新加载进度
-    const progress = (loaded / total) * 100
-    document.querySelector('.progress-bar').style.width = progress + '%'
-}
+  // 更新加载进度
+  const progress = (loaded / total) * 100;
+  document.querySelector(".progress-bar").style.width = progress + "%";
+};
 
-const textureLoader = new THREE.TextureLoader(loadingManager)
+const textureLoader = new THREE.TextureLoader(loadingManager);
 ```
 
 ### WebGL 兼容性
@@ -563,8 +569,8 @@ const textureLoader = new THREE.TextureLoader(loadingManager)
 
 ```js
 if (!renderer.capabilities.isWebGL2) {
-    // 回退方案或提示信息
-    document.body.innerHTML = '<h1>您的浏览器不支持 WebGL，请使用现代浏览器访问。</h1>'
+  // 回退方案或提示信息
+  document.body.innerHTML = "<h1>您的浏览器不支持 WebGL，请使用现代浏览器访问。</h1>";
 }
 ```
 
@@ -582,13 +588,16 @@ if (!renderer.capabilities.isWebGL2) {
 
 ```html
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的 3D 作品 - Three.js 交互体验</title>
-    <meta name="description" content="一个使用 Three.js 创建的交互式 3D 网页体验，展示酷炫的 3D 文字和动画效果。">
-    <meta property="og:title" content="我的 3D 作品">
-    <meta property="og:description" content="Three.js 交互式 3D 网页体验">
-    <meta property="og:image" content="https://your-domain.com/preview-image.jpg">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>我的 3D 作品 - Three.js 交互体验</title>
+  <meta
+    name="description"
+    content="一个使用 Three.js 创建的交互式 3D 网页体验，展示酷炫的 3D 文字和动画效果。"
+  />
+  <meta property="og:title" content="我的 3D 作品" />
+  <meta property="og:description" content="Three.js 交互式 3D 网页体验" />
+  <meta property="og:image" content="https://your-domain.com/preview-image.jpg" />
 </head>
 ```
 
@@ -603,14 +612,15 @@ if (!renderer.capabilities.isWebGL2) {
 ```html
 <canvas id="webgl-canvas"></canvas>
 <noscript>
-    <h1>我的 3D 作品</h1>
-    <p>一个使用 Three.js 创建的交互式 3D 网页体验。请启用 JavaScript 以查看完整效果。</p>
+  <h1>我的 3D 作品</h1>
+  <p>一个使用 Three.js 创建的交互式 3D 网页体验。请启用 JavaScript 以查看完整效果。</p>
 </noscript>
 ```
 
 ### 截图预览
 
 在社交媒体分享链接时，一个好的预览图片非常重要。你可以：
+
 - 在项目中放一张高质量的 3D 效果截图（如 `preview.jpg`）
 - 在 Open Graph 标签中引用这张图片
 

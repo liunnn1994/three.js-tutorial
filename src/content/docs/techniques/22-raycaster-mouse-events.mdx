@@ -3,8 +3,7 @@ title: 22 射线检测与鼠标事件
 description: 使用 Raycaster 实现 3D 场景中的鼠标交互、拾取和碰撞检测
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 什么是 Raycaster
 
@@ -20,26 +19,26 @@ Raycaster（射线检测器）是 Three.js 提供的一个工具类，它的核�
 - **射击检测** — 判断子弹/激光是否命中目标
 - **悬停效果** — 鼠标悬停在物体上时改变外观
 - **距离测量** — 获取射线原点到物体的精确距离
-<LessonPreview lesson="22-raycaster-and-mouse-events" />
+  <LessonPreview lesson="22-raycaster-and-mouse-events" />
 
 ## 创建 Raycaster
 
 ```js
-const raycaster = new THREE.Raycaster()
+const raycaster = new THREE.Raycaster();
 ```
 
 创建后，需要指定射线的**起点（origin）**和**方向（direction）**，两者都是 `Vector3`：
 
 ```js
 // 起点 — 射线从这里出发
-const rayOrigin = new THREE.Vector3(-3, 0, 0)
+const rayOrigin = new THREE.Vector3(-3, 0, 0);
 
 // 方向 — 射线朝哪个方向射出（需要归一化）
-const rayDirection = new THREE.Vector3(1, 0, 0)
-rayDirection.normalize()
+const rayDirection = new THREE.Vector3(1, 0, 0);
+rayDirection.normalize();
 
 // 设置射线
-raycaster.set(rayOrigin, rayDirection)
+raycaster.set(rayOrigin, rayDirection);
 ```
 
 ### 为什么需要 normalize()
@@ -49,8 +48,8 @@ raycaster.set(rayOrigin, rayDirection)
 ## 检测相交物体
 
 ```js
-const objectsToTest = [object1, object2, object3]
-const intersects = raycaster.intersectObjects(objectsToTest)
+const objectsToTest = [object1, object2, object3];
+const intersects = raycaster.intersectObjects(objectsToTest);
 ```
 
 `intersects` 是一个数组，包含所有被射线穿过的物体信息，**按距离从近到远排序**。如果没有物体相交，数组为空。
@@ -58,27 +57,27 @@ const intersects = raycaster.intersectObjects(objectsToTest)
 ### 单个物体检测
 
 ```js
-const intersects = raycaster.intersectObject(singleObject)
+const intersects = raycaster.intersectObject(singleObject);
 ```
 
 ### Intersection 对象属性
 
 `intersects` 数组中的每个元素包含以下信息：
 
-| 属性 | 类型 | 说明 |
-|------|------|------|
-| `distance` | Number | 射线原点到交点的距离 |
-| `point` | Vector3 | 交点的世界坐标 |
-| `object` | Object3D | 被击中的 Three.js 对象 |
-| `face` | Face | 被击中的三角形面 |
-| `faceIndex` | Number | 面的索引 |
-| `uv` | Vector2 | 交点的 UV 坐标 |
+| 属性        | 类型     | 说明                   |
+| ----------- | -------- | ---------------------- |
+| `distance`  | Number   | 射线原点到交点的距离   |
+| `point`     | Vector3  | 交点的世界坐标         |
+| `object`    | Object3D | 被击中的 Three.js 对象 |
+| `face`      | Face     | 被击中的三角形面       |
+| `faceIndex` | Number   | 面的索引               |
+| `uv`        | Vector2  | 交点的 UV 坐标         |
 
 ```js
 if (intersects.length > 0) {
-    console.log('最近的交点距离:', intersects[0].distance)
-    console.log('交点坐标:', intersects[0].point)
-    console.log('被击中的物体:', intersects[0].object)
+  console.log("最近的交点距离:", intersects[0].distance);
+  console.log("交点坐标:", intersects[0].point);
+  console.log("被击中的物体:", intersects[0].object);
 }
 ```
 
@@ -91,15 +90,15 @@ if (intersects.length > 0) {
 屏幕坐标是像素值（如 800x600），需要转换为标准化设备坐标（NDC），范围 -1 到 1：
 
 ```js
-const mouse = new THREE.Vector2()
+const mouse = new THREE.Vector2();
 
-window.addEventListener('mousemove', (event) => {
-    // X: 0 → -1, width → 1
-    mouse.x = event.clientX / sizes.width * 2 - 1
+window.addEventListener("mousemove", (event) => {
+  // X: 0 → -1, width → 1
+  mouse.x = (event.clientX / sizes.width) * 2 - 1;
 
-    // Y: 0 → 1, height → -1（注意 Y 轴反转）
-    mouse.y = -(event.clientY / sizes.height) * 2 + 1
-})
+  // Y: 0 → 1, height → -1（注意 Y 轴反转）
+  mouse.y = -(event.clientY / sizes.height) * 2 + 1;
+});
 ```
 
 **为什么 Y 轴要取反？** 因为屏幕坐标的 Y 轴向下为正，而 WebGL/NDC 的 Y 轴向上为正。
@@ -108,15 +107,15 @@ window.addEventListener('mousemove', (event) => {
 
 ```js
 const tick = () => {
-    // 根据鼠标位置和相机计算射线
-    raycaster.setFromCamera(mouse, camera)
+  // 根据鼠标位置和相机计算射线
+  raycaster.setFromCamera(mouse, camera);
 
-    // 检测相交
-    const intersects = raycaster.intersectObjects(objectsToTest)
+  // 检测相交
+  const intersects = raycaster.intersectObjects(objectsToTest);
 
-    // 处理结果...
-    requestAnimationFrame(tick)
-}
+  // 处理结果...
+  requestAnimationFrame(tick);
+};
 ```
 
 `setFromCamera` 方法会根据鼠标 NDC 坐标和相机参数自动计算射线的起点和方向。对于透视相机，射线从相机位置出发；对于正交相机，射线从近裁剪面出发。
@@ -126,86 +125,86 @@ const tick = () => {
 实现鼠标悬停时改变物体颜色的效果：
 
 ```js
-let currentIntersect = null
+let currentIntersect = null;
 
 const tick = () => {
-    raycaster.setFromCamera(mouse, camera)
-    const intersects = raycaster.intersectObjects(objectsToTest)
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(objectsToTest);
 
-    if (intersects.length) {
-        // 鼠标进入物体
-        if (!currentIntersect) {
-            console.log('鼠标进入物体')
-        }
-        currentIntersect = intersects[0]
-        intersects[0].object.material.color.set('#0000ff')
-    } else {
-        // 鼠标离开物体
-        if (currentIntersect) {
-            console.log('鼠标离开物体')
-        }
-        currentIntersect = null
+  if (intersects.length) {
+    // 鼠标进入物体
+    if (!currentIntersect) {
+      console.log("鼠标进入物体");
     }
-
-    // 重置未悬停的物体颜色
-    for (const object of objectsToTest) {
-        if (!intersects.find(i => i.object === object)) {
-            object.material.color.set('#ff0000')
-        }
+    currentIntersect = intersects[0];
+    intersects[0].object.material.color.set("#0000ff");
+  } else {
+    // 鼠标离开物体
+    if (currentIntersect) {
+      console.log("鼠标离开物体");
     }
+    currentIntersect = null;
+  }
 
-    requestAnimationFrame(tick)
-}
+  // 重置未悬停的物体颜色
+  for (const object of objectsToTest) {
+    if (!intersects.find((i) => i.object === object)) {
+      object.material.color.set("#ff0000");
+    }
+  }
+
+  requestAnimationFrame(tick);
+};
 ```
 
 ### 使用 mouseenter/mouseleave 模式
 
 ```js
-const objectsToTest = [object1, object2, object3]
-const objectStates = new Map()
+const objectsToTest = [object1, object2, object3];
+const objectStates = new Map();
 
 for (const obj of objectsToTest) {
-    objectStates.set(obj, { isHovered: false })
+  objectStates.set(obj, { isHovered: false });
 }
 
 // 在动画循环中
-const intersects = raycaster.intersectObjects(objectsToTest)
-const hoveredObjects = new Set(intersects.map(i => i.object))
+const intersects = raycaster.intersectObjects(objectsToTest);
+const hoveredObjects = new Set(intersects.map((i) => i.object));
 
 for (const obj of objectsToTest) {
-    const state = objectStates.get(obj)
-    const isNowHovered = hoveredObjects.has(obj)
+  const state = objectStates.get(obj);
+  const isNowHovered = hoveredObjects.has(obj);
 
-    if (isNowHovered && !state.isHovered) {
-        // mouseenter
-        obj.scale.set(1.5, 1.5, 1.5)
-    } else if (!isNowHovered && state.isHovered) {
-        // mouseleave
-        obj.scale.set(1, 1, 1)
-    }
+  if (isNowHovered && !state.isHovered) {
+    // mouseenter
+    obj.scale.set(1.5, 1.5, 1.5);
+  } else if (!isNowHovered && state.isHovered) {
+    // mouseleave
+    obj.scale.set(1, 1, 1);
+  }
 
-    state.isHovered = isNowHovered
+  state.isHovered = isNowHovered;
 }
 ```
 
 ## 点击检测
 
 ```js
-window.addEventListener('click', () => {
-    if (currentIntersect) {
-        switch (currentIntersect.object) {
-            case object1:
-                console.log('点击了物体 1')
-                break
-            case object2:
-                console.log('点击了物体 2')
-                break
-            case object3:
-                console.log('点击了物体 3')
-                break
-        }
+window.addEventListener("click", () => {
+  if (currentIntersect) {
+    switch (currentIntersect.object) {
+      case object1:
+        console.log("点击了物体 1");
+        break;
+      case object2:
+        console.log("点击了物体 2");
+        break;
+      case object3:
+        console.log("点击了物体 3");
+        break;
     }
-})
+  }
+});
 ```
 
 :::tip
@@ -217,14 +216,14 @@ window.addEventListener('click', () => {
 Raycaster 同样可以检测 GLTF 等导入的模型：
 
 ```js
-gltfLoader.load('./model.glb', (gltf) => {
-    const model = gltf.scene
-    scene.add(model)
+gltfLoader.load("./model.glb", (gltf) => {
+  const model = gltf.scene;
+  scene.add(model);
 
-    // 在动画循环中检测
-    const modelIntersects = raycaster.intersectObject(model, true)
-    // 第二个参数 true 表示递归检测子物体
-})
+  // 在动画循环中检测
+  const modelIntersects = raycaster.intersectObject(model, true);
+  // 第二个参数 true 表示递归检测子物体
+});
 ```
 
 `intersectObject` 的第二个参数 `recursive` 为 `true` 时，会检测该对象的所有子对象（子 Mesh）。对于包含多个 Mesh 的模型，这非常重要。
@@ -242,17 +241,17 @@ Raycaster 每次检测都需要遍历所有三角面，对于复杂模型可能�
 
 ```js
 // 节流示例：每 50ms 最多检测一次
-let lastMoveTime = 0
-const MOVE_THROTTLE = 50
+let lastMoveTime = 0;
+const MOVE_THROTTLE = 50;
 
-window.addEventListener('mousemove', (event) => {
-    const now = Date.now()
-    if (now - lastMoveTime < MOVE_THROTTLE) return
-    lastMoveTime = now
+window.addEventListener("mousemove", (event) => {
+  const now = Date.now();
+  if (now - lastMoveTime < MOVE_THROTTLE) return;
+  lastMoveTime = now;
 
-    mouse.x = event.clientX / sizes.width * 2 - 1
-    mouse.y = -(event.clientY / sizes.height) * 2 + 1
-})
+  mouse.x = (event.clientX / sizes.width) * 2 - 1;
+  mouse.y = -(event.clientY / sizes.height) * 2 + 1;
+});
 ```
 
 ## 参考链接

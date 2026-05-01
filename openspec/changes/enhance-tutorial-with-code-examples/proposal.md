@@ -16,6 +16,7 @@
 ## Capabilities
 
 ### New Capabilities
+
 - `lesson-static-assets`: 将所有章节的静态资源（纹理、模型、HDR、着色器、字体等）从 `code/` 复制到 `src/lesson-code/` 对应目录，确保 iframe 预览能正确加载资源
 - `missing-lesson-code`: 为 13 个缺失代码示例的章节创建增强的 lesson-code 目录（03-first-threejs-project, 13-go-live, 23-custom-models-with-blender, 26-code-structuring, 46-performance-tips, 51-importing-optimizing, 52-adding-details）
 - `final-version-lessons`: 为所有章节的 `-final` 版本创建独立的 lesson-code 和 preview 文件，展示每节课的最终完成效果
@@ -23,6 +24,7 @@
 - `lesson-mdx-updates`: 更新所有 MDX 文档文件，为缺失 `LessonPreview` 的章节添加组件引用，为有最终版的章节添加双版本展示
 
 ### Modified Capabilities
+
 （无需修改已有规范）
 
 ## Impact

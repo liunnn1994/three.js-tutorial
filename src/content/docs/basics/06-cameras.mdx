@@ -3,8 +3,7 @@ title: 06 相机
 description: 深入学习 Three.js 中的透视相机与正交相机，掌握 FOV、宽高比、裁剪面等概念，以及 OrbitControls 相机控制
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 相机概述
 
@@ -12,17 +11,18 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 
 所有相机都继承自一个抽象基类 `Camera`，你**不应该直接使用这个基类**，而是使用它的子类。以下是各种相机的简要介绍：
 
-| 相机类型 | 用途 | 本课使用 |
-|---------|------|---------|
-| **PerspectiveCamera** | 模拟人眼透视效果，最常用 | 是 |
-| **OrthographicCamera** | 无透视效果，2D 风格 | 是 |
-| ArrayCamera | 在渲染区域中使用多个相机（如分屏游戏） | 否 |
-| StereoCamera | 双目立体渲染（VR 头显等） | 否 |
-| CubeCamera | 6 个方向渲染（用于环境贴图、反射） | 否 |
+| 相机类型               | 用途                                   | 本课使用 |
+| ---------------------- | -------------------------------------- | -------- |
+| **PerspectiveCamera**  | 模拟人眼透视效果，最常用               | 是       |
+| **OrthographicCamera** | 无透视效果，2D 风格                    | 是       |
+| ArrayCamera            | 在渲染区域中使用多个相机（如分屏游戏） | 否       |
+| StereoCamera           | 双目立体渲染（VR 头显等）              | 否       |
+| CubeCamera             | 6 个方向渲染（用于环境贴图、反射）     | 否       |
 
-:::info
+:::note
 ArrayCamera 可以实现多人同屏游戏的分屏效果。StereoCamera 可以模拟双眼产生 3D 深度效果，用于 VR。CubeCamera 会从上下左右前后 6 个方向渲染场景，Three.js 内部用它来生成环境贴图（后续课程会讲到）。这些相机在本课中不会使用，但了解它们的存在很有帮助。
 :::
+
 <LessonPreview lesson="06-cameras" />
 
 ## 透视相机（PerspectiveCamera）
@@ -31,11 +31,11 @@ ArrayCamera 可以实现多人同屏游戏的分屏效果。StereoCamera 可以�
 
 ```js
 const camera = new THREE.PerspectiveCamera(
-    75,                         // FOV — 视场角（垂直方向，单位：度）
-    sizes.width / sizes.height, // 宽高比
-    0.1,                        // 近裁剪面
-    100                         // 远裁剪面
-)
+  75, // FOV — 视场角（垂直方向，单位：度）
+  sizes.width / sizes.height, // 宽高比
+  0.1, // 近裁剪面
+  100, // 远裁剪面
+);
 ```
 
 ### 参数一：FOV（Field of View，视场角）
@@ -52,21 +52,22 @@ FOV 是**垂直方向的可见角度**（注意：Three.js 的 PerspectiveCamera
 
 #### 不同 FOV 值的对比
 
-| FOV 值 | 效果 | 适用场景 |
-|--------|------|---------|
-| 25 - 35 | 窄视野，物体放大，类似望远镜 | 远景摄影、狙击镜 |
-| 45 - 55 | 较窄但自然 | 第一人称射击游戏 |
-| 60 - 75 | 标准视野，平衡 | 大多数 3D 应用（推荐范围） |
-| 90 - 120 | 广角，开始出现边缘变形 | 建筑展示、沉浸式体验 |
-| 120 - 180 | 极广角 / 鱼眼效果 | 特殊艺术效果 |
+| FOV 值    | 效果                         | 适用场景                   |
+| --------- | ---------------------------- | -------------------------- |
+| 25 - 35   | 窄视野，物体放大，类似望远镜 | 远景摄影、狙击镜           |
+| 45 - 55   | 较窄但自然                   | 第一人称射击游戏           |
+| 60 - 75   | 标准视野，平衡               | 大多数 3D 应用（推荐范围） |
+| 90 - 120  | 广角，开始出现边缘变形       | 建筑展示、沉浸式体验       |
+| 120 - 180 | 极广角 / 鱼眼效果            | 特殊艺术效果               |
 
-:::warning FOV 过大的问题
+:::caution[FOV 过大的问题]
 当 FOV 设置过大（如 140 度）时，画面会出现严重的**透视畸变** —— 边缘的物体会被拉伸和扭曲，看起来很不自然。这是因为宽大的视锥体被压缩到矩形的屏幕中导致的。课程推荐使用 **45 到 75 度**之间的值。
 :::
 
 #### FOV 对比动画演示
 
 想象一段 Blender 中的 FOV 动画：当 FOV 从 15 度慢慢变到 140 度时，你可以看到：
+
 1. **小 FOV 时**：立方体看起来很大，像是被拉近了
 2. **FOV 增大**：视野变广，立方体变小
 3. **大 FOV 时**：立方体很小，边缘出现明显的拉伸变形
@@ -82,18 +83,18 @@ FOV 一旦在项目初期确定，就不应该随意更改。改变 FOV 意味�
 宽高比 = 渲染宽度 / 渲染高度。
 
 ```js
-const aspectRatio = sizes.width / sizes.height
+const aspectRatio = sizes.width / sizes.height;
 ```
 
 这个值确保你的 3D 场景不会被拉伸或压缩。如果宽高比和实际画布不匹配，物体看起来就会被压扁或拉长。
 
 常见的宽高比值：
 
-| 分辨率 | 宽高比 | 类型 |
-|--------|--------|------|
-| 800 x 600 | 1.333 | 4:3 |
-| 1920 x 1080 | 1.778 | 16:9（全高清） |
-| 1080 x 1080 | 1.0 | 1:1（正方形） |
+| 分辨率      | 宽高比 | 类型             |
+| ----------- | ------ | ---------------- |
+| 800 x 600   | 1.333  | 4:3              |
+| 1920 x 1080 | 1.778  | 16:9（全高清）   |
+| 1080 x 1080 | 1.0    | 1:1（正方形）    |
 | 1080 x 1920 | 0.5625 | 9:16（手机竖屏） |
 
 :::important
@@ -110,7 +111,7 @@ const aspectRatio = sizes.width / sizes.height
 - **刚好在边界上的物体** — 只能看到截面
 
 ```js
-const camera = new THREE.PerspectiveCamera(75, aspectRatio, 0.1, 100)
+const camera = new THREE.PerspectiveCamera(75, aspectRatio, 0.1, 100);
 //                                                           ^^^   ^^^
 //                                                           近     远
 ```
@@ -128,12 +129,12 @@ const camera = new THREE.PerspectiveCamera(75, aspectRatio, 0.1, 100)
 
 #### 应该怎么设置？
 
-| 参数 | 推荐值 | 说明 |
-|------|--------|------|
-| near | 0.1 | 足够近，摄像机可以贴近物体观察 |
-| far | 100 或更大 | 取决于你的场景大小 |
+| 参数 | 推荐值     | 说明                           |
+| ---- | ---------- | ------------------------------ |
+| near | 0.1        | 足够近，摄像机可以贴近物体观察 |
+| far  | 100 或更大 | 取决于你的场景大小             |
 
-:::warning Z-Fighting（深度冲突）
+:::caution[Z-Fighting（深度冲突）]
 不要把近裁剪面设置得太小（如 0.0001），也不要让远裁剪面和近裁剪面的比值过大。这会导致一种叫做 **Z-Fighting** 的渲染错误。
 
 Z-Fighting 发生在两个面非常接近时，GPU 无法确定哪个面在前面，导致画面出现闪烁的花纹。在现实生活中，你可以想象两张纸紧贴在一起，你很难判断哪张在上面。
@@ -151,12 +152,12 @@ Z-Fighting 发生在两个面非常接近时，GPU 无法确定哪个面在前�
 
 ### 与透视相机的对比
 
-| 特性 | 透视相机 | 正交相机 |
-|------|---------|---------|
-| 近大远小 | 是 | 否 |
-| 视锥体形状 | 锥体（金字塔形） | 长方体 |
-| 适用场景 | 3D 游戏、建筑展示 | 2D 游戏、CAD、策略游戏 |
-| 参数 | FOV + 宽高比 + near/far | left/right/top/bottom + near/far |
+| 特性       | 透视相机                | 正交相机                         |
+| ---------- | ----------------------- | -------------------------------- |
+| 近大远小   | 是                      | 否                               |
+| 视锥体形状 | 锥体（金字塔形）        | 长方体                           |
+| 适用场景   | 3D 游戏、建筑展示       | 2D 游戏、CAD、策略游戏           |
+| 参数       | FOV + 宽高比 + near/far | left/right/top/bottom + near/far |
 
 ### 适用场景
 
@@ -172,15 +173,15 @@ Z-Fighting 发生在两个面非常接近时，GPU 无法确定哪个面在前�
 正交相机需要指定一个**矩形视域**（而不是锥形视锥体）：
 
 ```js
-const aspectRatio = sizes.width / sizes.height
+const aspectRatio = sizes.width / sizes.height;
 const camera = new THREE.OrthographicCamera(
-    -1 * aspectRatio,  // left  — 左边界
-     1 * aspectRatio,  // right — 右边界
-     1,                // top   — 上边界
-    -1,                // bottom — 下边界
-     0.1,              // near
-     100               // far
-)
+  -1 * aspectRatio, // left  — 左边界
+  1 * aspectRatio, // right — 右边界
+  1, // top   — 上边界
+  -1, // bottom — 下边界
+  0.1, // near
+  100, // far
+);
 ```
 
 可以把它想象成一个长方形的"取景框"：
@@ -201,21 +202,22 @@ left     │                      │  right
 正交相机的视域必须和画布的宽高比匹配，否则物体会被拉伸或压缩。
 
 ```js
-const aspectRatio = sizes.width / sizes.height
+const aspectRatio = sizes.width / sizes.height;
 
 // 水平方向乘以宽高比，垂直方向保持不变
 const camera = new THREE.OrthographicCamera(
-    -1 * aspectRatio,   // left
-     1 * aspectRatio,   // right
-     1,                 // top
-    -1,                 // bottom
-     0.1, 100
-)
+  -1 * aspectRatio, // left
+  1 * aspectRatio, // right
+  1, // top
+  -1, // bottom
+  0.1,
+  100,
+);
 ```
 
 这样做的原因：当画布是 800x600（宽高比 1.333）时，水平方向的可视范围会自动变宽（-1.333 到 1.333），使得正方形物体在屏幕上看起来仍然是正方形。
 
-:::tip 调试技巧
+:::tip[调试技巧]
 如果你用正交相机发现物体看起来被压扁或拉长了，首先检查宽高比是否正确。可以用一个正方体来验证：如果正方体看起来确实是正方形，说明宽高比设置正确。
 :::
 
@@ -230,21 +232,22 @@ const camera = new THREE.OrthographicCamera(
 使用原生 JavaScript 的 `mousemove` 事件获取光标位置：
 
 ```js
-const cursor = { x: 0, y: 0 }
+const cursor = { x: 0, y: 0 };
 
-window.addEventListener('mousemove', (event) => {
-    cursor.x = event.clientX / sizes.width - 0.5
-    cursor.y = - (event.clientY / sizes.height - 0.5)
-})
+window.addEventListener("mousemove", (event) => {
+  cursor.x = event.clientX / sizes.width - 0.5;
+  cursor.y = -(event.clientY / sizes.height - 0.5);
+});
 ```
 
-:::info 坐标归一化详解
+:::note[坐标归一化详解]
 我们不直接使用像素值（如 `event.clientX = 500`），而是将其**归一化**为 -0.5 到 0.5 之间的值：
 
 1. `event.clientX / sizes.width` — 得到 0 到 1 之间的比例值
 2. `... - 0.5` — 偏移到 -0.5 到 0.5 之间
 
 这样做的优势：
+
 - **不依赖屏幕尺寸**：无论屏幕是 800px 还是 2000px 宽，结果都是 -0.5 到 0.5
 - **正负值方便控制方向**：负值表示左侧/上方，正值表示右侧/下方
 
@@ -255,20 +258,20 @@ window.addEventListener('mousemove', (event) => {
 
 ```js
 const tick = () => {
-    // 将鼠标位置映射到相机位置
-    camera.position.x = cursor.x * 5  // 乘以 5 增大移动幅度
-    camera.position.y = cursor.y * 5
+  // 将鼠标位置映射到相机位置
+  camera.position.x = cursor.x * 5; // 乘以 5 增大移动幅度
+  camera.position.y = cursor.y * 5;
 
-    // 让相机始终看向场景中心
-    camera.lookAt(mesh.position)
+  // 让相机始终看向场景中心
+  camera.lookAt(mesh.position);
 
-    renderer.render(scene, camera)
-    window.requestAnimationFrame(tick)
-}
-tick()
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(tick);
+};
+tick();
 ```
 
-:::tip 关于 lookAt()
+:::tip[关于 lookAt()]
 `camera.lookAt()` 接收一个 `THREE.Vector3`（或 `mesh.position` 这样的 Vector3 属性），会让摄像机旋转朝向指定位置。**必须在更新位置之后调用**，否则方向会不正确。
 :::
 
@@ -278,28 +281,28 @@ tick()
 
 ```js
 const tick = () => {
-    const elapsedTime = clock.getElapsedTime()
+  const elapsedTime = clock.getElapsedTime();
 
-    // X 轴位置用 sin，Z 轴位置用 cos，形成圆形轨迹
-    camera.position.x = Math.sin(cursor.x * Math.PI * 2) * 3
-    camera.position.z = Math.cos(cursor.x * Math.PI * 2) * 3
+  // X 轴位置用 sin，Z 轴位置用 cos，形成圆形轨迹
+  camera.position.x = Math.sin(cursor.x * Math.PI * 2) * 3;
+  camera.position.z = Math.cos(cursor.x * Math.PI * 2) * 3;
 
-    // Y 轴用鼠标纵向位置控制
-    camera.position.y = cursor.y * 5
+  // Y 轴用鼠标纵向位置控制
+  camera.position.y = cursor.y * 5;
 
-    // 始终看向目标
-    camera.lookAt(mesh.position)
+  // 始终看向目标
+  camera.lookAt(mesh.position);
 
-    renderer.render(scene, camera)
-    window.requestAnimationFrame(tick)
-}
-tick()
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(tick);
+};
+tick();
 ```
 
 **原理解析**：
 
 - `Math.sin(angle)` 和 `Math.cos(angle)` 结合使用，可以将角度转换为圆上的坐标
-- `cursor.x * Math.PI * 2` — 当鼠标从最左边移到最右边时，角度从 0 变到 2*PI，即一整圈
+- `cursor.x * Math.PI * 2` — 当鼠标从最左边移到最右边时，角度从 0 变到 2\*PI，即一整圈
 - `* 3` — 圆的半径为 3 个单位，控制相机离物体的距离
 
 ## OrbitControls（轨道控制器）
@@ -308,18 +311,18 @@ Three.js 在 `three/examples/jsm/controls/` 目录下提供了多种内置相机
 
 ### 所有内置控制器一览
 
-| 控制器 | 效果 | 典型用途 |
-|--------|------|---------|
-| **OrbitControls** | 轨道控制：围绕目标旋转、缩放、平移 | **最常用，本课重点** |
-| FlyControls | 飞行控制：自由飞行，可翻滚 | 太空飞行模拟 |
-| FirstPersonControls | 第一人称：前进后退，不能翻滚 | 地面行走模拟 |
-| PointerLockControls | 指针锁定：隐藏鼠标，WASD 移动 | FPS 射击游戏 |
-| TrackballControls | 轨迹球：无限制旋转 | 全方位查看模型 |
-| DeviceOrientationControls | 设备方向：用手机陀螺仪控制 | 移动端 VR/AR |
-| TransformControls | 变换控制：移动/旋转/缩放物体 | 场景编辑器 |
-| DragControls | 拖拽控制：鼠标拖拽物体 | 简单的物体交互 |
+| 控制器                    | 效果                               | 典型用途             |
+| ------------------------- | ---------------------------------- | -------------------- |
+| **OrbitControls**         | 轨道控制：围绕目标旋转、缩放、平移 | **最常用，本课重点** |
+| FlyControls               | 飞行控制：自由飞行，可翻滚         | 太空飞行模拟         |
+| FirstPersonControls       | 第一人称：前进后退，不能翻滚       | 地面行走模拟         |
+| PointerLockControls       | 指针锁定：隐藏鼠标，WASD 移动      | FPS 射击游戏         |
+| TrackballControls         | 轨迹球：无限制旋转                 | 全方位查看模型       |
+| DeviceOrientationControls | 设备方向：用手机陀螺仪控制         | 移动端 VR/AR         |
+| TransformControls         | 变换控制：移动/旋转/缩放物体       | 场景编辑器           |
+| DragControls              | 拖拽控制：鼠标拖拽物体             | 简单的物体交互       |
 
-:::info
+:::note
 TransformControls 和 DragControls 不是用来控制相机的，而是用来控制场景中的物体。OrbitControls 是我们的重点，因为它提供了最通用、最流畅的 3D 观察体验。
 :::
 
@@ -328,10 +331,10 @@ TransformControls 和 DragControls 不是用来控制相机的，而是用来控
 OrbitControls **不在** `THREE` 主对象中，需要从示例目录单独导入：
 
 ```js
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 ```
 
-:::warning 常见错误
+:::caution[常见错误]
 如果你尝试 `THREE.OrbitControls`，会得到 `undefined`。OrbitControls 虽然是 Three.js 官方的一部分，但它被放在 examples 目录下，需要单独导入。
 :::
 
@@ -340,7 +343,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 创建 OrbitControls 实例需要两个参数：**相机** 和 **DOM 元素**。
 
 ```js
-const controls = new OrbitControls(camera, canvas)
+const controls = new OrbitControls(camera, canvas);
 ```
 
 - `camera` — 要控制的相机对象
@@ -350,35 +353,35 @@ OrbitControls 会在内部自动监听这个 DOM 元素上的各种事件：`mou
 
 ### 操作方式
 
-| 操作 | 效果 |
-|------|------|
-| **左键拖拽** | 围绕目标旋转视角 |
-| **右键拖拽** | 平移画面（上下左右移动） |
-| **滚轮滚动** | 缩放（靠近/远离目标） |
-| **触摸：单指拖拽** | 旋转视角 |
-| **触摸：双指拖拽** | 平移画面 |
-| **触摸：双指缩放** | 缩放 |
+| 操作               | 效果                     |
+| ------------------ | ------------------------ |
+| **左键拖拽**       | 围绕目标旋转视角         |
+| **右键拖拽**       | 平移画面（上下左右移动） |
+| **滚轮滚动**       | 缩放（靠近/远离目标）    |
+| **触摸：单指拖拽** | 旋转视角                 |
+| **触摸：双指拖拽** | 平移画面                 |
+| **触摸：双指缩放** | 缩放                     |
 
 ### 启用阻尼（Damping）
 
 阻尼会给相机运动添加**惯性和摩擦力**效果，让操作感觉更加顺滑自然。
 
 ```js
-controls.enableDamping = true
+controls.enableDamping = true;
 ```
 
-:::warning 阻尼必须配合 controls.update()
+:::caution[阻尼必须配合 controls.update()]
 
 启用阻尼后，**必须在每一帧调用 `controls.update()`**，阻尼效果才能生效。即使鼠标没有操作，阻尼的惯性滑动也需要每帧更新。
 
 ```js
 const tick = () => {
-    controls.update()  // ← 必须放在这里！
+  controls.update(); // ← 必须放在这里！
 
-    renderer.render(scene, camera)
-    window.requestAnimationFrame(tick)
-}
-tick()
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(tick);
+};
+tick();
 ```
 
 如果不调用 `controls.update()`，你会发现：鼠标拖拽时相机跟随移动，但松开鼠标后相机会突然"卡住"，没有平滑的减速效果。
@@ -390,44 +393,44 @@ tick()
 
 ```js
 // 将观察目标设置为 (0, 2, 0)（稍微偏上）
-controls.target.y = 2
+controls.target.y = 2;
 
 // 修改 target 后需要调用 update() 使其生效
-controls.update()
+controls.update();
 ```
 
 ### OrbitControls 常用属性
 
 ```js
 // 旋转速度
-controls.rotateSpeed = 1.0
+controls.rotateSpeed = 1.0;
 
 // 缩放速度
-controls.zoomSpeed = 1.0
+controls.zoomSpeed = 1.0;
 
 // 平移速度
-controls.panSpeed = 1.0
+controls.panSpeed = 1.0;
 
 // 是否允许平移
-controls.enablePan = true
+controls.enablePan = true;
 
 // 是否允许缩放
-controls.enableZoom = true
+controls.enableZoom = true;
 
 // 是否允许旋转
-controls.enableRotate = true
+controls.enableRotate = true;
 
 // 缩放的最小/最大距离
-controls.minDistance = 2
-controls.maxDistance = 20
+controls.minDistance = 2;
+controls.maxDistance = 20;
 
 // 垂直旋转的角度限制（防止相机翻转）
-controls.minPolarAngle = 0
-controls.maxPolarAngle = Math.PI
+controls.minPolarAngle = 0;
+controls.maxPolarAngle = Math.PI;
 
 // 是否启用阻尼
-controls.enableDamping = true
-controls.dampingFactor = 0.05  // 阻尼系数，值越小越顺滑
+controls.enableDamping = true;
+controls.dampingFactor = 0.05; // 阻尼系数，值越小越顺滑
 ```
 
 :::tip
@@ -436,10 +439,10 @@ controls.dampingFactor = 0.05  // 阻尼系数，值越小越顺滑
 
 ### OrbitControls vs TrackballControls
 
-| 特性 | OrbitControls | TrackballControls |
-|------|--------------|-------------------|
-| 垂直旋转限制 | 有（不能翻转到底面） | 无（可以无限翻转） |
-| 适用场景 | 大多数 3D 场景观察 | 需要全方位无限制查看 |
+| 特性         | OrbitControls        | TrackballControls    |
+| ------------ | -------------------- | -------------------- |
+| 垂直旋转限制 | 有（不能翻转到底面） | 无（可以无限翻转）   |
+| 适用场景     | 大多数 3D 场景观察   | 需要全方位无限制查看 |
 
 如果你有一个"地面"和"天空"，不想让用户翻到地面下方去看，用 OrbitControls。如果你有一个可无限旋转的模型，用 TrackballControls。
 
@@ -466,61 +469,61 @@ controls.dampingFactor = 0.05  // 阻尼系数，值越小越顺滑
 ## 完整代码示例
 
 ```js
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 // Canvas
-const canvas = document.querySelector('canvas.webgl')
+const canvas = document.querySelector("canvas.webgl");
 
 // Sizes
-const sizes = { width: 800, height: 600 }
+const sizes = { width: 800, height: 600 };
 
 // Scene
-const scene = new THREE.Scene()
+const scene = new THREE.Scene();
 
 // Object
 const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1, 5, 5, 5),
-    new THREE.MeshBasicMaterial({ color: 0xff0000 })
-)
-scene.add(mesh)
+  new THREE.BoxGeometry(1, 1, 1, 5, 5, 5),
+  new THREE.MeshBasicMaterial({ color: 0xff0000 }),
+);
+scene.add(mesh);
 
 // Camera（透视相机，带近/远裁剪面）
 const camera = new THREE.PerspectiveCamera(
-    75,                         // FOV
-    sizes.width / sizes.height, // 宽高比
-    0.1,                        // 近裁剪面
-    100                         // 远裁剪面
-)
-camera.position.z = 3
-scene.add(camera)
+  75, // FOV
+  sizes.width / sizes.height, // 宽高比
+  0.1, // 近裁剪面
+  100, // 远裁剪面
+);
+camera.position.z = 3;
+scene.add(camera);
 
 // Controls
-const controls = new OrbitControls(camera, canvas)
-controls.enableDamping = true
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
 
 // Renderer
-const renderer = new THREE.WebGLRenderer({ canvas: canvas })
-renderer.setSize(sizes.width, sizes.height)
+const renderer = new THREE.WebGLRenderer({ canvas: canvas });
+renderer.setSize(sizes.width, sizes.height);
 
 // Clock
-const clock = new THREE.Clock()
+const clock = new THREE.Clock();
 
 // Animate
 const tick = () => {
-    const elapsedTime = clock.getElapsedTime()
+  const elapsedTime = clock.getElapsedTime();
 
-    // Update controls（启用阻尼时必须调用）
-    controls.update()
+  // Update controls（启用阻尼时必须调用）
+  controls.update();
 
-    // Render
-    renderer.render(scene, camera)
+  // Render
+  renderer.render(scene, camera);
 
-    // Call tick again on the next frame
-    window.requestAnimationFrame(tick)
-}
+  // Call tick again on the next frame
+  window.requestAnimationFrame(tick);
+};
 
-tick()
+tick();
 ```
 
 ### 正交相机示例（注释形式）
@@ -532,15 +535,15 @@ tick()
 // const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
 
 // 正交相机
-const aspectRatio = sizes.width / sizes.height
+const aspectRatio = sizes.width / sizes.height;
 const camera = new THREE.OrthographicCamera(
-    -1 * aspectRatio,  // left
-     1 * aspectRatio,  // right
-     1,                // top
-    -1,                // bottom
-     0.1,              // near
-     100               // far
-)
+  -1 * aspectRatio, // left
+  1 * aspectRatio, // right
+  1, // top
+  -1, // bottom
+  0.1, // near
+  100, // far
+);
 ```
 
 ### 自定义鼠标控制示例
@@ -549,20 +552,20 @@ const camera = new THREE.OrthographicCamera(
 
 ```js
 // Cursor
-const cursor = { x: 0, y: 0 }
+const cursor = { x: 0, y: 0 };
 
-window.addEventListener('mousemove', (event) => {
-    cursor.x = event.clientX / sizes.width - 0.5
-    cursor.y = - (event.clientY / sizes.height - 0.5)
-})
+window.addEventListener("mousemove", (event) => {
+  cursor.x = event.clientX / sizes.width - 0.5;
+  cursor.y = -(event.clientY / sizes.height - 0.5);
+});
 
 // 在 tick 中
 const tick = () => {
-    camera.position.x = cursor.x * 5
-    camera.position.y = cursor.y * 5
-    camera.lookAt(mesh.position)
+  camera.position.x = cursor.x * 5;
+  camera.position.y = cursor.y * 5;
+  camera.lookAt(mesh.position);
 
-    renderer.render(scene, camera)
-    window.requestAnimationFrame(tick)
-}
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(tick);
+};
 ```

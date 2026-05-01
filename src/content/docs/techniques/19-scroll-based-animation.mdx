@@ -3,8 +3,7 @@ title: 19 滚动驱动动画
 description: 将 Three.js 场景作为经典 HTML 网站的背景，通过滚动和鼠标实现沉浸式交互体验
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 本课概览
 
@@ -19,7 +18,7 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 - 鼠标视差效果的原理和实现
 - 如何在滚动到特定区域时触发动画
 - 透明背景和 HTML 层叠技巧
-<LessonPreview lesson="19-scroll-based-animation" />
+  <LessonPreview lesson="19-scroll-based-animation" />
 
 ## 什么是滚动驱动动画？
 
@@ -58,22 +57,22 @@ CSS 中：
 
 ```css
 html {
-    /* 不要阻止默认滚动行为！ */
+  /* 不要阻止默认滚动行为！ */
 }
 
 .webgl {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
 }
 
 .section {
-    position: relative;
-    z-index: 2;  /* 在 Canvas 之上 */
-    /* 每个 section 的高度等于一个视口高度 */
+  position: relative;
+  z-index: 2; /* 在 Canvas 之上 */
+  /* 每个 section 的高度等于一个视口高度 */
 }
 ```
 
@@ -89,9 +88,9 @@ html {
 
 ```js
 const renderer = new THREE.WebGLRenderer({
-    canvas: canvas,
-    alpha: true  // 启用透明背景
-})
+  canvas: canvas,
+  alpha: true, // 启用透明背景
+});
 ```
 
 设置 `alpha: true` 后，Canvas 中没有 3D 内容的区域会变为透明，用户可以看到后面的 HTML 页面背景色。
@@ -100,7 +99,7 @@ const renderer = new THREE.WebGLRenderer({
 
 ```css
 html {
-    background-color: #1e1a20;  /* 深色背景 */
+  background-color: #1e1a20; /* 深色背景 */
 }
 ```
 
@@ -112,10 +111,10 @@ html {
 
 ```js
 // 同时设置颜色和透明度
-renderer.setClearColor('#000000', 0)
+renderer.setClearColor("#000000", 0);
 
 // 只设置透明度
-renderer.setClearAlpha(0.5)
+renderer.setClearAlpha(0.5);
 ```
 
 ## 恢复滚动 -- 移除滚动锁定
@@ -123,9 +122,10 @@ renderer.setClearAlpha(0.5)
 之前课程中为了防止纯 WebGL 页面被意外滚动，我们可能在 CSS 中添加了类似这样的代码：
 
 ```css
-html, body {
-    overflow: hidden;
-    height: 100%;
+html,
+body {
+  overflow: hidden;
+  height: 100%;
 }
 ```
 
@@ -137,22 +137,22 @@ html, body {
 
 ```js
 // 每个物体之间的 3D 空间距离
-const objectsDistance = 4
+const objectsDistance = 4;
 
 // 创建三个物体
-const mesh1 = new THREE.Mesh(new THREE.TorusGeometry(1, 0.4, 16, 60), material)
-const mesh2 = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 32), material)
-const mesh3 = new THREE.Mesh(new THREE.TorusKnotGeometry(0.8, 0.35, 100, 16), material)
+const mesh1 = new THREE.Mesh(new THREE.TorusGeometry(1, 0.4, 16, 60), material);
+const mesh2 = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 32), material);
+const mesh3 = new THREE.Mesh(new THREE.TorusKnotGeometry(0.8, 0.35, 100, 16), material);
 
 // 垂直排列：每个物体向下间隔 objectsDistance
-mesh1.position.y = - objectsDistance * 0  // y = 0
-mesh2.position.y = - objectsDistance * 1  // y = -4
-mesh3.position.y = - objectsDistance * 2  // y = -8
+mesh1.position.y = -objectsDistance * 0; // y = 0
+mesh2.position.y = -objectsDistance * 1; // y = -4
+mesh3.position.y = -objectsDistance * 2; // y = -8
 
 // 水平交错放置，避免都叠在中间
-mesh1.position.x = 2
-mesh2.position.x = -2
-mesh3.position.x = 2
+mesh1.position.x = 2;
+mesh2.position.x = -2;
+mesh3.position.x = 2;
 ```
 
 ### 为什么物体间距等于 `objectsDistance`？
@@ -168,7 +168,7 @@ Three.js 中 `PerspectiveCamera` 的 `fov`（视场角）参数指的是**垂直
 - 我们可以放心地把物体放在固定的 Y 坐标上
 
 ```js
-const camera = new THREE.PerspectiveCamera(35, sizes.width / sizes.height, 0.1, 100)
+const camera = new THREE.PerspectiveCamera(35, sizes.width / sizes.height, 0.1, 100);
 //                                     ^^
 //                          这是垂直视场角 35 度
 ```
@@ -179,8 +179,8 @@ const camera = new THREE.PerspectiveCamera(35, sizes.width / sizes.height, 0.1, 
 
 ```js
 const material = new THREE.MeshToonMaterial({
-    color: parameters.materialColor
-})
+  color: parameters.materialColor,
+});
 ```
 
 ### 添加渐变纹理实现更多色阶
@@ -188,19 +188,19 @@ const material = new THREE.MeshToonMaterial({
 默认的 `MeshToonMaterial` 只有两种明暗状态（亮面和暗面）。要实现三段或更多色阶，需要提供一个**渐变纹理**：
 
 ```js
-const textureLoader = new THREE.TextureLoader()
-const gradientTexture = textureLoader.load('textures/gradients/3.jpg')
+const textureLoader = new THREE.TextureLoader();
+const gradientTexture = textureLoader.load("textures/gradients/3.jpg");
 
 // 关键：使用 NearestFilter 避免 WebGL 自动插值
-gradientTexture.magFilter = THREE.NearestFilter
+gradientTexture.magFilter = THREE.NearestFilter;
 
 material = new THREE.MeshToonMaterial({
-    color: parameters.materialColor,
-    gradientMap: gradientTexture
-})
+  color: parameters.materialColor,
+  gradientMap: gradientTexture,
+});
 ```
 
-:::info
+:::note
 **为什么需要 NearestFilter？**
 
 默认情况下，WebGL 在读取纹理时会进行双线性插值，导致 3 个像素的渐变纹理变成平滑过渡，卡通效果消失。`NearestFilter` 让 WebGL 直接取最近的像素颜色，不做插值，从而保留了明显的色阶分界。
@@ -213,9 +213,9 @@ material = new THREE.MeshToonMaterial({
 `MeshToonMaterial` 是基于光照的材质，场景中没有光的话什么都看不到：
 
 ```js
-const directionalLight = new THREE.DirectionalLight('#ffffff', 3)
-directionalLight.position.set(1, 1, 0)
-scene.add(directionalLight)
+const directionalLight = new THREE.DirectionalLight("#ffffff", 3);
+directionalLight.position.set(1, 1, 0);
+scene.add(directionalLight);
 ```
 
 ## 追踪滚动位置
@@ -225,14 +225,14 @@ scene.add(directionalLight)
 `window.scrollY` 返回页面已经滚动的像素数：
 
 ```js
-let scrollY = window.scrollY  // 例如：1080 表示滚动了 1080 像素
+let scrollY = window.scrollY; // 例如：1080 表示滚动了 1080 像素
 
-window.addEventListener('scroll', () => {
-    scrollY = window.scrollY
-})
+window.addEventListener("scroll", () => {
+  scrollY = window.scrollY;
+});
 ```
 
-:::info
+:::note
 `scrollY` 是一个**像素值**，会随视口大小和分辨率变化。直接用它来控制 3D 场景会导致不同设备上体验不一致。我们需要将其**归一化**。
 :::
 
@@ -243,7 +243,7 @@ window.addEventListener('scroll', () => {
 ```js
 // scrollY / sizes.height 得到 0~N 的值（N = 滚过了几个视口高度）
 // 再乘以 objectsDistance，转换为 3D 空间距离
-const scrollProgress = scrollY / sizes.height * objectsDistance
+const scrollProgress = (scrollY / sizes.height) * objectsDistance;
 ```
 
 展开来看：
@@ -260,8 +260,8 @@ const scrollProgress = scrollY / sizes.height * objectsDistance
 
 ```js
 // 方法二：使用 getBoundingClientRect 追踪特定元素
-const sectionRect = section.getBoundingClientRect()
-const elementTop = sectionRect.top
+const sectionRect = section.getBoundingClientRect();
+const elementTop = sectionRect.top;
 // elementTop 为负数表示元素滚到了视口上方
 ```
 
@@ -269,9 +269,9 @@ const elementTop = sectionRect.top
 
 两种方法的对比：
 
-| 方法 | 优点 | 缺点 |
-|------|------|------|
-| `window.scrollY` | 简单直接，性能好 | 只能获取全局滚动量 |
+| 方法                      | 优点                   | 缺点                                                 |
+| ------------------------- | ---------------------- | ---------------------------------------------------- |
+| `window.scrollY`          | 简单直接，性能好       | 只能获取全局滚动量                                   |
 | `getBoundingClientRect()` | 可以追踪特定元素的位置 | 触发回流（layout recalculation），频繁调用有性能影响 |
 
 对于大多数滚动动画场景，`window.scrollY` 就足够了。
@@ -282,16 +282,16 @@ const elementTop = sectionRect.top
 
 ```js
 const tick = () => {
-    const elapsedTime = clock.getElapsedTime()
-    const deltaTime = elapsedTime - previousTime
-    previousTime = elapsedTime
+  const elapsedTime = clock.getElapsedTime();
+  const deltaTime = elapsedTime - previousTime;
+  previousTime = elapsedTime;
 
-    // 相机 Y 位置跟随滚动
-    camera.position.y = - scrollY / sizes.height * objectsDistance
+  // 相机 Y 位置跟随滚动
+  camera.position.y = (-scrollY / sizes.height) * objectsDistance;
 
-    renderer.render(scene, camera)
-    window.requestAnimationFrame(tick)
-}
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(tick);
+};
 ```
 
 注意负号 `-` 的含义：
@@ -305,31 +305,28 @@ const tick = () => {
 我们经常需要在用户滚动到某个 section 时触发特定动画。方法是计算当前处于第几个 section：
 
 ```js
-let currentSection = 0
+let currentSection = 0;
 
-window.addEventListener('scroll', () => {
-    scrollY = window.scrollY
+window.addEventListener("scroll", () => {
+  scrollY = window.scrollY;
 
-    // 计算当前处于第几个 section
-    const newSection = Math.round(scrollY / sizes.height)
+  // 计算当前处于第几个 section
+  const newSection = Math.round(scrollY / sizes.height);
 
-    // 只有当 section 发生变化时才触发动画
-    if (newSection !== currentSection) {
-        currentSection = newSection
+  // 只有当 section 发生变化时才触发动画
+  if (newSection !== currentSection) {
+    currentSection = newSection;
 
-        // 使用 GSAP 对当前 section 对应的物体做旋转动画
-        gsap.to(
-            sectionMeshes[currentSection].rotation,
-            {
-                duration: 1.5,
-                ease: 'power2.inOut',
-                x: '+=6',   // 在当前基础上增加 6 弧度
-                y: '+=3',
-                z: '+=1.5'
-            }
-        )
-    }
-})
+    // 使用 GSAP 对当前 section 对应的物体做旋转动画
+    gsap.to(sectionMeshes[currentSection].rotation, {
+      duration: 1.5,
+      ease: "power2.inOut",
+      x: "+=6", // 在当前基础上增加 6 弧度
+      y: "+=3",
+      z: "+=1.5",
+    });
+  }
+});
 ```
 
 `Math.round(scrollY / sizes.height)` 的含义：
@@ -349,6 +346,7 @@ window.addEventListener('scroll', () => {
 **视差（Parallax）** 是指从不同视角观察同一物体时，近处和远处的物体产生相对位移的现象。
 
 想象你把一只手伸在面前，另一只手伸在远处。当你左右摇头时：
+
 - 近处的手移动很多
 - 远处的手几乎不动
 
@@ -364,16 +362,16 @@ window.addEventListener('scroll', () => {
 
 ```js
 // 创建一个 Group 来包裹相机
-const cameraGroup = new THREE.Group()
-scene.add(cameraGroup)
-cameraGroup.add(camera)
+const cameraGroup = new THREE.Group();
+scene.add(cameraGroup);
+cameraGroup.add(camera);
 
 // 相机的 Y 位置跟随滚动（在 Group 内部）
 // camera.position.y = - scrollY / sizes.height * objectsDistance
 
 // Group 的 X 和 Y 位置跟随鼠标（视差效果）
-cameraGroup.position.x = parallaxX
-cameraGroup.position.y = parallaxY
+cameraGroup.position.x = parallaxX;
+cameraGroup.position.y = parallaxY;
 ```
 
 这样，滚动和视差互不干扰。
@@ -383,19 +381,20 @@ cameraGroup.position.y = parallaxY
 和滚动一样，鼠标位置也需要归一化：
 
 ```js
-const cursor = { x: 0, y: 0 }
+const cursor = { x: 0, y: 0 };
 
-window.addEventListener('mousemove', (event) => {
-    // event.clientX 范围是 0 ~ window.innerWidth
-    // event.clientY 范围是 0 ~ window.innerHeight
+window.addEventListener("mousemove", (event) => {
+  // event.clientX 范围是 0 ~ window.innerWidth
+  // event.clientY 范围是 0 ~ window.innerHeight
 
-    // 归一化为 -0.5 ~ 0.5
-    cursor.x = event.clientX / sizes.width - 0.5
-    cursor.y = event.clientY / sizes.height - 0.5
-})
+  // 归一化为 -0.5 ~ 0.5
+  cursor.x = event.clientX / sizes.width - 0.5;
+  cursor.y = event.clientY / sizes.height - 0.5;
+});
 ```
 
 减去 `0.5` 是为了让值变为**正负对称**的 `-0.5` 到 `0.5`：
+
 - 鼠标在左侧 → `cursor.x` 为负值 → 相机向左移动
 - 鼠标在右侧 → `cursor.x` 为正值 → 相机向右移动
 - 鼠标在中间 → `cursor.x` 接近 0 → 相机不动
@@ -406,21 +405,21 @@ window.addEventListener('mousemove', (event) => {
 
 ```js
 const tick = () => {
-    const elapsedTime = clock.getElapsedTime()
-    const deltaTime = elapsedTime - previousTime
-    previousTime = elapsedTime
+  const elapsedTime = clock.getElapsedTime();
+  const deltaTime = elapsedTime - previousTime;
+  previousTime = elapsedTime;
 
-    // 计算目标视差位置
-    const parallaxX = cursor.x * 0.5
-    const parallaxY = - cursor.y * 0.5  // 注意 Y 轴取反
+  // 计算目标视差位置
+  const parallaxX = cursor.x * 0.5;
+  const parallaxY = -cursor.y * 0.5; // 注意 Y 轴取反
 
-    // 平滑跟随：每帧只移动"差值的一小部分"
-    cameraGroup.position.x += (parallaxX - cameraGroup.position.x) * 5 * deltaTime
-    cameraGroup.position.y += (parallaxY - cameraGroup.position.y) * 5 * deltaTime
+  // 平滑跟随：每帧只移动"差值的一小部分"
+  cameraGroup.position.x += (parallaxX - cameraGroup.position.x) * 5 * deltaTime;
+  cameraGroup.position.y += (parallaxY - cameraGroup.position.y) * 5 * deltaTime;
 
-    renderer.render(scene, camera)
-    window.requestAnimationFrame(tick)
-}
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(tick);
+};
 ```
 
 这里的关键是 `* 5 * deltaTime`：
@@ -429,10 +428,11 @@ const tick = () => {
 - `* 5` 是跟随速度（值越大越快）
 - `* deltaTime` 让动画与帧率无关
 
-:::info
+:::note
 **为什么需要 deltaTime？**
 
 不同设备的帧率不同（60fps、120fps、144fps）。如果不使用 `deltaTime`：
+
 - 60fps 的设备上，每秒移动 60 步
 - 120fps 的设备上，每秒移动 120 步（速度快了一倍）
 
@@ -446,28 +446,28 @@ const tick = () => {
 为了让场景更有氛围感，我们可以在整个滚动范围内添加背景粒子：
 
 ```js
-const particlesCount = 200
-const positions = new Float32Array(particlesCount * 3)
+const particlesCount = 200;
+const positions = new Float32Array(particlesCount * 3);
 
 for (let i = 0; i < particlesCount; i++) {
-    // X 和 Z：在相机视野范围内随机分布
-    positions[i * 3 + 0] = (Math.random() - 0.5) * 10
-    positions[i * 3 + 1] = objectsDistance * 0.5
-        - Math.random() * objectsDistance * sectionMeshes.length
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 10
+  // X 和 Z：在相机视野范围内随机分布
+  positions[i * 3 + 0] = (Math.random() - 0.5) * 10;
+  positions[i * 3 + 1] =
+    objectsDistance * 0.5 - Math.random() * objectsDistance * sectionMeshes.length;
+  positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
 }
 
-const particlesGeometry = new THREE.BufferGeometry()
-particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+const particlesGeometry = new THREE.BufferGeometry();
+particlesGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
 
 const particlesMaterial = new THREE.PointsMaterial({
-    color: parameters.materialColor,
-    sizeAttenuation: true,
-    size: 0.03
-})
+  color: parameters.materialColor,
+  sizeAttenuation: true,
+  size: 0.03,
+});
 
-const particles = new THREE.Points(particlesGeometry, particlesMaterial)
-scene.add(particles)
+const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+scene.add(particles);
 ```
 
 粒子的 Y 坐标从 `objectsDistance * 0.5`（第一个物体之上）延伸到 `objectsDistance * sectionMeshes.length` 之下，这样粒子分布在用户能滚动的整个范围内。
@@ -479,8 +479,8 @@ scene.add(particles)
 ```js
 // 在 tick 函数中
 for (const mesh of sectionMeshes) {
-    mesh.rotation.x += deltaTime * 0.1
-    mesh.rotation.y += deltaTime * 0.12
+  mesh.rotation.x += deltaTime * 0.1;
+  mesh.rotation.y += deltaTime * 0.12;
 }
 ```
 
@@ -537,20 +537,23 @@ const tick = () => {
 ```js
 // 简单的节流函数
 function throttle(fn, delay) {
-    let lastCall = 0
-    return function(...args) {
-        const now = Date.now()
-        if (now - lastCall >= delay) {
-            lastCall = now
-            fn.apply(this, args)
-        }
+  let lastCall = 0;
+  return function (...args) {
+    const now = Date.now();
+    if (now - lastCall >= delay) {
+      lastCall = now;
+      fn.apply(this, args);
     }
+  };
 }
 
-window.addEventListener('scroll', throttle(() => {
+window.addEventListener(
+  "scroll",
+  throttle(() => {
     // 这里最多每 16ms 执行一次
-    scrollY = window.scrollY
-}, 16))
+    scrollY = window.scrollY;
+  }, 16),
+);
 ```
 
 ### 方案三：使用 CSS scroll-driven animations（现代浏览器）
@@ -558,13 +561,17 @@ window.addEventListener('scroll', throttle(() => {
 ```css
 /* 纯 CSS 的滚动驱动动画（无需 JavaScript） */
 @keyframes moveCamera {
-    from { transform: translateY(0); }
-    to { transform: translateY(-100px); }
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-100px);
+  }
 }
 
 .section {
-    animation: moveCamera linear;
-    animation-timeline: scroll();
+  animation: moveCamera linear;
+  animation-timeline: scroll();
 }
 ```
 

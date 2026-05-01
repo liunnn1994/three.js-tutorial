@@ -3,8 +3,7 @@ title: 15 阴影
 description: 从零开始学习 Three.js 中的阴影系统——阴影贴图的原理、三种投影光源的配置、优化技巧，以及烘焙阴影方案
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 为什么需要阴影？
 
@@ -13,6 +12,7 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 投影阴影是让 3D 场景看起来"真实"的关键因素之一。没有阴影的 3D 场景看起来像是在太空里漂浮的物体，而有了阴影之后，物体就有了"接地感"和空间深度。
 
 ---
+
 <LessonPreview lesson="15-shadows" />
 
 ## 阴影贴图（Shadow Map）原理
@@ -37,13 +37,14 @@ Three.js 使用的是一种折中方案：**阴影贴图（Shadow Map）**。
 
 4. **在最终渲染中使用阴影贴图**：Three.js 用这张阴影贴图来判断场景中的哪些区域处于阴影中。如果某个像素在阴影贴图中对应的深度值表示"有物体挡住了光线"，那么这个像素就会被渲染为阴影（变暗）。
 
-:::info 一句话总结
+:::note[一句话总结]
 阴影贴图 = 从光源视角拍摄的"深度照片"，Three.js 用这张照片来判断哪里该有阴影。
 :::
 
 ### 多光源的性能影响
 
 如果你的场景中有 3 个开启了阴影的光源，那么每帧渲染时：
+
 - 普通渲染：1 次
 - 阴影贴图渲染：3 次（每个光源 1 次）
 - 总共：**4 次渲染**
@@ -59,9 +60,9 @@ Three.js 使用的是一种折中方案：**阴影贴图（Shadow Map）**。
 ### 第一步：开启渲染器阴影
 
 ```js
-const renderer = new THREE.WebGLRenderer({ canvas })
-renderer.shadowMap.enabled = true
-renderer.shadowMap.type = THREE.PCFSoftShadowMap
+const renderer = new THREE.WebGLRenderer({ canvas });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 ```
 
 - `renderer.shadowMap.enabled = true`：告诉渲染器要处理阴影贴图。没有这一行，所有阴影相关代码都不会生效。
@@ -76,17 +77,17 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
 ```js
 // 球体投射阴影（比如它在地面上投下影子）
-sphere.castShadow = true
+sphere.castShadow = true;
 
 // 地面接收阴影（球体的影子会落在地面上）
-plane.receiveShadow = true
+plane.receiveShadow = true;
 ```
 
 - `castShadow = true`：这个物体**会在其他表面上产生影子**。
 - `receiveShadow = true`：这个物体**的表面上会显示出其他物体的影子**。
 - 两个属性默认都是 `false`。
 
-:::tip 思考方式
+:::tip[思考方式]
 在添加阴影之前，想清楚："哪些物体需要在其他物体上投下影子？" 和 "影子应该出现在哪些表面上？"。不是所有物体都需要同时开启两个属性。比如地面通常只需要 `receiveShadow`，不需要 `castShadow`。
 :::
 
@@ -94,19 +95,19 @@ plane.receiveShadow = true
 
 只有**三种光源**可以投射阴影：
 
-| 光源 | 支持阴影 | 阴影相机类型 |
-|------|---------|------------|
-| `DirectionalLight` | 是 | 正交相机（OrthographicCamera） |
-| `SpotLight` | 是 | 透视相机（PerspectiveCamera） |
-| `PointLight` | 是 | 透视相机（6 方向渲染） |
-| `AmbientLight` | 否 | - |
-| `HemisphereLight` | 否 | - |
-| `RectAreaLight` | 否 | - |
+| 光源               | 支持阴影 | 阴影相机类型                   |
+| ------------------ | -------- | ------------------------------ |
+| `DirectionalLight` | 是       | 正交相机（OrthographicCamera） |
+| `SpotLight`        | 是       | 透视相机（PerspectiveCamera）  |
+| `PointLight`       | 是       | 透视相机（6 方向渲染）         |
+| `AmbientLight`     | 否       | -                              |
+| `HemisphereLight`  | 否       | -                              |
+| `RectAreaLight`    | 否       | -                              |
 
 环境光和半球光不支持阴影是合理的——环境光来自四面八方，无法产生有方向的投影；矩形面光目前还不支持阴影。
 
 ```js
-directionalLight.castShadow = true
+directionalLight.castShadow = true;
 ```
 
 ---
@@ -120,14 +121,14 @@ directionalLight.castShadow = true
 你可以通过以下方式访问这个阴影相机：
 
 ```js
-directionalLight.shadow.camera
+directionalLight.shadow.camera;
 ```
 
 ### 阴影贴图分辨率
 
 ```js
-directionalLight.shadow.mapSize.width = 1024
-directionalLight.shadow.mapSize.height = 1024
+directionalLight.shadow.mapSize.width = 1024;
+directionalLight.shadow.mapSize.height = 1024;
 ```
 
 阴影贴图的分辨率直接决定阴影的清晰度。默认值是 `512x512`。
@@ -136,7 +137,7 @@ directionalLight.shadow.mapSize.height = 1024
 - **适中**（如 1024）：大多数场景的推荐值
 - **太高**（如 4096）：更清晰，但性能开销更大
 
-:::warning 必须使用 2 的幂值
+:::caution[必须使用 2 的幂值]
 阴影贴图的分辨率必须是 2 的幂值（256、512、1024、2048...）。这是因为 GPU 对 2 的幂尺寸的纹理有优化的 MIP 映射处理。
 :::
 
@@ -145,13 +146,13 @@ directionalLight.shadow.mapSize.height = 1024
 正交相机有一个矩形视野范围（不像透视相机那样有锥形视野）。你可以通过 `top`、`right`、`bottom`、`left`、`near`、`far` 来控制它：
 
 ```js
-directionalLight.shadow.camera.near = 1
-directionalLight.shadow.camera.far = 6
+directionalLight.shadow.camera.near = 1;
+directionalLight.shadow.camera.far = 6;
 
-directionalLight.shadow.camera.top = 2
-directionalLight.shadow.camera.right = 2
-directionalLight.shadow.camera.bottom = -2
-directionalLight.shadow.camera.left = -2
+directionalLight.shadow.camera.top = 2;
+directionalLight.shadow.camera.right = 2;
+directionalLight.shadow.camera.bottom = -2;
+directionalLight.shadow.camera.left = -2;
 ```
 
 ### 为什么要调整阴影相机范围？
@@ -166,15 +167,15 @@ directionalLight.shadow.camera.left = -2
 
 ```js
 const directionalLightCameraHelper = new THREE.CameraHelper(
-    directionalLight.shadow.camera
-)
-scene.add(directionalLightCameraHelper)
+  directionalLight.shadow.camera,
+);
+scene.add(directionalLightCameraHelper);
 ```
 
 你会看到一个线框盒子出现在光源位置，展示阴影相机的可视范围。调试完成后记得隐藏：
 
 ```js
-directionalLightCameraHelper.visible = false
+directionalLightCameraHelper.visible = false;
 ```
 
 ### 阴影偏差（Shadow Bias）
@@ -182,7 +183,7 @@ directionalLightCameraHelper.visible = false
 如果阴影出现不正常的条纹或"阴影痤疮（Shadow Acne）"，可以通过调整 bias 来修复：
 
 ```js
-directionalLight.shadow.bias = -0.0001
+directionalLight.shadow.bias = -0.0001;
 ```
 
 :::caution
@@ -193,28 +194,28 @@ Bias 值需要非常小（通常在 `-0.0001 ~ -0.001` 之间）。如果 bias �
 
 ```js
 // 创建平行光
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1.1)
-directionalLight.position.set(2, 2, -1)
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1.1);
+directionalLight.position.set(2, 2, -1);
 
 // 启用阴影
-directionalLight.castShadow = true
+directionalLight.castShadow = true;
 
 // 阴影贴图分辨率
-directionalLight.shadow.mapSize.width = 1024
-directionalLight.shadow.mapSize.height = 1024
+directionalLight.shadow.mapSize.width = 1024;
+directionalLight.shadow.mapSize.height = 1024;
 
 // 阴影相机范围
-directionalLight.shadow.camera.near = 1
-directionalLight.shadow.camera.far = 6
-directionalLight.shadow.camera.top = 2
-directionalLight.shadow.camera.right = 2
-directionalLight.shadow.camera.bottom = -2
-directionalLight.shadow.camera.left = -2
+directionalLight.shadow.camera.near = 1;
+directionalLight.shadow.camera.far = 6;
+directionalLight.shadow.camera.top = 2;
+directionalLight.shadow.camera.right = 2;
+directionalLight.shadow.camera.bottom = -2;
+directionalLight.shadow.camera.left = -2;
 
 // 阴影偏差（可选）
-directionalLight.shadow.bias = -0.0001
+directionalLight.shadow.bias = -0.0001;
 
-scene.add(directionalLight)
+scene.add(directionalLight);
 ```
 
 **参考文档**：[Three.js DirectionalLightShadow](https://threejs.org/docs/#api/en/lights/shadows/DirectionalLightShadow)
@@ -228,22 +229,22 @@ scene.add(directionalLight)
 ### 配置示例
 
 ```js
-const spotLight = new THREE.SpotLight(0xffffff, 2.4, 10, Math.PI * 0.3)
-spotLight.position.set(0, 2, 2)
-scene.add(spotLight)
-scene.add(spotLight.target)
+const spotLight = new THREE.SpotLight(0xffffff, 2.4, 10, Math.PI * 0.3);
+spotLight.position.set(0, 2, 2);
+scene.add(spotLight);
+scene.add(spotLight.target);
 
 // 启用阴影
-spotLight.castShadow = true
+spotLight.castShadow = true;
 
 // 阴影贴图分辨率
-spotLight.shadow.mapSize.width = 1024
-spotLight.shadow.mapSize.height = 1024
+spotLight.shadow.mapSize.width = 1024;
+spotLight.shadow.mapSize.height = 1024;
 
 // 阴影相机参数（透视相机）
-spotLight.shadow.camera.near = 1
-spotLight.shadow.camera.far = 6
-spotLight.shadow.camera.fov = 30
+spotLight.shadow.camera.near = 1;
+spotLight.shadow.camera.far = 6;
+spotLight.shadow.camera.fov = 30;
 ```
 
 ### 透视相机的参数
@@ -263,10 +264,10 @@ spotLight.shadow.camera.fov = 30
 ### 调试
 
 ```js
-const spotLightCameraHelper = new THREE.CameraHelper(spotLight.shadow.camera)
-scene.add(spotLightCameraHelper)
+const spotLightCameraHelper = new THREE.CameraHelper(spotLight.shadow.camera);
+scene.add(spotLightCameraHelper);
 // 调试完成后
-spotLightCameraHelper.visible = false
+spotLightCameraHelper.visible = false;
 ```
 
 **参考文档**：[Three.js SpotLightShadow](https://threejs.org/docs/#api/en/lights/shadows/SpotLightShadow)
@@ -282,20 +283,20 @@ spotLightCameraHelper.visible = false
 ### 配置示例
 
 ```js
-const pointLight = new THREE.PointLight(0xffffff, 2.7)
-pointLight.position.set(-1, 1, 0)
-scene.add(pointLight)
+const pointLight = new THREE.PointLight(0xffffff, 2.7);
+pointLight.position.set(-1, 1, 0);
+scene.add(pointLight);
 
 // 启用阴影
-pointLight.castShadow = true
+pointLight.castShadow = true;
 
 // 阴影贴图分辨率
-pointLight.shadow.mapSize.width = 1024
-pointLight.shadow.mapSize.height = 1024
+pointLight.shadow.mapSize.width = 1024;
+pointLight.shadow.mapSize.height = 1024;
 
 // 阴影相机参数（透视相机）
-pointLight.shadow.camera.near = 0.1
-pointLight.shadow.camera.far = 5
+pointLight.shadow.camera.near = 0.1;
+pointLight.shadow.camera.far = 5;
 ```
 
 ### 透视相机参数
@@ -307,13 +308,13 @@ pointLight.shadow.camera.far = 5
 ### 调试
 
 ```js
-const pointLightCameraHelper = new THREE.CameraHelper(pointLight.shadow.camera)
-scene.add(pointLightCameraHelper)
+const pointLightCameraHelper = new THREE.CameraHelper(pointLight.shadow.camera);
+scene.add(pointLightCameraHelper);
 // 调试完成后
-pointLightCameraHelper.visible = false
+pointLightCameraHelper.visible = false;
 ```
 
-:::warning 性能警告
+:::caution[性能警告]
 点光源的阴影渲染成本极高（6 次额外渲染）。如果场景中有 3 个带阴影的点光源，就是 18 次额外的渲染。在性能敏感的场景中，尽量避免给点光源开启阴影。
 :::
 
@@ -328,7 +329,7 @@ Three.js 提供了多种阴影渲染算法，通过 `renderer.shadowMap.type` �
 ### BasicShadowMap
 
 ```js
-renderer.shadowMap.type = THREE.BasicShadowMap
+renderer.shadowMap.type = THREE.BasicShadowMap;
 ```
 
 - **性能**：最快
@@ -338,7 +339,7 @@ renderer.shadowMap.type = THREE.BasicShadowMap
 ### PCFShadowMap（默认）
 
 ```js
-renderer.shadowMap.type = THREE.PCFShadowMap
+renderer.shadowMap.type = THREE.PCFShadowMap;
 ```
 
 - **性能**：中等
@@ -349,8 +350,8 @@ renderer.shadowMap.type = THREE.PCFShadowMap
 ### PCFSoftShadowMap（推荐）
 
 ```js
-renderer.shadowMap.type = THREE.PCFSoftMap
-renderer.shadowMap.type = THREE.PCFSoftShadowMap
+renderer.shadowMap.type = THREE.PCFSoftMap;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 ```
 
 - **性能**：稍慢于 PCFShadowMap
@@ -361,7 +362,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap
 ### VSMShadowMap
 
 ```js
-renderer.shadowMap.type = THREE.VSMShadowMap
+renderer.shadowMap.type = THREE.VSMShadowMap;
 ```
 
 - **性能**：最慢
@@ -371,7 +372,7 @@ renderer.shadowMap.type = THREE.VSMShadowMap
 ### shadow.radius 模糊控制
 
 ```js
-directionalLight.shadow.radius = 4
+directionalLight.shadow.radius = 4;
 ```
 
 `shadow.radius` 控制 PCFShadowMap 模式下阴影的模糊程度。值越大，阴影边缘越模糊。
@@ -382,14 +383,14 @@ directionalLight.shadow.radius = 4
 
 ### 算法对比总结
 
-| 算法 | 性能 | 阴影质量 | 支持 shadow.radius |
-|------|------|---------|-------------------|
-| `BasicShadowMap` | 最快 | 锯齿明显 | 否 |
-| `PCFShadowMap` | 中等 | 较好 | 是 |
-| `PCFSoftShadowMap` | 稍慢 | 柔和自然 | 否 |
-| `VSMShadowMap` | 最慢 | 不稳定 | 否 |
+| 算法               | 性能 | 阴影质量 | 支持 shadow.radius |
+| ------------------ | ---- | -------- | ------------------ |
+| `BasicShadowMap`   | 最快 | 锯齿明显 | 否                 |
+| `PCFShadowMap`     | 中等 | 较好     | 是                 |
+| `PCFSoftShadowMap` | 稍慢 | 柔和自然 | 否                 |
+| `VSMShadowMap`     | 最慢 | 不稳定   | 否                 |
 
-:::tip 推荐
+:::tip[推荐]
 大多数情况下，使用 `THREE.PCFSoftShadowMap` 就好了。如果你需要自定义阴影模糊度，则使用 `THREE.PCFShadowMap` + `shadow.radius`。
 :::
 
@@ -413,11 +414,11 @@ directionalLight.shadow.radius = 4
 
 这是最重要的优化。每个带阴影的光源都会增加额外的渲染负担：
 
-| 光源类型 | 每个光源的额外渲染次数 |
-|---------|---------------------|
-| DirectionalLight | 1 次 |
-| SpotLight | 1 次 |
-| PointLight | **6 次** |
+| 光源类型         | 每个光源的额外渲染次数 |
+| ---------------- | ---------------------- |
+| DirectionalLight | 1 次                   |
+| SpotLight        | 1 次                   |
+| PointLight       | **6 次**               |
 
 ### 2. 缩小阴影相机范围
 
@@ -425,10 +426,10 @@ directionalLight.shadow.radius = 4
 
 ```js
 // 只覆盖需要的区域
-directionalLight.shadow.camera.top = 2
-directionalLight.shadow.camera.right = 2
-directionalLight.shadow.camera.bottom = -2
-directionalLight.shadow.camera.left = -2
+directionalLight.shadow.camera.top = 2;
+directionalLight.shadow.camera.right = 2;
+directionalLight.shadow.camera.bottom = -2;
+directionalLight.shadow.camera.left = -2;
 ```
 
 ### 3. 合理设置阴影贴图分辨率
@@ -437,10 +438,10 @@ directionalLight.shadow.camera.left = -2
 
 ```js
 // 主要光源 - 高分辨率
-directionalLight.shadow.mapSize.set(1024, 1024)
+directionalLight.shadow.mapSize.set(1024, 1024);
 
 // 次要光源 - 低分辨率
-spotLight.shadow.mapSize.set(512, 512)
+spotLight.shadow.mapSize.set(512, 512);
 ```
 
 ### 4. 减少投射/接收阴影的物体
@@ -478,15 +479,15 @@ spotLight.shadow.mapSize.set(512, 512)
 
 ```js
 // 1. 加载烘焙好的阴影纹理
-const textureLoader = new THREE.TextureLoader()
-const bakedShadow = textureLoader.load('/textures/bakedShadow.jpg')
-bakedShadow.colorSpace = THREE.SRGBColorSpace
+const textureLoader = new THREE.TextureLoader();
+const bakedShadow = textureLoader.load("/textures/bakedShadow.jpg");
+bakedShadow.colorSpace = THREE.SRGBColorSpace;
 
 // 2. 使用 MeshBasicMaterial 显示纹理（不需要实时光照）
 const shadowPlane = new THREE.Mesh(
-    new THREE.PlaneGeometry(5, 5),
-    new THREE.MeshBasicMaterial({ map: bakedShadow })
-)
+  new THREE.PlaneGeometry(5, 5),
+  new THREE.MeshBasicMaterial({ map: bakedShadow }),
+);
 ```
 
 注意：使用烘焙阴影时，地面材质通常改为 `MeshBasicMaterial`，因为它不需要响应实时光照。
@@ -507,42 +508,42 @@ const shadowPlane = new THREE.Mesh(
 
 ```js
 // 加载假阴影纹理（中心白色=透明，边缘黑色=阴影）
-const simpleShadow = textureLoader.load('/textures/simpleShadow.jpg')
+const simpleShadow = textureLoader.load("/textures/simpleShadow.jpg");
 
 // 创建假阴影平面
 const sphereShadow = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.5, 1.5),
-    new THREE.MeshBasicMaterial({
-        color: 0x000000,
-        transparent: true,
-        alphaMap: simpleShadow
-    })
-)
-sphereShadow.rotation.x = -Math.PI * 0.5
+  new THREE.PlaneGeometry(1.5, 1.5),
+  new THREE.MeshBasicMaterial({
+    color: 0x000000,
+    transparent: true,
+    alphaMap: simpleShadow,
+  }),
+);
+sphereShadow.rotation.x = -Math.PI * 0.5;
 // 稍微高于地面，避免 Z-fighting
-sphereShadow.position.y = plane.position.y + 0.01
-scene.add(sphereShadow)
+sphereShadow.position.y = plane.position.y + 0.01;
+scene.add(sphereShadow);
 
 // 在动画循环中更新
 const tick = () => {
-    const elapsedTime = clock.getElapsedTime()
+  const elapsedTime = clock.getElapsedTime();
 
-    // 更新球体位置
-    sphere.position.x = Math.cos(elapsedTime) * 1.5
-    sphere.position.z = Math.sin(elapsedTime) * 1.5
-    sphere.position.y = Math.abs(Math.sin(elapsedTime * 3))
+  // 更新球体位置
+  sphere.position.x = Math.cos(elapsedTime) * 1.5;
+  sphere.position.z = Math.sin(elapsedTime) * 1.5;
+  sphere.position.y = Math.abs(Math.sin(elapsedTime * 3));
 
-    // 假阴影跟随球体
-    sphereShadow.position.x = sphere.position.x
-    sphereShadow.position.z = sphere.position.z
+  // 假阴影跟随球体
+  sphereShadow.position.x = sphere.position.x;
+  sphereShadow.position.z = sphere.position.z;
 
-    // 球体越高，阴影越淡
-    sphereShadow.material.opacity = (1 - sphere.position.y) * 0.3
+  // 球体越高，阴影越淡
+  sphereShadow.material.opacity = (1 - sphere.position.y) * 0.3;
 
-    renderer.render(scene, camera)
-    window.requestAnimationFrame(tick)
-}
-tick()
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(tick);
+};
+tick();
 ```
 
 ### Z-fighting 避坑
@@ -550,10 +551,10 @@ tick()
 当两个平面放在完全相同的位置时，GPU 无法判断哪个平面应该显示在上面，导致画面闪烁。这就是 **Z-fighting**。解决方法是将假阴影平面放在真实地面的**稍微上方一点**（比如 `+0.01`）：
 
 ```js
-sphereShadow.position.y = plane.position.y + 0.01
+sphereShadow.position.y = plane.position.y + 0.01;
 ```
 
-:::tip 使用建议
+:::tip[使用建议]
 假阴影方案非常轻量（几乎零性能开销），效果也不错。虽然不像真正的实时阴影那样精确，但非常适合用在个人作品集、移动端项目、或者对性能要求极高的场景中。
 :::
 
@@ -562,67 +563,61 @@ sphereShadow.position.y = plane.position.y + 0.01
 ## 完整代码示例
 
 ```js
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 // 场景
-const scene = new THREE.Scene()
+const scene = new THREE.Scene();
 
 // 渲染器 - 开启阴影
-const renderer = new THREE.WebGLRenderer({ canvas })
-renderer.shadowMap.enabled = true
-renderer.shadowMap.type = THREE.PCFSoftShadowMap
+const renderer = new THREE.WebGLRenderer({ canvas });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 // 材质
-const material = new THREE.MeshStandardMaterial({ roughness: 0.7 })
+const material = new THREE.MeshStandardMaterial({ roughness: 0.7 });
 
 // 球体 - 投射阴影
-const sphere = new THREE.Mesh(
-    new THREE.SphereGeometry(0.5, 32, 32),
-    material
-)
-sphere.castShadow = true
+const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), material);
+sphere.castShadow = true;
 
 // 地面 - 接收阴影
-const plane = new THREE.Mesh(
-    new THREE.PlaneGeometry(5, 5),
-    material
-)
-plane.receiveShadow = true
-plane.rotation.x = -Math.PI * 0.5
-plane.position.y = -0.5
+const plane = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), material);
+plane.receiveShadow = true;
+plane.rotation.x = -Math.PI * 0.5;
+plane.position.y = -0.5;
 
-scene.add(sphere, plane)
+scene.add(sphere, plane);
 
 // 环境光 - 不支持阴影
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
-scene.add(ambientLight)
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(ambientLight);
 
 // 平行光 - 投射阴影
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1.1)
-directionalLight.position.set(2, 2, -1)
-directionalLight.castShadow = true
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1.1);
+directionalLight.position.set(2, 2, -1);
+directionalLight.castShadow = true;
 
 // 阴影贴图分辨率
-directionalLight.shadow.mapSize.width = 1024
-directionalLight.shadow.mapSize.height = 1024
+directionalLight.shadow.mapSize.width = 1024;
+directionalLight.shadow.mapSize.height = 1024;
 
 // 阴影相机范围
-directionalLight.shadow.camera.near = 1
-directionalLight.shadow.camera.far = 6
-directionalLight.shadow.camera.top = 2
-directionalLight.shadow.camera.right = 2
-directionalLight.shadow.camera.bottom = -2
-directionalLight.shadow.camera.left = -2
+directionalLight.shadow.camera.near = 1;
+directionalLight.shadow.camera.far = 6;
+directionalLight.shadow.camera.top = 2;
+directionalLight.shadow.camera.right = 2;
+directionalLight.shadow.camera.bottom = -2;
+directionalLight.shadow.camera.left = -2;
 
-scene.add(directionalLight)
+scene.add(directionalLight);
 
 // 阴影相机辅助工具（调试用）
 const directionalLightCameraHelper = new THREE.CameraHelper(
-    directionalLight.shadow.camera
-)
-directionalLightCameraHelper.visible = false
-scene.add(directionalLightCameraHelper)
+  directionalLight.shadow.camera,
+);
+directionalLightCameraHelper.visible = false;
+scene.add(directionalLightCameraHelper);
 ```
 
 **下一课预告**：我们将在后续课程中学习更多关于材质和纹理的高级技巧。

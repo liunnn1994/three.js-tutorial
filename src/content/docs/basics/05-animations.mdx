@@ -3,7 +3,7 @@ title: 05 动画
 description: 学习使用 requestAnimationFrame 创建 Three.js 动画循环，掌握帧率独立性、Clock 工具、GSAP 动画库
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 为什么需要动画
 
@@ -31,21 +31,21 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 
 ```js
 const tick = () => {
-    // 1. 更新物体（移动、旋转、缩放等）
-    mesh.rotation.y += 0.01
+  // 1. 更新物体（移动、旋转、缩放等）
+  mesh.rotation.y += 0.01;
 
-    // 2. 渲染场景
-    renderer.render(scene, camera)
+  // 2. 渲染场景
+  renderer.render(scene, camera);
 
-    // 3. 请求下一帧再次调用这个函数
-    window.requestAnimationFrame(tick)
-}
+  // 3. 请求下一帧再次调用这个函数
+  window.requestAnimationFrame(tick);
+};
 
 // 必须手动调用一次来启动循环！
-tick()
+tick();
 ```
 
-:::warning 常见陷阱
+:::caution[常见陷阱]
 不要忘记在定义函数后**手动调用一次** `tick()`。如果不调用，函数永远不会被执行，屏幕上什么都不会发生。这个错误非常常见，即使是有经验的开发者也会偶尔忘记。
 :::
 
@@ -56,9 +56,9 @@ tick()
 ```js
 // ❌ 不推荐的方式
 setInterval(() => {
-    mesh.rotation.y += 0.01
-    renderer.render(scene, camera)
-}, 1000 / 60) // 约 16.67ms
+  mesh.rotation.y += 0.01;
+  renderer.render(scene, camera);
+}, 1000 / 60); // 约 16.67ms
 ```
 
 `requestAnimationFrame` 相比 `setInterval` 有以下重要优势：
@@ -91,7 +91,7 @@ setInterval(() => {
 假设你写了一个简单的旋转动画：
 
 ```js
-mesh.rotation.y += 0.01
+mesh.rotation.y += 0.01;
 ```
 
 这段代码的意思是：**每一帧让物体旋转 0.01 弧度**。
@@ -117,26 +117,26 @@ mesh.rotation.y += 0.01
 `Date.now()` 返回的是一个**时间戳** —— 从 1970 年 1 月 1 日 00:00:00 UTC 到现在的毫秒数（即 Unix 时间）。
 
 ```js
-let time = Date.now() // 记录起始时间
+let time = Date.now(); // 记录起始时间
 
 const tick = () => {
-    // 获取当前时间
-    const currentTime = Date.now()
+  // 获取当前时间
+  const currentTime = Date.now();
 
-    // 计算两帧之间的时间差（毫秒 → 秒）
-    const deltaTime = (currentTime - time) / 1000
+  // 计算两帧之间的时间差（毫秒 → 秒）
+  const deltaTime = (currentTime - time) / 1000;
 
-    // 更新时间记录，为下一帧做准备
-    time = currentTime
+  // 更新时间记录，为下一帧做准备
+  time = currentTime;
 
-    // 使用 deltaTime 驱动动画
-    mesh.rotation.y += 1 * deltaTime // 每秒旋转 1 弧度
+  // 使用 deltaTime 驱动动画
+  mesh.rotation.y += 1 * deltaTime; // 每秒旋转 1 弧度
 
-    renderer.render(scene, camera)
-    window.requestAnimationFrame(tick)
-}
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(tick);
+};
 
-tick()
+tick();
 ```
 
 关键步骤解析：
@@ -154,7 +154,7 @@ Three.js 提供了一个内置的 `THREE.Clock` 类，帮我们封装了上述�
 ### 创建 Clock 实例
 
 ```js
-const clock = new THREE.Clock()
+const clock = new THREE.Clock();
 ```
 
 Clock 在实例化时会自动记录当前时间作为起点。
@@ -164,23 +164,23 @@ Clock 在实例化时会自动记录当前时间作为起点。
 `getElapsedTime()` 返回从 Clock 创建（或上次调用 `.start()`、`.getElapsedTime()`）到现在的**总秒数**。每次调用都会更新内部计时。
 
 ```js
-const clock = new THREE.Clock()
+const clock = new THREE.Clock();
 
 const tick = () => {
-    const elapsedTime = clock.getElapsedTime()
-    // elapsedTime 从 0 开始，每秒增加 1
+  const elapsedTime = clock.getElapsedTime();
+  // elapsedTime 从 0 开始，每秒增加 1
 
-    // 示例：每秒旋转一整圈
-    mesh.rotation.y = elapsedTime * Math.PI * 2
+  // 示例：每秒旋转一整圈
+  mesh.rotation.y = elapsedTime * Math.PI * 2;
 
-    renderer.render(scene, camera)
-    window.requestAnimationFrame(tick)
-}
-tick()
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(tick);
+};
+tick();
 ```
 
-:::tip Math.PI * 2 的含义
-在数学中，一个完整的圆周是 `2 * PI` 弧度（约 6.28 弧度）。所以 `elapsedTime * Math.PI * 2` 表示：随着时间每过 1 秒，角度增加一个完整的圆周，即每秒转一圈。
+:::tip[Math.PI _ 2 的含义]
+在数学中，一个完整的圆周是 `2 _ PI`弧度（约 6.28 弧度）。所以`elapsedTime _ Math.PI _ 2` 表示：随着时间每过 1 秒，角度增加一个完整的圆周，即每秒转一圈。
 :::
 
 **注意**：这里用的是 `=` 赋值，不是 `+=` 增量。我们直接用时间值设置旋转角度，而不是在上一帧的基础上增加。这样动画天然就是帧率独立的。
@@ -190,21 +190,21 @@ tick()
 `getDelta()` 返回**上一帧到这一帧之间的时间差**（秒）。
 
 ```js
-const clock = new THREE.Clock()
+const clock = new THREE.Clock();
 
 const tick = () => {
-    const deltaTime = clock.getDelta()
-    // deltaTime 通常是 0.016 左右（60fps 下约 16.67ms）
+  const deltaTime = clock.getDelta();
+  // deltaTime 通常是 0.016 左右（60fps 下约 16.67ms）
 
-    mesh.rotation.y += 1 * deltaTime
+  mesh.rotation.y += 1 * deltaTime;
 
-    renderer.render(scene, camera)
-    window.requestAnimationFrame(tick)
-}
-tick()
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(tick);
+};
+tick();
 ```
 
-:::warning 重要警告：不要使用 getDelta()！
+:::caution[重要警告：不要使用 getDelta()！]
 Three.js 的 `getDelta()` 和 `getElapsedTime()` 共享内部计时状态。**如果你同时使用了 `getElapsedTime()` 和 `getDelta()`，可能会导致非常奇怪的结果和数值，因为它们会互相干扰内部逻辑。**
 
 建议：**只使用 `getElapsedTime()`**，它能满足绝大多数需求。
@@ -214,14 +214,14 @@ Three.js 的 `getDelta()` 和 `getElapsedTime()` 共享内部计时状态。**�
 
 ### getElapsedTime() vs getDelta() 对比
 
-| 特性 | `getElapsedTime()` | `getDelta()` |
-|------|-------------------|-------------|
-| 返回值 | 从 Clock 启动到现在的总秒数 | 上一帧到这一帧的时间差（秒） |
-| 使用方式 | 直接赋值 `rotation.y = time * speed` | 增量更新 `rotation.y += speed * delta` |
-| 典型场景 | 持续循环动画（旋转、摆动） | 基于增量的物理模拟 |
-| 推荐程度 | **推荐使用** | **不推荐使用**（内部状态问题） |
-| 60fps 下的值 | 持续递增 0, 1, 2, 3... | 约等于 0.0167 |
-| 120fps 下的值 | 持续递增 0, 0.5, 1, 1.5... | 约等于 0.0083 |
+| 特性          | `getElapsedTime()`                   | `getDelta()`                           |
+| ------------- | ------------------------------------ | -------------------------------------- |
+| 返回值        | 从 Clock 启动到现在的总秒数          | 上一帧到这一帧的时间差（秒）           |
+| 使用方式      | 直接赋值 `rotation.y = time * speed` | 增量更新 `rotation.y += speed * delta` |
+| 典型场景      | 持续循环动画（旋转、摆动）           | 基于增量的物理模拟                     |
+| 推荐程度      | **推荐使用**                         | **不推荐使用**（内部状态问题）         |
+| 60fps 下的值  | 持续递增 0, 1, 2, 3...               | 约等于 0.0167                          |
+| 120fps 下的值 | 持续递增 0, 0.5, 1, 1.5...           | 约等于 0.0083                          |
 
 ## 使用三角函数创建动画
 
@@ -230,13 +230,14 @@ Three.js 的 `getDelta()` 和 `getElapsedTime()` 共享内部计时状态。**�
 ### 上下弹跳（正弦函数）
 
 ```js
-const elapsedTime = clock.getElapsedTime()
-mesh.position.y = Math.sin(elapsedTime)
+const elapsedTime = clock.getElapsedTime();
+mesh.position.y = Math.sin(elapsedTime);
 ```
 
 `Math.sin()` 返回值在 -1 到 1 之间循环变化。随着时间推移，物体会在 y = -1 到 y = 1 之间上下弹跳。
 
-:::info 回顾：三角函数基础
+:::note[回顾：三角函数基础]
+
 - `Math.sin(x)` — 返回 -1 到 1 之间的值，从 0 开始
 - `Math.cos(x)` — 返回 -1 到 1 之间的值，从 1 开始
 - `Math.PI` — 约 3.14159，半圆的弧度
@@ -248,9 +249,9 @@ mesh.position.y = Math.sin(elapsedTime)
 ### 圆形运动轨迹
 
 ```js
-const elapsedTime = clock.getElapsedTime()
-mesh.position.x = Math.sin(elapsedTime)
-mesh.position.z = Math.cos(elapsedTime)
+const elapsedTime = clock.getElapsedTime();
+mesh.position.x = Math.sin(elapsedTime);
+mesh.position.z = Math.cos(elapsedTime);
 ```
 
 **原理**：当你把 `Math.sin()` 的值赋给 x 轴，把 `Math.cos()` 的值赋给 z 轴（使用相同的角度值），物体就会沿着一个圆形轨迹运动。这正是极坐标到直角坐标的转换公式。
@@ -258,9 +259,9 @@ mesh.position.z = Math.cos(elapsedTime)
 ### 呼吸缩放效果
 
 ```js
-const elapsedTime = clock.getElapsedTime()
-const scale = 1 + Math.sin(elapsedTime * 2) * 0.2
-mesh.scale.set(scale, scale, scale)
+const elapsedTime = clock.getElapsedTime();
+const scale = 1 + Math.sin(elapsedTime * 2) * 0.2;
+mesh.scale.set(scale, scale, scale);
 ```
 
 物体的大小会在 0.8 到 1.2 之间以"呼吸"的节奏变化。
@@ -271,23 +272,23 @@ mesh.scale.set(scale, scale, scale)
 
 ```js
 const tick = () => {
-    const elapsedTime = clock.getElapsedTime()
+  const elapsedTime = clock.getElapsedTime();
 
-    // 旋转
-    mesh.rotation.y = elapsedTime * 0.5
-    mesh.rotation.x = elapsedTime * 0.3
+  // 旋转
+  mesh.rotation.y = elapsedTime * 0.5;
+  mesh.rotation.x = elapsedTime * 0.3;
 
-    // 上下弹跳
-    mesh.position.y = Math.sin(elapsedTime) * 0.5
+  // 上下弹跳
+  mesh.position.y = Math.sin(elapsedTime) * 0.5;
 
-    // 呼吸缩放
-    const scale = 1 + Math.sin(elapsedTime * 2) * 0.1
-    mesh.scale.set(scale, scale, scale)
+  // 呼吸缩放
+  const scale = 1 + Math.sin(elapsedTime * 2) * 0.1;
+  mesh.scale.set(scale, scale, scale);
 
-    renderer.render(scene, camera)
-    window.requestAnimationFrame(tick)
-}
-tick()
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(tick);
+};
+tick();
 ```
 
 ### 动画摄像机
@@ -296,19 +297,19 @@ tick()
 
 ```js
 const tick = () => {
-    const elapsedTime = clock.getElapsedTime()
+  const elapsedTime = clock.getElapsedTime();
 
-    // 让摄像机绕着原点做圆形运动
-    camera.position.x = Math.sin(elapsedTime) * 3
-    camera.position.z = Math.cos(elapsedTime) * 3
+  // 让摄像机绕着原点做圆形运动
+  camera.position.x = Math.sin(elapsedTime) * 3;
+  camera.position.z = Math.cos(elapsedTime) * 3;
 
-    // 让摄像机始终看向场景中心
-    camera.lookAt(mesh.position)
+  // 让摄像机始终看向场景中心
+  camera.lookAt(mesh.position);
 
-    renderer.render(scene, camera)
-    window.requestAnimationFrame(tick)
-}
-tick()
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(tick);
+};
+tick();
 ```
 
 `camera.lookAt()` 接收一个 `THREE.Vector3` 参数，会让摄像机转向看向指定的位置。这里我们让摄像机始终盯着方块，产生一种"环绕观察"的效果。
@@ -323,21 +324,21 @@ tick()
 
 常见的缓动类型：
 
-| 名称 | 效果 | 应用场景 |
-|------|------|---------|
-| Linear | 匀速运动 | 很少使用，看起来不自然 |
-| Ease In | 开始慢，结束快 | 物体加速飞出 |
-| Ease Out | 开始快，结束慢 | 物体减速停下 |
-| Ease In Out | 开始慢，中间快，结束慢 | 大多数 UI 动画 |
-| Bounce | 弹跳效果 | 球体落地 |
-| Elastic | 弹性效果 | 弹簧运动 |
+| 名称        | 效果                   | 应用场景               |
+| ----------- | ---------------------- | ---------------------- |
+| Linear      | 匀速运动               | 很少使用，看起来不自然 |
+| Ease In     | 开始慢，结束快         | 物体加速飞出           |
+| Ease Out    | 开始快，结束慢         | 物体减速停下           |
+| Ease In Out | 开始慢，中间快，结束慢 | 大多数 UI 动画         |
+| Bounce      | 弹跳效果               | 球体落地               |
+| Elastic     | 弹性效果               | 弹簧运动               |
 
 在使用 `requestAnimationFrame` + 数学函数时，你可以自己实现简单的缓动：
 
 ```js
 // 简单的 easeInOut 缓动（使用 sin 函数）
-const progress = (Math.sin(elapsedTime * Math.PI - Math.PI / 2) + 1) / 2
-mesh.position.x = progress * 5 // 从 0 移动到 5
+const progress = (Math.sin(elapsedTime * Math.PI - Math.PI / 2) + 1) / 2;
+mesh.position.x = progress * 5; // 从 0 移动到 5
 ```
 
 但如果需要更复杂的缓动效果，推荐使用 GSAP 等动画库。
@@ -361,7 +362,7 @@ mesh.position.x = progress * 5 // 从 0 移动到 5
 npm install gsap
 ```
 
-:::tip 关于版本号
+:::tip[关于版本号]
 课程中使用了 `gsap@3.5.1`。对于你自己的项目，直接安装最新版本即可：`npm install gsap`。版本更新通常会带来更好的性能和更多功能。
 :::
 
@@ -370,30 +371,30 @@ npm install gsap
 `gsap.to()` 是 GSAP 最核心的方法，用于将属性从当前值**动画到目标值**。
 
 ```js
-import gsap from 'gsap'
+import gsap from "gsap";
 
 // 语法：gsap.to(目标对象, { 属性: 目标值, ...配置 })
 gsap.to(mesh.position, {
-    x: 2,           // 将 position.x 从当前值动画到 2
-    duration: 1,     // 动画持续 1 秒
-    delay: 1,        // 等待 1 秒后开始
-})
+  x: 2, // 将 position.x 从当前值动画到 2
+  duration: 1, // 动画持续 1 秒
+  delay: 1, // 等待 1 秒后开始
+});
 ```
 
 ### 让物体回到原位
 
 ```js
 gsap.to(mesh.position, {
-    x: 2,
-    duration: 1,
-    delay: 1,
-})
+  x: 2,
+  duration: 1,
+  delay: 1,
+});
 
 gsap.to(mesh.position, {
-    x: 0,           // 回到原位
-    duration: 1,
-    delay: 3,        // 3 秒后开始
-})
+  x: 0, // 回到原位
+  duration: 1,
+  delay: 3, // 3 秒后开始
+});
 ```
 
 ### GSAP 的工作原理
@@ -405,20 +406,20 @@ GSAP 在库内部**独立管理自己的 `requestAnimationFrame` 循环**。这�
 3. GSAP 只负责更新属性值，渲染仍由你控制
 
 ```js
-import gsap from 'gsap'
+import gsap from "gsap";
 
 // GSAP 动画（库内部有自己的 tick）
-gsap.to(mesh.position, { x: 2, duration: 1, delay: 1 })
+gsap.to(mesh.position, { x: 2, duration: 1, delay: 1 });
 
 // 你自己的渲染循环（必须保留！）
 const tick = () => {
-    renderer.render(scene, camera)
-    window.requestAnimationFrame(tick)
-}
-tick()
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(tick);
+};
+tick();
 ```
 
-:::warning 常见错误
+:::caution[常见错误]
 即使使用了 GSAP 控制动画，你**仍然必须保持 `requestAnimationFrame` 渲染循环**。GSAP 只是在后台修改属性的数值，但如果你不持续调用 `renderer.render()`，画面不会更新。
 :::
 
@@ -429,25 +430,25 @@ GSAP 功能非常强大，以下是一些你会经常用到的特性：
 ```js
 // 缓动函数
 gsap.to(mesh.position, {
-    x: 2,
-    duration: 1,
-    ease: 'elastic.out(1, 0.3)',  // 弹性效果
-})
+  x: 2,
+  duration: 1,
+  ease: "elastic.out(1, 0.3)", // 弹性效果
+});
 
 // 时间线（Timeline）- 多个动画按顺序执行
-const tl = gsap.timeline()
+const tl = gsap.timeline();
 tl.to(mesh.position, { x: 2, duration: 1 })
   .to(mesh.position, { y: 2, duration: 1 })
-  .to(mesh.rotation, { y: Math.PI, duration: 1 })
+  .to(mesh.rotation, { y: Math.PI, duration: 1 });
 
 // 回调函数
 gsap.to(mesh.position, {
-    x: 2,
-    duration: 1,
-    onComplete: () => {
-        console.log('动画完成了！')
-    }
-})
+  x: 2,
+  duration: 1,
+  onComplete: () => {
+    console.log("动画完成了！");
+  },
+});
 ```
 
 参考文档：[GSAP 官方文档](https://gsap.com/docs/v3/)
@@ -456,11 +457,11 @@ gsap.to(mesh.position, {
 
 没有绝对正确的选择，取决于你的项目需求：
 
-| 方案 | 适用场景 | 优点 | 缺点 |
-|------|---------|------|------|
-| `requestAnimationFrame` + 数学函数 | 持续循环动画（旋转、摆动、跟随） | 无额外依赖，性能好 | 复杂时序难以管理 |
-| `requestAnimationFrame` + `THREE.Clock` | 同上（推荐方式） | 帧率独立，Three.js 内置 | getDelta() 有已知问题 |
-| GSAP | 一次性过渡动画、复杂时序 | 功能强大，API 简洁 | 增加包体积 |
+| 方案                                    | 适用场景                         | 优点                    | 缺点                  |
+| --------------------------------------- | -------------------------------- | ----------------------- | --------------------- |
+| `requestAnimationFrame` + 数学函数      | 持续循环动画（旋转、摆动、跟随） | 无额外依赖，性能好      | 复杂时序难以管理      |
+| `requestAnimationFrame` + `THREE.Clock` | 同上（推荐方式）                 | 帧率独立，Three.js 内置 | getDelta() 有已知问题 |
+| GSAP                                    | 一次性过渡动画、复杂时序         | 功能强大，API 简洁      | 增加包体积            |
 
 经验法则：
 
@@ -471,52 +472,52 @@ gsap.to(mesh.position, {
 ## 完整代码示例
 
 ```js
-import * as THREE from 'three'
-import gsap from 'gsap'
+import * as THREE from "three";
+import gsap from "gsap";
 
 // Canvas
-const canvas = document.querySelector('canvas.webgl')
+const canvas = document.querySelector("canvas.webgl");
 
 // Scene
-const scene = new THREE.Scene()
+const scene = new THREE.Scene();
 
 // Object
-const geometry = new THREE.BoxGeometry(1, 1, 1)
-const material = new THREE.MeshBasicMaterial({ color: 0xff0000 })
-const mesh = new THREE.Mesh(geometry, material)
-scene.add(mesh)
+const geometry = new THREE.BoxGeometry(1, 1, 1);
+const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+const mesh = new THREE.Mesh(geometry, material);
+scene.add(mesh);
 
 // Sizes
-const sizes = { width: 800, height: 600 }
+const sizes = { width: 800, height: 600 };
 
 // Camera
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height)
-camera.position.z = 3
-scene.add(camera)
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height);
+camera.position.z = 3;
+scene.add(camera);
 
 // Renderer
-const renderer = new THREE.WebGLRenderer({ canvas: canvas })
-renderer.setSize(sizes.width, sizes.height)
+const renderer = new THREE.WebGLRenderer({ canvas: canvas });
+renderer.setSize(sizes.width, sizes.height);
 
 // Clock
-const clock = new THREE.Clock()
+const clock = new THREE.Clock();
 
 // GSAP animation
-gsap.to(mesh.position, { duration: 1, delay: 1, x: 2 })
+gsap.to(mesh.position, { duration: 1, delay: 1, x: 2 });
 
 // Animation loop
 const tick = () => {
-    const elapsedTime = clock.getElapsedTime()
+  const elapsedTime = clock.getElapsedTime();
 
-    // Update controls (if any)
-    // controls.update()
+  // Update controls (if any)
+  // controls.update()
 
-    // Render
-    renderer.render(scene, camera)
+  // Render
+  renderer.render(scene, camera);
 
-    // Call tick again on the next frame
-    window.requestAnimationFrame(tick)
-}
+  // Call tick again on the next frame
+  window.requestAnimationFrame(tick);
+};
 
-tick()
+tick();
 ```

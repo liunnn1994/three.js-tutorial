@@ -3,8 +3,7 @@ title: 09 调试 UI
 description: 使用 lil-gui 创建调试界面，方便实时调整 3D 场景中的各种参数
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 为什么 3D 开发必须要有调试 UI
 
@@ -18,22 +17,23 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 2. **设计师**：设计师通常对视觉效果有非常具体的想法，他们希望能够直接调整颜色、动画等参数，然后告诉你"就是这样，就是这个感觉"。
 3. **客户**：有些客户也可以访问调试界面，自己微调效果直到满意为止。
 
-:::tip 实际项目中的调试 UI
+:::tip[实际项目中的调试 UI]
 在课程作者的个人作品集中，调试 UI 默认是隐藏的。用户需要在 URL 末尾加上 `#debug` 并刷新页面才能打开调试面板。通过这个面板，几乎可以调整场景中的一切 -- 太阳颜色、重力大小、动画效果等。这就是调试 UI 在实际项目中的真实用法。
 :::
+
 <LessonPreview lesson="09-debug-ui" />
 
 ## lil-gui 简介
 
 在 Three.js 生态中，常用的调试 UI 库有很多选择：
 
-| 库名 | 特点 |
-|------|------|
+| 库名        | 特点                                            |
+| ----------- | ----------------------------------------------- |
 | **lil-gui** | Three.js 课程使用的库，轻量、活跃维护、API 简洁 |
-| dat.GUI | 曾经的行业标准，但已停止维护，出现安全漏洞警告 |
-| Tweakpane | 另一个优秀的调试 UI 库 |
-| Control Kit | 高性能选择 |
-| Guify | 轻量级选择 |
+| dat.GUI     | 曾经的行业标准，但已停止维护，出现安全漏洞警告  |
+| Tweakpane   | 另一个优秀的调试 UI 库                          |
+| Control Kit | 高性能选择                                      |
+| Guify       | 轻量级选择                                      |
 
 **我们选择 `lil-gui` 的原因：**
 
@@ -64,9 +64,9 @@ npm run dev
 安装完成后，我们需要在代码中导入并实例化它：
 
 ```js
-import GUI from 'lil-gui'
+import GUI from "lil-gui";
 
-const gui = new GUI()
+const gui = new GUI();
 ```
 
 **几点说明：**
@@ -82,10 +82,10 @@ const gui = new GUI()
 
 ```js
 const gui = new GUI({
-    title: '调试面板',     // 自定义面板标题
-    width: 300,            // 面板宽度（像素），默认约 245
-    closeFolders: false    // 默认是否关闭所有文件夹
-})
+  title: "调试面板", // 自定义面板标题
+  width: 300, // 面板宽度（像素），默认约 245
+  closeFolders: false, // 默认是否关闭所有文件夹
+});
 ```
 
 - **`title`**：非常建议修改标题，这样你能清楚地区分不同的调试面板
@@ -100,25 +100,26 @@ const gui = new GUI({
 **lil-gui 只能调整对象的属性。**
 
 `gui.add()` 方法需要两个参数：
+
 1. **对象**（object）
 2. **属性名**（property，字符串格式）
 
 ```js
-gui.add(object, 'property')
+gui.add(object, "property");
 ```
 
 这意味着，如果你有一个独立的变量（不是某个对象的属性），你不能直接对它创建控制。你需要把它包装到一个对象中：
 
 ```js
 // 不能这样做：
-let myVariable = 'hello'
-gui.add(myVariable, '...') // ❌ 错误！myVariable 不是对象
+let myVariable = "hello";
+gui.add(myVariable, "..."); // ❌ 错误！myVariable 不是对象
 
 // 需要这样做：
 const debugObject = {
-    myVariable: 'hello'
-}
-gui.add(debugObject, 'myVariable') // ✅ 正确！
+  myVariable: "hello",
+};
+gui.add(debugObject, "myVariable"); // ✅ 正确！
 ```
 
 ## 控制类型详解
@@ -129,11 +130,12 @@ gui.add(debugObject, 'myVariable') // ✅ 正确！
 
 ```js
 // 调整立方体的 Y 轴位置
-gui.add(mesh.position, 'y')
-    .min(-3)       // 最小值
-    .max(3)        // 最大值
-    .step(0.01)    // 步进值（精度）
-    .name('高度')  // 显示标签
+gui
+  .add(mesh.position, "y")
+  .min(-3) // 最小值
+  .max(3) // 最大值
+  .step(0.01) // 步进值（精度）
+  .name("高度"); // 显示标签
 ```
 
 如果不添加 `min()`、`max()`、`step()`，GUI 会显示一个文本输入框，你需要手动输入数字 -- 这很不方便。加上这三个限制后，就会变成可以拖拽的滑块，使用体验好得多。
@@ -142,13 +144,10 @@ gui.add(mesh.position, 'y')
 
 ```js
 // 写法一：参数写在 add() 里（不推荐，可读性差）
-gui.add(mesh.position, 'y', -3, 3, 0.01)
+gui.add(mesh.position, "y", -3, 3, 0.01);
 
 // 写法二：用链式方法调用（推荐，每个参数一目了然）
-gui.add(mesh.position, 'y')
-    .min(-3)
-    .max(3)
-    .step(0.01)
+gui.add(mesh.position, "y").min(-3).max(3).step(0.01);
 ```
 
 第二种写法虽然更长，但即使不看文档也能理解每个参数的含义。
@@ -159,12 +158,10 @@ gui.add(mesh.position, 'y')
 
 ```js
 // 控制物体是否可见
-gui.add(mesh, 'visible')
-    .name('显示')
+gui.add(mesh, "visible").name("显示");
 
 // 控制材质是否显示线框
-gui.add(material, 'wireframe')
-    .name('线框')
+gui.add(material, "wireframe").name("线框");
 ```
 
 这个功能在性能调试时特别有用 -- 你可以快速切换显示/隐藏场景中的各个物体，找出哪个物体导致性能下降。
@@ -180,7 +177,7 @@ gui.add(material, 'wireframe')
 #### 解决方案：使用 `addColor()`
 
 ```js
-gui.addColor(material, 'color')
+gui.addColor(material, "color");
 ```
 
 这会弹出一个颜色选择器。
@@ -198,20 +195,20 @@ gui.addColor(material, 'color')
 ```js
 // 1. 在创建材质之前，定义颜色
 const debugObject = {
-    color: '#a778d8'
-}
+  color: "#a778d8",
+};
 
 // 2. 用这个颜色创建材质
-const material = new THREE.MeshBasicMaterial({ color: debugObject.color })
+const material = new THREE.MeshBasicMaterial({ color: debugObject.color });
 
 // 3. 添加 GUI 颜色控制，onChange 中同步到材质
-gui.addColor(debugObject, 'color')
-    .onChange(() => {
-        material.color.set(debugObject.color)
-    })
+gui.addColor(debugObject, "color").onChange(() => {
+  material.color.set(debugObject.color);
+});
 ```
 
 这样做的好处：
+
 - 颜色值只存储在一个地方，不会出现不一致
 - 设计师/客户可以截图发给你颜色值，你直接用即可
 - 不需要打开浏览器控制台去查找"正确的"颜色值
@@ -223,13 +220,12 @@ gui.addColor(debugObject, 'color')
 ```js
 // 添加旋转动画按钮
 debugObject.spin = () => {
-    gsap.to(mesh.rotation, {
-        y: mesh.rotation.y + Math.PI * 2  // 旋转一整圈
-    })
-}
+  gsap.to(mesh.rotation, {
+    y: mesh.rotation.y + Math.PI * 2, // 旋转一整圈
+  });
+};
 
-gui.add(debugObject, 'spin')
-    .name('旋转')
+gui.add(debugObject, "spin").name("旋转");
 ```
 
 lil-gui 会检查该属性的值类型 -- 如果发现它是一个函数，就会自动创建一个按钮。点击按钮时，函数会被执行。
@@ -242,19 +238,20 @@ lil-gui 会检查该属性的值类型 -- 如果发现它是一个函数，就�
 
 ```js
 const debugObject = {
-    toneMapping: 'NoToneMapping'
-}
+  toneMapping: "NoToneMapping",
+};
 
-gui.add(debugObject, 'toneMapping', [
-    'NoToneMapping',
-    'LinearToneMapping',
-    'ReinhardToneMapping',
-    'CineonToneMapping',
-    'ACESFilmicToneMapping'
-])
-    .onChange(() => {
-        renderer.toneMapping = THREE[debugObject.toneMapping]
-    })
+gui
+  .add(debugObject, "toneMapping", [
+    "NoToneMapping",
+    "LinearToneMapping",
+    "ReinhardToneMapping",
+    "CineonToneMapping",
+    "ACESFilmicToneMapping",
+  ])
+  .onChange(() => {
+    renderer.toneMapping = THREE[debugObject.toneMapping];
+  });
 ```
 
 这会创建一个下拉选择框，用户可以在预定义的选项之间切换。
@@ -270,10 +267,9 @@ gui.add(debugObject, 'toneMapping', [
 每次值发生变化时都会触发回调函数，包括用户正在拖拽滑块的过程中：
 
 ```js
-gui.add(debugObject, 'color')
-    .onChange((value) => {
-        material.color.set(debugObject.color)
-    })
+gui.add(debugObject, "color").onChange((value) => {
+  material.color.set(debugObject.color);
+});
 ```
 
 - 适合用于颜色、光照等需要**实时预览**的参数
@@ -284,26 +280,29 @@ gui.add(debugObject, 'color')
 只有当用户**停止调整并松开鼠标**时才会触发回调函数：
 
 ```js
-gui.add(debugObject, 'subdivision')
-    .min(1)
-    .max(20)
-    .step(1)
-    .onFinishChange(() => {
-        // 用户松手后才执行
-        mesh.geometry.dispose()
-        mesh.geometry = new THREE.BoxGeometry(
-            1, 1, 1,
-            debugObject.subdivision,
-            debugObject.subdivision,
-            debugObject.subdivision
-        )
-    })
+gui
+  .add(debugObject, "subdivision")
+  .min(1)
+  .max(20)
+  .step(1)
+  .onFinishChange(() => {
+    // 用户松手后才执行
+    mesh.geometry.dispose();
+    mesh.geometry = new THREE.BoxGeometry(
+      1,
+      1,
+      1,
+      debugObject.subdivision,
+      debugObject.subdivision,
+      debugObject.subdivision,
+    );
+  });
 ```
 
 - 适合用于**开销较大**的操作（如重建几何体）
 - 如果在 `onChange` 中重建几何体，拖拽滑块时会不断创建和销毁几何体，性能会很差
 
-:::warning 性能警告
+:::caution[性能警告]
 构建几何体对 CPU 来说是比较耗时的操作。对于简单的立方体还好，但对于复杂几何体，在拖拽过程中不断重建会导致明显的卡顿。这就是为什么重建几何体的操作应该用 `onFinishChange` 而不是 `onChange`。
 :::
 
@@ -313,16 +312,16 @@ gui.add(debugObject, 'subdivision')
 
 ```js
 // 创建一个文件夹
-const cubeTweaks = gui.addFolder('立方体控制')
+const cubeTweaks = gui.addFolder("立方体控制");
 
 // 在文件夹中添加控制
-cubeTweaks.add(mesh.position, 'y', -3, 3, 0.01).name('高度')
-cubeTweaks.add(mesh, 'visible').name('显示')
-cubeTweaks.add(material, 'wireframe').name('线框')
+cubeTweaks.add(mesh.position, "y", -3, 3, 0.01).name("高度");
+cubeTweaks.add(mesh, "visible").name("显示");
+cubeTweaks.add(material, "wireframe").name("线框");
 
 // 文件夹可以嵌套
-const materialTweaks = cubeTweaks.addFolder('材质')
-materialTweaks.addColor(debugObject, 'color').name('颜色')
+const materialTweaks = cubeTweaks.addFolder("材质");
+materialTweaks.addColor(debugObject, "color").name("颜色");
 ```
 
 **文件夹的实用技巧：**
@@ -340,28 +339,31 @@ materialTweaks.addColor(debugObject, 'color').name('颜色')
 
 ```js
 const debugObject = {
-    subdivision: 2
-}
+  subdivision: 2,
+};
 
-gui.add(debugObject, 'subdivision')
-    .min(1)
-    .max(20)
-    .step(1)
-    .onFinishChange(() => {
-        // 1. 先销毁旧几何体（释放 GPU 内存）
-        mesh.geometry.dispose()
+gui
+  .add(debugObject, "subdivision")
+  .min(1)
+  .max(20)
+  .step(1)
+  .onFinishChange(() => {
+    // 1. 先销毁旧几何体（释放 GPU 内存）
+    mesh.geometry.dispose();
 
-        // 2. 创建新几何体
-        mesh.geometry = new THREE.BoxGeometry(
-            1, 1, 1,
-            debugObject.subdivision,
-            debugObject.subdivision,
-            debugObject.subdivision
-        )
-    })
+    // 2. 创建新几何体
+    mesh.geometry = new THREE.BoxGeometry(
+      1,
+      1,
+      1,
+      debugObject.subdivision,
+      debugObject.subdivision,
+      debugObject.subdivision,
+    );
+  });
 ```
 
-:::warning 内存泄漏警告
+:::caution[内存泄漏警告]
 千万不要忘记调用 `mesh.geometry.dispose()` 来销毁旧的几何体！旧的几何体会一直留在 GPU 显存中，造成内存泄漏。虽然对于简单几何体影响不大，但这是一种非常不好的编程习惯。在后续课程中会有专门讲解资源销毁（dispose）的内容。
 :::
 
@@ -370,11 +372,12 @@ gui.add(debugObject, 'subdivision')
 ### hide() 和 show()
 
 ```js
-gui.hide()  // 隐藏 GUI（从 DOM 中移除）
-gui.show()  // 显示 GUI（重新添加到 DOM 中）
+gui.hide(); // 隐藏 GUI（从 DOM 中移除）
+gui.show(); // 显示 GUI（重新添加到 DOM 中）
 ```
 
 `hide()` 和 `close()` 的区别：
+
 - `close()` 只是折叠面板，用户点击标题栏就能重新展开
 - `hide()` 是将面板从页面中完全隐藏，用户看不到它
 
@@ -383,11 +386,11 @@ gui.show()  // 显示 GUI（重新添加到 DOM 中）
 最实用的做法是按 `H` 键来切换 GUI 的显示/隐藏：
 
 ```js
-window.addEventListener('keydown', (event) => {
-    if (event.key === 'h') {
-        gui.show(gui._hidden)
-    }
-})
+window.addEventListener("keydown", (event) => {
+  if (event.key === "h") {
+    gui.show(gui._hidden);
+  }
+});
 ```
 
 `gui._hidden` 是一个内部属性，记录了 GUI 当前是否处于隐藏状态。`gui.show(true)` 会显示，`gui.show(false)` 会隐藏 -- 所以传入当前的隐藏状态就能实现切换效果。
@@ -395,11 +398,12 @@ window.addEventListener('keydown', (event) => {
 你也可以用更直观的写法：
 
 ```js
-window.addEventListener('keydown', (event) => {
-    if (event.key === 'h') {
-        gui.domElement.style.display = gui.domElement.style.display === 'none' ? '' : 'none'
-    }
-})
+window.addEventListener("keydown", (event) => {
+  if (event.key === "h") {
+    gui.domElement.style.display =
+      gui.domElement.style.display === "none" ? "" : "none";
+  }
+});
 ```
 
 ## 在生产环境中处理调试 UI
@@ -409,18 +413,18 @@ window.addEventListener('keydown', (event) => {
 ### 方案一：通过 URL 哈希控制
 
 ```js
-const urlParams = new URLSearchParams(window.location.search)
-const hash = window.location.hash
+const urlParams = new URLSearchParams(window.location.search);
+const hash = window.location.hash;
 
-if (hash !== '#debug') {
-    gui.hide()
+if (hash !== "#debug") {
+  gui.hide();
 }
 
-window.addEventListener('keydown', (event) => {
-    if (event.key === 'h') {
-        gui.show(gui._hidden)
-    }
-})
+window.addEventListener("keydown", (event) => {
+  if (event.key === "h") {
+    gui.show(gui._hidden);
+  }
+});
 ```
 
 用户需要在 URL 后面加上 `#debug` 才能看到调试面板。
@@ -430,8 +434,8 @@ window.addEventListener('keydown', (event) => {
 ```js
 // 只在开发环境中显示
 if (import.meta.env.DEV) {
-    const gui = new GUI({ title: '调试面板' })
-    // ... 添加各种控制
+  const gui = new GUI({ title: "调试面板" });
+  // ... 添加各种控制
 }
 ```
 
@@ -439,10 +443,10 @@ if (import.meta.env.DEV) {
 
 ```js
 // 只在开发模式下导入和创建 GUI
-let gui
+let gui;
 if (import.meta.env.DEV) {
-    const { default: GUI } = await import('lil-gui')
-    gui = new GUI({ title: '调试面板' })
+  const { default: GUI } = await import("lil-gui");
+  gui = new GUI({ title: "调试面板" });
 }
 ```
 
@@ -458,13 +462,16 @@ if (import.meta.env.DEV) {
 
 ```js
 const debugObject = {
-    color: '#a778d8',
-    spin: () => { /* ... */ },
-    subdivision: 2
-}
+  color: "#a778d8",
+  spin: () => {
+    /* ... */
+  },
+  subdivision: 2,
+};
 ```
 
 这样做的好处：
+
 - 所有可调参数一目了然
 - 不会被 Three.js 的色彩管理等机制影响
 - 方便设计师/客户截图交流
@@ -474,8 +481,8 @@ const debugObject = {
 使用 `.name()` 方法给每个控制项添加清晰的标签：
 
 ```js
-gui.add(mesh.position, 'y', -3, 3, 0.01).name('立方体高度')
-gui.add(mesh, 'visible').name('显示立方体')
+gui.add(mesh.position, "y", -3, 3, 0.01).name("立方体高度");
+gui.add(mesh, "visible").name("显示立方体");
 ```
 
 ### 4. 善用文件夹保持整洁
@@ -483,9 +490,9 @@ gui.add(mesh, 'visible').name('显示立方体')
 随着项目增长，调试项会越来越多。用文件夹分类组织，让调试面板保持清晰：
 
 ```js
-const lightFolder = gui.addFolder('光照')
-const materialFolder = gui.addFolder('材质')
-const animationFolder = gui.addFolder('动画')
+const lightFolder = gui.addFolder("光照");
+const materialFolder = gui.addFolder("材质");
+const animationFolder = gui.addFolder("动画");
 ```
 
 ### 5. 在调整完成后记录最终值
@@ -497,62 +504,73 @@ const animationFolder = gui.addFolder('动画')
 以下是一个整合了所有概念的完整示例：
 
 ```js
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import GUI from 'lil-gui'
-import gsap from 'gsap'
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import GUI from "lil-gui";
+import gsap from "gsap";
 
 // === 调试 UI ===
-const gui = new GUI({ title: '调试面板' })
+const gui = new GUI({ title: "调试面板" });
 const debugObject = {
-    color: '#a778d8',
-    spin: () => {
-        gsap.to(mesh.rotation, { y: mesh.rotation.y + Math.PI * 2 })
-    },
-    subdivision: 2
-}
+  color: "#a778d8",
+  spin: () => {
+    gsap.to(mesh.rotation, { y: mesh.rotation.y + Math.PI * 2 });
+  },
+  subdivision: 2,
+};
 
 // === 场景基础 ===
-const canvas = document.querySelector('canvas.webgl')
-const scene = new THREE.Scene()
+const canvas = document.querySelector("canvas.webgl");
+const scene = new THREE.Scene();
 
 // === 几何体与材质 ===
-const geometry = new THREE.BoxGeometry(1, 1, 1, debugObject.subdivision, debugObject.subdivision, debugObject.subdivision)
-const material = new THREE.MeshBasicMaterial({ color: debugObject.color })
-const mesh = new THREE.Mesh(geometry, material)
-scene.add(mesh)
+const geometry = new THREE.BoxGeometry(
+  1,
+  1,
+  1,
+  debugObject.subdivision,
+  debugObject.subdivision,
+  debugObject.subdivision,
+);
+const material = new THREE.MeshBasicMaterial({ color: debugObject.color });
+const mesh = new THREE.Mesh(geometry, material);
+scene.add(mesh);
 
 // === 调试控制（使用文件夹组织） ===
-const cubeFolder = gui.addFolder('立方体')
-cubeFolder.add(mesh.position, 'y', -3, 3, 0.01).name('高度')
-cubeFolder.add(mesh, 'visible').name('显示')
-cubeFolder.add(material, 'wireframe').name('线框')
+const cubeFolder = gui.addFolder("立方体");
+cubeFolder.add(mesh.position, "y", -3, 3, 0.01).name("高度");
+cubeFolder.add(mesh, "visible").name("显示");
+cubeFolder.add(material, "wireframe").name("线框");
 
-cubeFolder.addColor(debugObject, 'color')
-    .name('颜色')
-    .onChange(() => {
-        material.color.set(debugObject.color)
-    })
+cubeFolder
+  .addColor(debugObject, "color")
+  .name("颜色")
+  .onChange(() => {
+    material.color.set(debugObject.color);
+  });
 
-cubeFolder.add(debugObject, 'spin').name('旋转')
-cubeFolder.add(debugObject, 'subdivision', 1, 20, 1)
-    .name('细分')
-    .onFinishChange(() => {
-        mesh.geometry.dispose()
-        mesh.geometry = new THREE.BoxGeometry(
-            1, 1, 1,
-            debugObject.subdivision,
-            debugObject.subdivision,
-            debugObject.subdivision
-        )
-    })
+cubeFolder.add(debugObject, "spin").name("旋转");
+cubeFolder
+  .add(debugObject, "subdivision", 1, 20, 1)
+  .name("细分")
+  .onFinishChange(() => {
+    mesh.geometry.dispose();
+    mesh.geometry = new THREE.BoxGeometry(
+      1,
+      1,
+      1,
+      debugObject.subdivision,
+      debugObject.subdivision,
+      debugObject.subdivision,
+    );
+  });
 
 // === 键盘快捷键 ===
-window.addEventListener('keydown', (event) => {
-    if (event.key === 'h') {
-        gui.show(gui._hidden)
-    }
-})
+window.addEventListener("keydown", (event) => {
+  if (event.key === "h") {
+    gui.show(gui._hidden);
+  }
+});
 
 // === 渲染循环（略） ===
 // ...

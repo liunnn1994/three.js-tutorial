@@ -3,7 +3,7 @@ title: 46 性能优化
 description: Three.js 项目系统性性能优化——测量瓶颈、减少绘制调用、优化几何体、纹理与材质
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 <LessonPreview lesson="46-performance-tips" />
 
@@ -24,19 +24,18 @@ npm install stats.js
 ```
 
 ```js
-import Stats from 'stats.js'
+import Stats from "stats.js";
 
-const stats = new Stats()
-stats.showPanel(0) // 0 = FPS 面板
-document.body.appendChild(stats.dom)
+const stats = new Stats();
+stats.showPanel(0); // 0 = FPS 面板
+document.body.appendChild(stats.dom);
 
-const tick = () =>
-{
-    stats.begin()
-    // 渲染代码
-    stats.end()
-    window.requestAnimationFrame(tick)
-}
+const tick = () => {
+  stats.begin();
+  // 渲染代码
+  stats.end();
+  window.requestAnimationFrame(tick);
+};
 ```
 
 点击面板可以在 FPS、MS（每帧耗时）、MB（内存占用）等不同监控面板之间切换。
@@ -59,10 +58,10 @@ const tick = () =>
 Three.js 的 `renderer.info` 提供详细的渲染统计数据：
 
 ```js
-console.log(renderer.info.render.triangles)  // 当前帧绘制的三角形数
-console.log(renderer.info.render.calls)      // 当前帧的绘制调用数（draw calls）
-console.log(renderer.info.memory.geometries) // 当前内存中的几何体数量
-console.log(renderer.info.memory.textures)   // 当前内存中的纹理数量
+console.log(renderer.info.render.triangles); // 当前帧绘制的三角形数
+console.log(renderer.info.render.calls); // 当前帧的绘制调用数（draw calls）
+console.log(renderer.info.memory.geometries); // 当前内存中的几何体数量
+console.log(renderer.info.memory.textures); // 当前内存中的纹理数量
 ```
 
 ### Spectre.js — 绘制调用监控
@@ -80,11 +79,11 @@ console.log(renderer.info.memory.textures)   // 当前内存中的纹理数量
 如果多个网格使用相同材质且永远不会单独移动，可以合并为一个几何体：
 
 ```js
-import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js'
+import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
 
 // 将多个几何体合并为一个
-const mergedGeometry = BufferGeometryUtils.mergeGeometries([geo1, geo2, geo3])
-const mergedMesh = new THREE.Mesh(mergedGeometry, sharedMaterial)
+const mergedGeometry = BufferGeometryUtils.mergeGeometries([geo1, geo2, geo3]);
+const mergedMesh = new THREE.Mesh(mergedGeometry, sharedMaterial);
 ```
 
 :::caution
@@ -96,26 +95,21 @@ const mergedMesh = new THREE.Mesh(mergedGeometry, sharedMaterial)
 当你需要渲染大量相同几何体、相同材质但不同位置/旋转/缩放的物体时，`InstancedMesh` 是最佳选择。它只产生**一个绘制调用**，无论你渲染多少实例：
 
 ```js
-const instanceCount = 1000
-const instancedMesh = new THREE.InstancedMesh(geometry, material, instanceCount)
+const instanceCount = 1000;
+const instancedMesh = new THREE.InstancedMesh(geometry, material, instanceCount);
 
-const dummy = new THREE.Object3D()
-for (let i = 0; i < instanceCount; i++)
-{
-    dummy.position.set(
-        (Math.random() - 0.5) * 10,
-        (Math.random() - 0.5) * 10,
-        (Math.random() - 0.5) * 10
-    )
-    dummy.rotation.set(
-        Math.random() * Math.PI,
-        Math.random() * Math.PI,
-        0
-    )
-    dummy.updateMatrix()
-    instancedMesh.setMatrixAt(i, dummy.matrix)
+const dummy = new THREE.Object3D();
+for (let i = 0; i < instanceCount; i++) {
+  dummy.position.set(
+    (Math.random() - 0.5) * 10,
+    (Math.random() - 0.5) * 10,
+    (Math.random() - 0.5) * 10,
+  );
+  dummy.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+  dummy.updateMatrix();
+  instancedMesh.setMatrixAt(i, dummy.matrix);
 }
-instancedMesh.instanceMatrix.needsUpdate = true
+instancedMesh.instanceMatrix.needsUpdate = true;
 ```
 
 **实例化 vs 普通网格的性能差异：** 1000 个独立 Mesh 会产生约 1000 次 draw calls，而 `InstancedMesh` 只产生 1 次 draw call。性能差距可以几十倍。
@@ -126,13 +120,13 @@ instancedMesh.instanceMatrix.needsUpdate = true
 
 ```js
 // 错误 — 每个网格各自创建新材质，产生多个 draw calls
-const mesh1 = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xff0000 }))
-const mesh2 = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xff0000 }))
+const mesh1 = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xff0000 }));
+const mesh2 = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xff0000 }));
 
 // 正确 — 共享同一个材质实例
-const sharedMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 })
-const mesh1 = new THREE.Mesh(geo, sharedMaterial)
-const mesh2 = new THREE.Mesh(geo, sharedMaterial)
+const sharedMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+const mesh1 = new THREE.Mesh(geo, sharedMaterial);
+const mesh2 = new THREE.Mesh(geo, sharedMaterial);
 ```
 
 ## 几何体优化
@@ -166,9 +160,9 @@ const mesh2 = new THREE.Mesh(geo, sharedMaterial)
 确保 `generateMipmaps` 开启（默认开启），并使用正确的过滤方式。Mipmap 可以在远距离查看纹理时避免摩尔纹闪烁，并提升采样性能。
 
 ```js
-texture.generateMipmaps = true
-texture.minFilter = THREE.LinearMipmapLinearFilter
-texture.magFilter = THREE.LinearFilter
+texture.generateMipmaps = true;
+texture.minFilter = THREE.LinearMipmapLinearFilter;
+texture.magFilter = THREE.LinearFilter;
 ```
 
 ### 纹理复用
@@ -181,13 +175,13 @@ texture.magFilter = THREE.LinearFilter
 
 不同材质的 GPU 开销差异很大：
 
-| 材质 | GPU 开销 | 适用场景 |
-|------|---------|---------|
-| `MeshBasicMaterial` | 极低 | 不需要光照的物体、UI 元素 |
-| `MeshLambertMaterial` | 低 | 简单光照效果，性能优先 |
-| `MeshPhongMaterial` | 中等 | 需要高光反射，但不需要 PBR |
-| `MeshStandardMaterial` | 高 | 需要物理真实感的 PBR 渲染 |
-| `MeshPhysicalMaterial` | 很高 | 需要透明、清漆、各向异性等高级效果 |
+| 材质                   | GPU 开销 | 适用场景                           |
+| ---------------------- | -------- | ---------------------------------- |
+| `MeshBasicMaterial`    | 极低     | 不需要光照的物体、UI 元素          |
+| `MeshLambertMaterial`  | 低       | 简单光照效果，性能优先             |
+| `MeshPhongMaterial`    | 中等     | 需要高光反射，但不需要 PBR         |
+| `MeshStandardMaterial` | 高       | 需要物理真实感的 PBR 渲染          |
+| `MeshPhysicalMaterial` | 很高     | 需要透明、清漆、各向异性等高级效果 |
 
 :::tip
 如果一个物体在阴影中或不重要，使用 `MeshBasicMaterial` 或 `MeshLambertMaterial` 代替 `MeshStandardMaterial`，可以显著降低 GPU 负载。
@@ -204,7 +198,7 @@ texture.magFilter = THREE.LinearFilter
 高 DPI 屏幕（如 Retina 显示器）的 `devicePixelRatio` 可能为 2 或 3，这意味着 GPU 需要渲染 4 倍或 9 倍的像素：
 
 ```js
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 ```
 
 将像素比限制为 2 是一个良好的平衡点——在高 DPI 设备上保持清晰度，同时避免像素量爆炸。
@@ -213,9 +207,9 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
 ```js
 const renderer = new THREE.WebGLRenderer({
-    canvas,
-    antialias: false // 如果使用后处理抗锯齿（SMAA/FXAA），可以关闭此选项
-})
+  canvas,
+  antialias: false, // 如果使用后处理抗锯齿（SMAA/FXAA），可以关闭此选项
+});
 ```
 
 如果使用了 `EffectComposer` + `SMAAPass` 做后处理抗锯齿，可以在创建 `WebGLRenderer` 时将 `antialias` 设为 `false`，避免双重抗锯齿的性能浪费。
@@ -225,20 +219,20 @@ const renderer = new THREE.WebGLRenderer({
 如果场景没有动画（没有持续的动画或控制器交互），不需要每帧都渲染：
 
 ```js
-let needsRender = true
+let needsRender = true;
 
-const tick = () =>
-{
-    if (needsRender)
-    {
-        renderer.render(scene, camera)
-        needsRender = false
-    }
-    requestAnimationFrame(tick)
-}
+const tick = () => {
+  if (needsRender) {
+    renderer.render(scene, camera);
+    needsRender = false;
+  }
+  requestAnimationFrame(tick);
+};
 
 // 当有变化时标记需要渲染
-controls.addEventListener('change', () => { needsRender = true })
+controls.addEventListener("change", () => {
+  needsRender = true;
+});
 ```
 
 :::tip
@@ -251,19 +245,19 @@ controls.addEventListener('change', () => { needsRender = true })
 
 ```js
 // 使用较小的阴影贴图尺寸
-directionalLight.shadow.mapSize.width = 1024
-directionalLight.shadow.mapSize.height = 1024
+directionalLight.shadow.mapSize.width = 1024;
+directionalLight.shadow.mapSize.height = 1024;
 
 // 限制阴影摄像机的范围，只渲染需要的区域
-directionalLight.shadow.camera.left = -5
-directionalLight.shadow.camera.right = 5
-directionalLight.shadow.camera.top = 5
-directionalLight.shadow.camera.bottom = -5
-directionalLight.shadow.camera.near = 0.1
-directionalLight.shadow.camera.far = 50
+directionalLight.shadow.camera.left = -5;
+directionalLight.shadow.camera.right = 5;
+directionalLight.shadow.camera.top = 5;
+directionalLight.shadow.camera.bottom = -5;
+directionalLight.shadow.camera.near = 0.1;
+directionalLight.shadow.camera.far = 50;
 
 // 使用 PCFSoftShadowMap 获得柔和阴影，或使用 BasicShadowMap 获得最佳性能
-renderer.shadowMap.type = THREE.PCFSoftShadowMap
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 // renderer.shadowMap.type = THREE.BasicShadowMap // 性能最好，但边缘锯齿明显
 ```
 
@@ -275,15 +269,17 @@ Three.js 默认启用视锥体剔除——摄像机视野外的物体不会被�
 
 ```js
 // 默认开启，通常不需要修改
-mesh.frustumCulled = true
+mesh.frustumCulled = true;
 ```
 
 :::caution
 如果你手动修改了物体的 `boundingBox` 或 `boundingSphere`（例如使用了自定义着色器变形了顶点位置），需要手动更新包围盒，否则剔除计算可能出错：
+
 ```js
-mesh.geometry.computeBoundingBox()
-mesh.geometry.computeBoundingSphere()
+mesh.geometry.computeBoundingBox();
+mesh.geometry.computeBoundingSphere();
 ```
+
 :::
 
 ### LOD（Level of Detail）
@@ -291,13 +287,13 @@ mesh.geometry.computeBoundingSphere()
 对远处的物体使用低精度模型，近处使用高精度模型：
 
 ```js
-const lod = new THREE.LOD()
+const lod = new THREE.LOD();
 
-lod.addLevel(highDetailMesh, 0)   // 距离 0~10 使用高精度
-lod.addLevel(mediumDetailMesh, 10) // 距离 10~30 使用中精度
-lod.addLevel(lowDetailMesh, 30)    // 距离 30+ 使用低精度
+lod.addLevel(highDetailMesh, 0); // 距离 0~10 使用高精度
+lod.addLevel(mediumDetailMesh, 10); // 距离 10~30 使用中精度
+lod.addLevel(lowDetailMesh, 30); // 距离 30+ 使用低精度
 
-scene.add(lod)
+scene.add(lod);
 ```
 
 ### 资源清理
@@ -306,16 +302,16 @@ scene.add(lod)
 
 ```js
 // 从场景中移除
-scene.remove(mesh)
+scene.remove(mesh);
 
 // 释放几何体
-mesh.geometry.dispose()
+mesh.geometry.dispose();
 
 // 释放材质（如果材质不再被其他物体使用）
-mesh.material.dispose()
+mesh.material.dispose();
 
 // 如果材质有贴图，也要释放贴图
-if (mesh.material.map) mesh.material.map.dispose()
+if (mesh.material.map) mesh.material.map.dispose();
 ```
 
 ### 对象池（Object Pool）
@@ -333,12 +329,12 @@ if (mesh.material.map) mesh.material.map.dispose()
 
 ## 总结清单
 
-| 优化方向 | 关键措施 |
-|---------|---------|
-| 测量 | Stats.js、renderer.info、Spectre.js |
+| 优化方向 | 关键措施                            |
+| -------- | ----------------------------------- |
+| 测量     | Stats.js、renderer.info、Spectre.js |
 | 绘制调用 | 合并几何体、InstancedMesh、材质共享 |
-| 几何体 | 减少面数、LOD |
-| 纹理 | 合适尺寸、KTX2 压缩、Mipmap、复用 |
-| 材质 | 选择合适的材质、减少贴图数量 |
-| 渲染器 | 限制像素比、按需渲染、合理阴影配置 |
-| 场景 | 视锥体剔除、LOD、资源清理、对象池 |
+| 几何体   | 减少面数、LOD                       |
+| 纹理     | 合适尺寸、KTX2 压缩、Mipmap、复用   |
+| 材质     | 选择合适的材质、减少贴图数量        |
+| 渲染器   | 限制像素比、按需渲染、合理阴影配置  |
+| 场景     | 视锥体剔除、LOD、资源清理、对象池   |

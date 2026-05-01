@@ -3,8 +3,7 @@ title: 24 环境贴图
 description: 深入理解环境贴图：HDRI、立方体贴图、场景照明、反射与实时环境映射
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 什么是环境贴图
 
@@ -33,12 +32,13 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 
 ### 环境贴图的常见格式
 
-| 格式 | 说明 | 文件数量 | 推荐程度 |
-|------|------|----------|----------|
-| HDR 等距矩形（.hdr） | 高动态范围 + 单文件 360 度投影 | 1 个文件 | 最推荐 |
-| EXR 等距矩形（.exr） | 高动态范围 + 单文件，比 HDR 质量更高 | 1 个文件 | 推荐 |
-| LDR 立方体贴图（6 张 PNG） | 低动态范围 + 立方体六面 | 6 个文件 | 一般 |
-| LDR 等距矩形（.jpg） | 低动态范围 + 单文件 360 度投影 | 1 个文件 | 简单场景可用 |
+| 格式                       | 说明                                 | 文件数量 | 推荐程度     |
+| -------------------------- | ------------------------------------ | -------- | ------------ |
+| HDR 等距矩形（.hdr）       | 高动态范围 + 单文件 360 度投影       | 1 个文件 | 最推荐       |
+| EXR 等距矩形（.exr）       | 高动态范围 + 单文件，比 HDR 质量更高 | 1 个文件 | 推荐         |
+| LDR 立方体贴图（6 张 PNG） | 低动态范围 + 立方体六面              | 6 个文件 | 一般         |
+| LDR 等距矩形（.jpg）       | 低动态范围 + 单文件 360 度投影       | 1 个文件 | 简单场景可用 |
+
 <LessonPreview lesson="24-environment-map" />
 
 ## 加载环境贴图
@@ -48,22 +48,22 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 HDR 等距矩形贴图是最常用的环境贴图格式。它使用 **RGBE 编码**（Red、Green、Blue + Exponent），其中指数（Exponent）存储了亮度信息。
 
 ```js
-import { RGBELoader } from 'three/addons/loaders/RGBELoader.js'
+import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
 
 // 实例化加载器
-const rgbeLoader = new RGBELoader()
+const rgbeLoader = new RGBELoader();
 
 // 加载 HDR 文件
-rgbeLoader.load('/environmentMaps/0/2k.hdr', (environmentMap) => {
-    // 告诉 Three.js 这是一张等距矩形投影
-    environmentMap.mapping = THREE.EquirectangularReflectionMapping
+rgbeLoader.load("/environmentMaps/0/2k.hdr", (environmentMap) => {
+  // 告诉 Three.js 这是一张等距矩形投影
+  environmentMap.mapping = THREE.EquirectangularReflectionMapping;
 
-    // 设置为场景背景
-    scene.background = environmentMap
+  // 设置为场景背景
+  scene.background = environmentMap;
 
-    // 设置为场景环境贴图（为所有 PBR 材质提供反射和照明）
-    scene.environment = environmentMap
-})
+  // 设置为场景环境贴图（为所有 PBR 材质提供反射和照明）
+  scene.environment = environmentMap;
+});
 ```
 
 **代码解析**：
@@ -72,7 +72,7 @@ rgbeLoader.load('/environmentMaps/0/2k.hdr', (environmentMap) => {
 - `EquirectangularReflectionMapping` 告诉 Three.js 如何将这张矩形的 2D 图片投影到 3D 球面上
 - 文件名中的 `2k` 表示分辨率（2048x1024），分辨率越高效果越好，但文件也越大
 
-:::info
+:::note
 等距矩形（Equirectangular）投影是一种将 360 度全景图存储为普通矩形图片的方式。图片的上边缘和下边缘分别对应你头顶正上方和脚下正下方的一个点（因此上下边缘会被拉长）。左右边缘则完美衔接，形成一个完整的 360 度环视。
 :::
 
@@ -81,15 +81,15 @@ rgbeLoader.load('/environmentMaps/0/2k.hdr', (environmentMap) => {
 EXR 格式是电影工业标准的 HDR 格式，比 HDR 格式质量更高：
 
 ```js
-import { EXRLoader } from 'three/addons/loaders/EXRLoader.js'
+import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 
-const exrLoader = new EXRLoader()
-exrLoader.load('/environmentMaps/nvidiaCanvas-4k.exr', (environmentMap) => {
-    environmentMap.mapping = THREE.EquirectangularReflectionMapping
+const exrLoader = new EXRLoader();
+exrLoader.load("/environmentMaps/nvidiaCanvas-4k.exr", (environmentMap) => {
+  environmentMap.mapping = THREE.EquirectangularReflectionMapping;
 
-    scene.background = environmentMap
-    scene.environment = environmentMap
-})
+  scene.background = environmentMap;
+  scene.environment = environmentMap;
+});
 ```
 
 ### 方法三：立方体贴图（Cube Texture）
@@ -98,19 +98,19 @@ exrLoader.load('/environmentMaps/nvidiaCanvas-4k.exr', (environmentMap) => {
 
 ```js
 // CubeTextureLoader 已包含在 Three.js 核心中，无需额外导入
-const cubeTextureLoader = new THREE.CubeTextureLoader()
+const cubeTextureLoader = new THREE.CubeTextureLoader();
 
 const environmentMap = cubeTextureLoader.load([
-    '/environmentMaps/2/px.png',  // positive X（右）
-    '/environmentMaps/2/nx.png',  // negative X（左）
-    '/environmentMaps/2/py.png',  // positive Y（上）
-    '/environmentMaps/2/ny.png',  // negative Y（下）
-    '/environmentMaps/2/pz.png',  // positive Z（前）
-    '/environmentMaps/2/nz.png'   // negative Z（后）
-])
+  "/environmentMaps/2/px.png", // positive X（右）
+  "/environmentMaps/2/nx.png", // negative X（左）
+  "/environmentMaps/2/py.png", // positive Y（上）
+  "/environmentMaps/2/ny.png", // negative Y（下）
+  "/environmentMaps/2/pz.png", // positive Z（前）
+  "/environmentMaps/2/nz.png", // negative Z（后）
+]);
 
-scene.environment = environmentMap
-scene.background = environmentMap
+scene.environment = environmentMap;
+scene.background = environmentMap;
 ```
 
 :::warning
@@ -119,30 +119,30 @@ scene.background = environmentMap
 
 **CubeTextureLoader vs RGBELoader 对比**：
 
-| 特性 | CubeTextureLoader | RGBELoader |
-|------|-------------------|------------|
-| 文件格式 | 6 张普通图片（PNG/JPG） | 1 个 HDR 文件 |
-| 动态范围 | LDR（低动态范围） | HDR（高动态范围） |
-| 导入方式 | Three.js 内置 | 需要从 addons 导入 |
-| 效果质量 | 一般，缺少高光信息 | 优秀，完整的亮度信息 |
-| 使用场景 | 简单项目、兼容性要求高 | 追求真实感的推荐方案 |
+| 特性     | CubeTextureLoader       | RGBELoader           |
+| -------- | ----------------------- | -------------------- |
+| 文件格式 | 6 张普通图片（PNG/JPG） | 1 个 HDR 文件        |
+| 动态范围 | LDR（低动态范围）       | HDR（高动态范围）    |
+| 导入方式 | Three.js 内置           | 需要从 addons 导入   |
+| 效果质量 | 一般，缺少高光信息      | 优秀，完整的亮度信息 |
+| 使用场景 | 简单项目、兼容性要求高  | 追求真实感的推荐方案 |
 
 ### 方法四：LDR 等距矩形贴图
 
 最简单的方式，使用一张普通的全景图片：
 
 ```js
-const textureLoader = new THREE.TextureLoader()
-const environmentMap = textureLoader.load('/environmentMap.jpg')
+const textureLoader = new THREE.TextureLoader();
+const environmentMap = textureLoader.load("/environmentMap.jpg");
 
 // 设置等距矩形投影
-environmentMap.mapping = THREE.EquirectangularReflectionMapping
+environmentMap.mapping = THREE.EquirectangularReflectionMapping;
 
 // LDR 图片需要设置正确的颜色空间
-environmentMap.colorSpace = THREE.SRGBColorSpace
+environmentMap.colorSpace = THREE.SRGBColorSpace;
 
-scene.background = environmentMap
-scene.environment = environmentMap
+scene.background = environmentMap;
+scene.environment = environmentMap;
 ```
 
 :::warning
@@ -155,19 +155,19 @@ scene.environment = environmentMap
 
 ```js
 // 只设置背景 —— 场景有背景，但模型是黑的
-scene.background = environmentMap
+scene.background = environmentMap;
 
 // 只设置环境 —— 场景没有背景，但模型有反射和光照
-scene.environment = environmentMap
+scene.environment = environmentMap;
 
 // 同时设置 —— 既有背景，模型也有反射和光照
-scene.background = environmentMap
-scene.environment = environmentMap
+scene.background = environmentMap;
+scene.environment = environmentMap;
 ```
 
-| 属性 | 作用 | 影响范围 |
-|------|------|----------|
-| `scene.background` | 设置场景的背景图像 | 只影响背景显示，不影响光照 |
+| 属性                | 作用                              | 影响范围                   |
+| ------------------- | --------------------------------- | -------------------------- |
+| `scene.background`  | 设置场景的背景图像                | 只影响背景显示，不影响光照 |
 | `scene.environment` | 为 PBR 材质提供环境反射和间接光照 | 影响所有支持环境贴图的材质 |
 
 **常见技巧**：只设置 `scene.environment` 而不设置 `scene.background`，这样模型有真实的光照和反射，但背景是纯色或自定义的，常用于产品展示页面。
@@ -180,13 +180,13 @@ scene.environment = environmentMap
 
 ```js
 const material = new THREE.MeshStandardMaterial({
-    roughness: 0.3,
-    metalness: 1,
-    color: 0xaaaaaa
-})
+  roughness: 0.3,
+  metalness: 1,
+  color: 0xaaaaaa,
+});
 
 // 手动设置环境贴图
-material.envMap = environmentMap
+material.envMap = environmentMap;
 ```
 
 **缺点**：如果你的场景中有数百个网格，每个都要手动设置 envMap，代码会变得非常混乱。
@@ -197,7 +197,7 @@ material.envMap = environmentMap
 
 ```js
 // 一行代码，所有 PBR 材质都会获得环境反射
-scene.environment = environmentMap
+scene.environment = environmentMap;
 ```
 
 这意味着所有使用 `MeshStandardMaterial` 和 `MeshPhysicalMaterial` 的网格都会自动获得环境反射和间接光照，无需逐个设置。
@@ -209,24 +209,24 @@ scene.environment = environmentMap
 ```js
 // 完全光滑的金属 —— 像镜子一样清晰反射
 const mirrorMaterial = new THREE.MeshStandardMaterial({
-    roughness: 0,
-    metalness: 1,
-    color: 0xaaaaaa
-})
+  roughness: 0,
+  metalness: 1,
+  color: 0xaaaaaa,
+});
 
 // 粗糙的非金属 —— 几乎看不到反射
 const matteMaterial = new THREE.MeshStandardMaterial({
-    roughness: 1,
-    metalness: 0,
-    color: 0xaaaaaa
-})
+  roughness: 1,
+  metalness: 0,
+  color: 0xaaaaaa,
+});
 
 // 半光滑的金属 —— 模糊的反射
 const brushedMetalMaterial = new THREE.MeshStandardMaterial({
-    roughness: 0.3,
-    metalness: 1,
-    color: 0xaaaaaa
-})
+  roughness: 0.3,
+  metalness: 1,
+  color: 0xaaaaaa,
+});
 ```
 
 - **roughness 越低**：表面越光滑，反射越清晰（像镜子）
@@ -241,9 +241,9 @@ const brushedMetalMaterial = new THREE.MeshStandardMaterial({
 `envMapIntensity` 控制环境贴图对材质的影响强度，默认值为 1：
 
 ```js
-material.envMapIntensity = 1  // 默认
-material.envMapIntensity = 3  // 增强反射
-material.envMapIntensity = 0  // 完全关闭环境贴图影响
+material.envMapIntensity = 1; // 默认
+material.envMapIntensity = 3; // 增强反射
+material.envMapIntensity = 0; // 完全关闭环境贴图影响
 ```
 
 ### 批量更新所有材质
@@ -252,13 +252,13 @@ material.envMapIntensity = 0  // 完全关闭环境贴图影响
 
 ```js
 const updateAllMaterials = () => {
-    scene.traverse((child) => {
-        // 只处理网格，且材质是 MeshStandardMaterial
-        if (child.isMesh && child.material.isMeshStandardMaterial) {
-            child.material.envMapIntensity = global.envMapIntensity
-        }
-    })
-}
+  scene.traverse((child) => {
+    // 只处理网格，且材质是 MeshStandardMaterial
+    if (child.isMesh && child.material.isMeshStandardMaterial) {
+      child.material.envMapIntensity = global.envMapIntensity;
+    }
+  });
+};
 ```
 
 **代码解析**：
@@ -270,18 +270,14 @@ const updateAllMaterials = () => {
 ### 使用 GUI 控制强度
 
 ```js
-const global = {}
-global.envMapIntensity = 1
+const global = {};
+global.envMapIntensity = 1;
 
-gui
-    .add(global, 'envMapIntensity')
-    .min(0)
-    .max(10)
-    .step(0.001)
-    .onChange(updateAllMaterials)
+gui.add(global, "envMapIntensity").min(0).max(10).step(0.001).onChange(updateAllMaterials);
 ```
 
 这里使用一个全局变量 `global.envMapIntensity` 作为中间桥梁：
+
 1. GUI 调整这个全局变量
 2. `onChange` 触发时调用 `updateAllMaterials()`
 3. `updateAllMaterials()` 将全局变量的值应用到每个材质的 `envMapIntensity`
@@ -295,7 +291,7 @@ Three.js 提供了两个方便的属性来控制背景显示效果：
 ### 背景模糊
 
 ```js
-scene.backgroundBlurriness = 0   // 0 = 清晰，1 = 完全模糊
+scene.backgroundBlurriness = 0; // 0 = 清晰，1 = 完全模糊
 ```
 
 **使用场景**：
@@ -307,20 +303,20 @@ scene.backgroundBlurriness = 0   // 0 = 清晰，1 = 完全模糊
 ### 背景强度
 
 ```js
-scene.backgroundIntensity = 1    // 控制背景亮度，不影响环境反射
+scene.backgroundIntensity = 1; // 控制背景亮度，不影响环境反射
 ```
 
 `backgroundIntensity` 只影响背景的亮度，**不会影响**模型的环境反射和光照。这让你可以独立调整背景亮度和模型照明。
 
 ```js
 // GUI 控制背景属性
-gui.add(scene, 'backgroundBlurriness').min(0).max(1).step(0.001)
-gui.add(scene, 'backgroundIntensity').min(0).max(10).step(0.001)
+gui.add(scene, "backgroundBlurriness").min(0).max(1).step(0.001);
+gui.add(scene, "backgroundIntensity").min(0).max(10).step(0.001);
 ```
 
 ## PMREMGenerator
 
-:::info
+:::note
 PMREM 是 **Prefiltered, Mipmapped Radiance Environment Map**（预过滤、多级渐远辐射环境贴图）的缩写。Three.js 在内部会自动使用 PMREMGenerator 来处理环境贴图，提高渲染性能和视觉质量。
 :::
 
@@ -329,9 +325,9 @@ PMREM 是 **Prefiltered, Mipmapped Radiance Environment Map**（预过滤、多�
 你也可以手动使用 PMREMGenerator 来预处理环境贴图：
 
 ```js
-const pmremGenerator = new THREE.PMREMGenerator(renderer)
-const processedEnvMap = pmremGenerator.fromEquirectangular(environmentMap).texture
-scene.environment = processedEnvMap
+const pmremGenerator = new THREE.PMREMGenerator(renderer);
+const processedEnvMap = pmremGenerator.fromEquirectangular(environmentMap).texture;
+scene.environment = processedEnvMap;
 ```
 
 在较新版本的 Three.js 中，这个步骤通常是自动完成的，大多数情况下你不需要手动调用。
@@ -341,23 +337,23 @@ scene.environment = processedEnvMap
 Three.js 提供了一个 `GroundProjectedSkybox` 工具，可以将等距矩形环境贴图投射为地面天空盒，营造更有空间感的效果：
 
 ```js
-import { GroundProjectedSkybox } from 'three/addons/objects/GroundProjectedSkybox.js'
+import { GroundProjectedSkybox } from "three/addons/objects/GroundProjectedSkybox.js";
 
-rgbeLoader.load('/environmentMaps/2/2k.hdr', (environmentMap) => {
-    environmentMap.mapping = THREE.EquirectangularReflectionMapping
-    scene.environment = environmentMap
+rgbeLoader.load("/environmentMaps/2/2k.hdr", (environmentMap) => {
+  environmentMap.mapping = THREE.EquirectangularReflectionMapping;
+  scene.environment = environmentMap;
 
-    // 创建地面投射天空盒
-    const skybox = new GroundProjectedSkybox(environmentMap)
-    skybox.radius = 120
-    skybox.height = 11
-    skybox.scale.setScalar(50)
-    scene.add(skybox)
+  // 创建地面投射天空盒
+  const skybox = new GroundProjectedSkybox(environmentMap);
+  skybox.radius = 120;
+  skybox.height = 11;
+  skybox.scale.setScalar(50);
+  scene.add(skybox);
 
-    // GUI 控制
-    gui.add(skybox, 'radius', 1, 200, 0.1).name('skyboxRadius')
-    gui.add(skybox, 'height', 1, 100, 0.1).name('skyboxHeight')
-})
+  // GUI 控制
+  gui.add(skybox, "radius", 1, 200, 0.1).name("skyboxRadius");
+  gui.add(skybox, "height", 1, 100, 0.1).name("skyboxHeight");
+});
 ```
 
 这会在场景底部创建一个地平线效果，比单纯将环境贴图作为背景看起来更有沉浸感。
@@ -369,28 +365,28 @@ rgbeLoader.load('/environmentMaps/2/2k.hdr', (environmentMap) => {
 ```js
 // 创建立方体渲染目标
 const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256, {
-    type: THREE.FloatType
-})
+  type: THREE.FloatType,
+});
 
 // 将渲染目标的纹理设为场景的环境贴图
-scene.environment = cubeRenderTarget.texture
+scene.environment = cubeRenderTarget.texture;
 
 // 创建立方体相机
-const cubeCamera = new THREE.CubeCamera(0.1, 100, cubeRenderTarget)
+const cubeCamera = new THREE.CubeCamera(0.1, 100, cubeRenderTarget);
 
 // 在动画循环中更新实时环境贴图
 const tick = () => {
-    // ... 其他更新逻辑
+  // ... 其他更新逻辑
 
-    // 实时更新环境贴图
-    if (holyDonut) {
-        holyDonut.rotation.x = Math.sin(elapsedTime) * 2
-        cubeCamera.update(renderer, scene)
-    }
+  // 实时更新环境贴图
+  if (holyDonut) {
+    holyDonut.rotation.x = Math.sin(elapsedTime) * 2;
+    cubeCamera.update(renderer, scene);
+  }
 
-    renderer.render(scene, camera)
-    window.requestAnimationFrame(tick)
-}
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(tick);
+};
 ```
 
 **工作原理**：
@@ -405,10 +401,10 @@ const tick = () => {
 
 ```js
 // 发光甜甜圈只出现在 layer 1
-holyDonut.layers.enable(1)
+holyDonut.layers.enable(1);
 
 // 立方体相机只渲染 layer 1 中的物体
-cubeCamera.layers.set(1)
+cubeCamera.layers.set(1);
 ```
 
 :::warning
@@ -446,12 +442,12 @@ Blender 渲染的环境贴图分辨率建议使用 2 的幂次方（如 1024x512
 
 以下网站提供高质量的免费环境贴图：
 
-| 网站 | 说明 | 许可证 |
-|------|------|--------|
-| [Poly Haven](https://polyhaven.com/hdris) | 最推荐！数百张高质量 HDR 环境贴图，还提供 PBR 纹理和 3D 模型 | CC0（公共领域） |
-| [Poly Haven Textures](https://polyhaven.com/textures) | 高质量 PBR 纹理贴图（颜色、法线、粗糙度、金属度等） | CC0 |
-| [ambientCG](https://ambientcg.com/) | 免费纹理和环境贴图 | CC0 |
-| [HDRI Hub](https://hdri-hub.com/) | 部分 HDR 环境贴图免费 | 混合许可 |
+| 网站                                                  | 说明                                                         | 许可证          |
+| ----------------------------------------------------- | ------------------------------------------------------------ | --------------- |
+| [Poly Haven](https://polyhaven.com/hdris)             | 最推荐！数百张高质量 HDR 环境贴图，还提供 PBR 纹理和 3D 模型 | CC0（公共领域） |
+| [Poly Haven Textures](https://polyhaven.com/textures) | 高质量 PBR 纹理贴图（颜色、法线、粗糙度、金属度等）          | CC0             |
+| [ambientCG](https://ambientcg.com/)                   | 免费纹理和环境贴图                                           | CC0             |
+| [HDRI Hub](https://hdri-hub.com/)                     | 部分 HDR 环境贴图免费                                        | 混合许可        |
 
 ### Poly Haven 使用指南
 
@@ -465,7 +461,7 @@ Blender 渲染的环境贴图分辨率建议使用 2 的幂次方（如 1024x512
 1. 选择纹理
 2. 在导出选项中选择需要的贴图类型：
    - **Color (Diffuse)**：颜色贴图，选择 JPG 格式即可
-   - **Normal**：法线贴图，**必须选择 OpenGL（_nor_gl）** 版本，使用 PNG 格式
+   - **Normal**：法线贴图，**必须选择 OpenGL（\_nor_gl）** 版本，使用 PNG 格式
    - **AO / Roughness / Metalness**：可以下载合并的 ARM 贴图，也可以分开下载
 3. 分辨率 1K 对大多数场景已足够
 
@@ -478,50 +474,50 @@ Blender 渲染的环境贴图分辨率建议使用 2 的幂次方（如 1024x512
 以下是一个完整的环境贴图示例，整合了本课的所有知识点：
 
 ```js
-import * as THREE from 'three'
-import { RGBELoader } from 'three/addons/loaders/RGBELoader.js'
+import * as THREE from "three";
+import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
 
 // 场景
-const scene = new THREE.Scene()
+const scene = new THREE.Scene();
 
 // 加载器
-const rgbeLoader = new RGBELoader()
+const rgbeLoader = new RGBELoader();
 
 // 全局变量
-const global = {}
-global.envMapIntensity = 1
+const global = {};
+global.envMapIntensity = 1;
 
 // 更新所有材质的环境贴图强度
 const updateAllMaterials = () => {
-    scene.traverse((child) => {
-        if (child.isMesh && child.material.isMeshStandardMaterial) {
-            child.material.envMapIntensity = global.envMapIntensity
-        }
-    })
-}
+  scene.traverse((child) => {
+    if (child.isMesh && child.material.isMeshStandardMaterial) {
+      child.material.envMapIntensity = global.envMapIntensity;
+    }
+  });
+};
 
 // 背景控制
-scene.backgroundBlurriness = 0
-scene.backgroundIntensity = 1
+scene.backgroundBlurriness = 0;
+scene.backgroundIntensity = 1;
 
 // 加载 HDR 环境贴图
-rgbeLoader.load('/environmentMaps/0/2k.hdr', (environmentMap) => {
-    environmentMap.mapping = THREE.EquirectangularReflectionMapping
+rgbeLoader.load("/environmentMaps/0/2k.hdr", (environmentMap) => {
+  environmentMap.mapping = THREE.EquirectangularReflectionMapping;
 
-    scene.background = environmentMap
-    scene.environment = environmentMap
-})
+  scene.background = environmentMap;
+  scene.environment = environmentMap;
+});
 
 // 创建测试球体
 const sphere = new THREE.Mesh(
-    new THREE.SphereGeometry(1, 32, 32),
-    new THREE.MeshStandardMaterial({
-        roughness: 0,
-        metalness: 1,
-        color: 0xaaaaaa
-    })
-)
-scene.add(sphere)
+  new THREE.SphereGeometry(1, 32, 32),
+  new THREE.MeshStandardMaterial({
+    roughness: 0,
+    metalness: 1,
+    color: 0xaaaaaa,
+  }),
+);
+scene.add(sphere);
 ```
 
 :::tip

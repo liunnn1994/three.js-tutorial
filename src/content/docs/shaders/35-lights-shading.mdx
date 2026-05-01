@@ -3,8 +3,7 @@ title: 35 光照着色器
 description: 在自定义着色器中手动实现 Phong 光照模型，包含漫反射、镜面高光和环境光
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 概述
 
@@ -13,6 +12,7 @@ Three.js 的 `ShaderMaterial` 默认**不支持光照**。使用 `MeshStandardMa
 :::tip
 为什么要自己实现光照？（1）学习光照的底层原理；（2）为自定义着色器（如海浪、旗帜）添加光照时，尝试注入 Three.js 内置光照系统"简直是噩梦"，自己实现更简单可控；（3）自定义光照性能更高，因为只计算需要的光照类型。
 :::
+
 <LessonPreview lesson="35-lights-shading-shaders" />
 
 ## 光照模型概述
@@ -176,12 +176,12 @@ specular = pow(specular, uShininess);
 
 **Phong vs Blinn-Phong：**
 
-| 方面 | Phong | Blinn-Phong |
-|------|-------|-------------|
+| 方面     | Phong                                    | Blinn-Phong                                                              |
+| -------- | ---------------------------------------- | ------------------------------------------------------------------------ |
 | 反射计算 | `reflect()` + `dot(viewDir, reflectDir)` | `halfVector = normalize(lightDir + viewDir)` + `dot(normal, halfVector)` |
-| 高光形状 | 略长（沿反射方向拉伸） | 更圆、更自然 |
-| 性能 | 略低（需要 `reflect` 计算） | 略高 |
-| 使用场景 | 传统渲染 | 现代渲染（大多数引擎的默认选择） |
+| 高光形状 | 略长（沿反射方向拉伸）                   | 更圆、更自然                                                             |
+| 性能     | 略低（需要 `reflect` 计算）              | 略高                                                                     |
+| 使用场景 | 传统渲染                                 | 现代渲染（大多数引擎的默认选择）                                         |
 
 :::tip
 Blinn-Phong 的 `dot(normal, halfVector)` 中，当视线和光线在同一侧且关于法线对称时，半角向量恰好等于法线方向，此时点积为 1（最大高光）。这个直觉理解比反射向量更容易把握。

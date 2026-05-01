@@ -3,8 +3,7 @@ title: 10 纹理
 description: 学习加载和使用纹理贴图来丰富几何体表面，理解 UV 映射、PBR 材质与纹理属性
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 什么是纹理
 
@@ -15,6 +14,7 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 但纹理远不止"给物体上色"这么简单。通过不同类型的纹理组合，你可以模拟出几乎任何表面效果：金属的反射、木头的粗糙、石头的裂缝、布料的柔软等等。
 
 本节课我们将使用著名的 [Joao Paulo 的门纹理](https://www.patreon.com/joacopaulo) 来学习各种纹理类型。这套纹理包含了多种贴图，非常适合学习。
+
 <LessonPreview lesson="10-textures" />
 
 ## PBR -- 基于物理的渲染
@@ -28,6 +28,7 @@ PBR 已经成为 3D 行业的标准。Unreal Engine、Unity、Blender、C4D 以�
 PBR 的核心参数是**金属度（Metalness）**和**粗糙度（Roughness）**，我们后面会详细讲解这两种纹理。
 
 > 推荐阅读（英文）：
+>
 > - [The PBR Guide - Part 1](https://www.marmoset.co/posts/theory-of-physically-based-rendering/) -- Marmoset 出品的 PBR 理论指南
 > - [The PBR Guide - Part 2](https://www.marmoset.co/posts/physically-based-rendering-and-you/) -- 实践篇
 >
@@ -50,10 +51,10 @@ PBR 的核心参数是**金属度（Metalness）**和**粗糙度（Roughness）*
 在 Three.js 中，通过 `material.map` 使用：
 
 ```js
-material.map = colorTexture
+material.map = colorTexture;
 ```
 
-:::tip 注意
+:::tip[注意]
 在 PBR 工作流中，颜色贴图**不应该**包含任何光照信息（比如阴影、高光）。理想情况下，它应该是一张"纯平光"下的照片，让 PBR 引擎自己来计算所有光照效果。
 :::
 
@@ -71,12 +72,12 @@ material.map = colorTexture
 
 **对比高度贴图的关键优势：**
 
-| 特性 | 法线贴图 | 高度贴图 |
-|------|---------|---------|
-| 需要额外顶点？ | **不需要** | 需要大量细分 |
-| 性能消耗 | 很低 | 较高 |
-| 真实凹凸？ | 只是光影错觉 | 真实移动顶点 |
-| 边缘效果 | 从侧面看仍是平面 | 边缘也有凹凸 |
+| 特性           | 法线贴图         | 高度贴图     |
+| -------------- | ---------------- | ------------ |
+| 需要额外顶点？ | **不需要**       | 需要大量细分 |
+| 性能消耗       | 很低             | 较高         |
+| 真实凹凸？     | 只是光影错觉     | 真实移动顶点 |
+| 边缘效果       | 从侧面看仍是平面 | 边缘也有凹凸 |
 
 法线贴图是 3D 游戏和实时渲染中最常用的细节增强手段 -- 它能以极低的性能代价大幅提升画面质量。
 
@@ -93,6 +94,7 @@ material.map = colorTexture
 ```
 
 **生活中的类比：**
+
 - **地毯**是非常粗糙的表面 -> 粗糙度贴图几乎是纯白
 - **金属板**是非常光滑的表面 -> 粗糙度贴图接近纯黑
 - **生锈的铁板**介于两者之间 -> 粗糙度贴图是灰色调
@@ -167,15 +169,15 @@ material.map = colorTexture
 
 ### 纹理类型总结
 
-| 纹理类型 | 图像特征 | Three.js 属性 | 直观作用 |
-|---------|---------|-------------|---------|
-| 颜色/反照率 | 彩色 | `material.map` | 表面基础颜色 |
-| 法线 | 偏紫蓝 | `material.normalMap` | 假装有凹凸细节 |
-| 粗糙度 | 灰度 | `material.roughnessMap` | 光滑 vs 粗糙 |
-| 金属度 | 灰度 | `material.metalnessMap` | 金属 vs 非金属 |
-| 环境遮蔽 | 灰度 | `material.aoMap` | 缝隙假阴影 |
-| 高度/位移 | 灰度 | `material.displacementMap` | 真实几何凹凸 |
-| 透明 | 灰度 | `material.alphaMap` | 控制透明度 |
+| 纹理类型    | 图像特征 | Three.js 属性              | 直观作用       |
+| ----------- | -------- | -------------------------- | -------------- |
+| 颜色/反照率 | 彩色     | `material.map`             | 表面基础颜色   |
+| 法线        | 偏紫蓝   | `material.normalMap`       | 假装有凹凸细节 |
+| 粗糙度      | 灰度     | `material.roughnessMap`    | 光滑 vs 粗糙   |
+| 金属度      | 灰度     | `material.metalnessMap`    | 金属 vs 非金属 |
+| 环境遮蔽    | 灰度     | `material.aoMap`           | 缝隙假阴影     |
+| 高度/位移   | 灰度     | `material.displacementMap` | 真实几何凹凸   |
+| 透明        | 灰度     | `material.alphaMap`        | 控制透明度     |
 
 ## 加载纹理
 
@@ -201,7 +203,7 @@ project/
 从代码中访问时，路径从 `static/` 内部开始写：
 
 ```js
-const texturePath = '/textures/door/color.jpg'
+const texturePath = "/textures/door/color.jpg";
 ```
 
 不需要写 `static/` 这个目录名 -- Vite 会自动将 `static/` 中的文件作为静态资源提供。
@@ -211,8 +213,8 @@ const texturePath = '/textures/door/color.jpg'
 放在 `src/` 中的文件会被 Vite/Webpack 处理。你可以通过 import 来获取路径：
 
 ```js
-import imageSrc from './textures/door/color.jpg'
-console.log(imageSrc) // 会得到带有哈希值的路径，如 "/assets/color-a1b2c3.jpg"
+import imageSrc from "./textures/door/color.jpg";
+console.log(imageSrc); // 会得到带有哈希值的路径，如 "/assets/color-a1b2c3.jpg"
 ```
 
 Webpack 会自动给文件名添加哈希值来实现缓存破坏（cache busting）。
@@ -222,33 +224,36 @@ Webpack 会自动给文件名添加哈希值来实现缓存破坏（cache bustin
 Three.js 提供了 `TextureLoader` 来加载图片并自动将其转换为 GPU 友好的纹理格式。
 
 ```js
-import * as THREE from 'three'
+import * as THREE from "three";
 
 // 创建纹理加载器
-const textureLoader = new THREE.TextureLoader()
+const textureLoader = new THREE.TextureLoader();
 
 // 加载纹理（返回一个 Texture 对象）
-const colorTexture = textureLoader.load('/textures/door/color.jpg')
+const colorTexture = textureLoader.load("/textures/door/color.jpg");
 ```
 
 **`load()` 方法还支持三个可选的回调函数：**
 
 ```js
 const texture = textureLoader.load(
-    '/textures/door/color.jpg',  // 图片路径
-    (texture) => {               // 加载完成时触发
-        console.log('纹理加载完成')
-    },
-    (xhr) => {                   // 加载进度（不推荐使用，通常不准确）
-        console.log(`加载进度: ${(xhr.loaded / xhr.total * 100)}%`)
-    },
-    (error) => {                  // 加载出错时触发
-        console.log('加载出错:', error)
-    }
-)
+  "/textures/door/color.jpg", // 图片路径
+  (texture) => {
+    // 加载完成时触发
+    console.log("纹理加载完成");
+  },
+  (xhr) => {
+    // 加载进度（不推荐使用，通常不准确）
+    console.log(`加载进度: ${(xhr.loaded / xhr.total) * 100}%`);
+  },
+  (error) => {
+    // 加载出错时触发
+    console.log("加载出错:", error);
+  },
+);
 ```
 
-:::tip 一个 TextureLoader 可以加载多个纹理
+:::tip[一个 TextureLoader 可以加载多个纹理]
 你不需要为每个纹理都创建一个 TextureLoader。创建一个实例，重复使用它来加载所有纹理即可。这个类是可以复用的。
 :::
 
@@ -257,48 +262,48 @@ const texture = textureLoader.load(
 当你需要加载多个纹理（以及后续课程中的模型、字体等资源）时，使用 `LoadingManager` 来统一监控所有资源的加载状态。
 
 ```js
-import * as THREE from 'three'
+import * as THREE from "three";
 
 // 创建加载管理器
-const loadingManager = new THREE.LoadingManager()
+const loadingManager = new THREE.LoadingManager();
 
 // 设置回调
 loadingManager.onStart = () => {
-    console.log('开始加载资源')
-}
+  console.log("开始加载资源");
+};
 
 loadingManager.onLoad = () => {
-    console.log('所有资源加载完成')
-}
+  console.log("所有资源加载完成");
+};
 
 loadingManager.onProgress = (url, loaded, total) => {
-    console.log(`加载中: ${loaded}/${total}`)
-    console.log(`当前文件: ${url}`)
-}
+  console.log(`加载中: ${loaded}/${total}`);
+  console.log(`当前文件: ${url}`);
+};
 
 loadingManager.onError = (url) => {
-    console.log(`加载出错: ${url}`)
-}
+  console.log(`加载出错: ${url}`);
+};
 
 // 将 loadingManager 传给 TextureLoader
-const textureLoader = new THREE.TextureLoader(loadingManager)
+const textureLoader = new THREE.TextureLoader(loadingManager);
 
 // 使用同一个 loader 加载多个纹理
-const colorTexture = textureLoader.load('/textures/door/color.jpg')
-const normalTexture = textureLoader.load('/textures/door/normal.jpg')
-const roughnessTexture = textureLoader.load('/textures/door/roughness.jpg')
+const colorTexture = textureLoader.load("/textures/door/color.jpg");
+const normalTexture = textureLoader.load("/textures/door/normal.jpg");
+const roughnessTexture = textureLoader.load("/textures/door/roughness.jpg");
 ```
 
 **LoadingManager 的回调与 TextureLoader 的回调的区别：**
 
-| 特性 | LoadingManager | TextureLoader |
-|------|--------------|---------------|
-| 监控范围 | 所有加载器的所有资源 | 单个纹理 |
-| `onLoad` | 所有资源加载完成后触发一次 | 每个纹理加载完成时触发 |
-| `onProgress` | 每个文件加载完时触发 | 单个纹理的加载进度 |
-| 适用场景 | 全局加载进度条、加载完成后的初始化 | 单个资源的错误处理 |
+| 特性         | LoadingManager                     | TextureLoader          |
+| ------------ | ---------------------------------- | ---------------------- |
+| 监控范围     | 所有加载器的所有资源               | 单个纹理               |
+| `onLoad`     | 所有资源加载完成后触发一次         | 每个纹理加载完成时触发 |
+| `onProgress` | 每个文件加载完时触发               | 单个纹理的加载进度     |
+| 适用场景     | 全局加载进度条、加载完成后的初始化 | 单个资源的错误处理     |
 
-:::info onProgress 的参数
+:::note[onProgress 的参数]
 `onProgress` 回调接收三个参数：`url`（当前加载的文件 URL）、`loaded`（已加载数量）、`total`（总数量）。你可以用这些信息来显示一个全局加载进度条。
 :::
 
@@ -308,8 +313,8 @@ const roughnessTexture = textureLoader.load('/textures/door/roughness.jpg')
 
 ```js
 const material = new THREE.MeshBasicMaterial({
-    map: colorTexture  // 替换掉原来的 color 属性
-})
+  map: colorTexture, // 替换掉原来的 color 属性
+});
 ```
 
 将颜色贴图应用到材质上后，物体表面的颜色将由纹理图片决定。你仍然可以同时使用 `color` 属性来对纹理进行着色（下一节材质课会详细讲解）。
@@ -354,7 +359,7 @@ Three.js 的内置几何体已经预设好了 UV 坐标。但不同几何体的 
 你可以通过 BufferGeometry 的属性来查看 UV 坐标：
 
 ```js
-console.log(geometry.attributes.uv)
+console.log(geometry.attributes.uv);
 // 输出: Float32BufferAttribute { itemSize: 2, count: 48, ... }
 ```
 
@@ -372,8 +377,8 @@ console.log(geometry.attributes.uv)
 ### 重复（Repeat）
 
 ```js
-colorTexture.repeat.x = 2  // 水平方向重复 2 次
-colorTexture.repeat.y = 3  // 垂直方向重复 3 次
+colorTexture.repeat.x = 2; // 水平方向重复 2 次
+colorTexture.repeat.y = 3; // 垂直方向重复 3 次
 ```
 
 `repeat` 是一个 `Vector2` 对象。如果只设置了 `repeat` 而不设置 wrapping 模式，纹理只会拉伸到边缘的最后一个像素 -- 效果不太自然。
@@ -384,27 +389,27 @@ colorTexture.repeat.y = 3  // 垂直方向重复 3 次
 
 ```js
 // 普通重复
-colorTexture.wrapS = THREE.RepeatWrapping   // 水平方向（S = U）
-colorTexture.wrapT = THREE.RepeatWrapping   // 垂直方向（T = V）
+colorTexture.wrapS = THREE.RepeatWrapping; // 水平方向（S = U）
+colorTexture.wrapT = THREE.RepeatWrapping; // 垂直方向（T = V）
 
 // 或者镜像重复（交替翻转）
-colorTexture.wrapS = THREE.MirroredRepeatWrapping
-colorTexture.wrapT = THREE.MirroredRepeatWrapping
+colorTexture.wrapS = THREE.MirroredRepeatWrapping;
+colorTexture.wrapT = THREE.MirroredRepeatWrapping;
 ```
 
 **为什么叫 S 和 T？** 这是从 OpenGL/图形学的传统命名而来（U/V 和 S/T 在不同语境下可以互换使用）。
 
-| 包裹模式 | 效果 |
-|---------|------|
-| `RepeatWrapping` | 纹理不断重复平铺 |
-| `MirroredRepeatWrapping` | 纹理重复但每次镜像翻转，实现无缝衔接 |
+| 包裹模式                      | 效果                                           |
+| ----------------------------- | ---------------------------------------------- |
+| `RepeatWrapping`              | 纹理不断重复平铺                               |
+| `MirroredRepeatWrapping`      | 纹理重复但每次镜像翻转，实现无缝衔接           |
 | `ClampToEdgeWrapping`（默认） | 纹理边缘的最后一个像素被拉伸到几何体的其余部分 |
 
 ### 偏移（Offset）
 
 ```js
-colorTexture.offset.x = 0.5  // 水平偏移半个纹理宽度
-colorTexture.offset.y = 0.5  // 垂直偏移半个纹理高度
+colorTexture.offset.x = 0.5; // 水平偏移半个纹理宽度
+colorTexture.offset.y = 0.5; // 垂直偏移半个纹理高度
 ```
 
 `offset` 也是 `Vector2` 对象，值的范围通常在 0 到 1 之间。常用于创建滚动效果（如传送带、水面流动）。
@@ -413,11 +418,11 @@ colorTexture.offset.y = 0.5  // 垂直偏移半个纹理高度
 
 ```js
 // 旋转需要同时设置旋转中心，否则会绕左下角 (0,0) 旋转
-colorTexture.rotation = Math.PI / 4  // 旋转 45 度
+colorTexture.rotation = Math.PI / 4; // 旋转 45 度
 
 // 设置旋转中心为纹理中心
-colorTexture.center.x = 0.5
-colorTexture.center.y = 0.5
+colorTexture.center.x = 0.5;
+colorTexture.center.y = 0.5;
 ```
 
 ### 组合使用
@@ -425,12 +430,12 @@ colorTexture.center.y = 0.5
 你可以同时使用 repeat、offset 和 rotation 来创造各种效果。比如制作一面砖墙：
 
 ```js
-const brickTexture = textureLoader.load('/textures/brick/color.jpg')
+const brickTexture = textureLoader.load("/textures/brick/color.jpg");
 
 // 砖墙重复
-brickTexture.wrapS = THREE.RepeatWrapping
-brickTexture.wrapT = THREE.RepeatWrapping
-brickTexture.repeat.set(4, 4)
+brickTexture.wrapS = THREE.RepeatWrapping;
+brickTexture.wrapT = THREE.RepeatWrapping;
+brickTexture.repeat.set(4, 4);
 
 // 砖墙通常不需要旋转，但可以通过 offset 做动画
 // brickTexture.offset.x += 0.001 // 每帧偏移（在动画循环中使用）
@@ -445,8 +450,8 @@ brickTexture.repeat.set(4, 4)
 当纹理在屏幕上显示得比原始分辨率**更大**时使用。
 
 ```js
-colorTexture.magFilter = THREE.NearestFilter  // 像素化（锯齿）
-colorTexture.magFilter = THREE.LinearFilter   // 平滑（默认）
+colorTexture.magFilter = THREE.NearestFilter; // 像素化（锯齿）
+colorTexture.magFilter = THREE.LinearFilter; // 平滑（默认）
 ```
 
 ### minFilter（缩小过滤）
@@ -454,28 +459,28 @@ colorTexture.magFilter = THREE.LinearFilter   // 平滑（默认）
 当纹理在屏幕上显示得比原始分辨率**更小**时使用。
 
 ```js
-colorTexture.minFilter = THREE.NearestFilter    // 像素化
-colorTexture.minFilter = THREE.LinearFilter     // 平滑
-colorTexture.minFilter = THREE.LinearMipmapLinearFilter // 默认值
+colorTexture.minFilter = THREE.NearestFilter; // 像素化
+colorTexture.minFilter = THREE.LinearFilter; // 平滑
+colorTexture.minFilter = THREE.LinearMipmapLinearFilter; // 默认值
 ```
 
 ### NearestFilter vs LinearFilter
 
-| 过滤器 | 效果 | 适用场景 |
-|--------|------|---------|
+| 过滤器          | 效果             | 适用场景                             |
+| --------------- | ---------------- | ------------------------------------ |
 | `NearestFilter` | 像素化、锯齿明显 | 像素风游戏（如 Minecraft）、复古风格 |
-| `LinearFilter` | 平滑、自然过渡 | 大多数写实场景 |
+| `LinearFilter`  | 平滑、自然过渡   | 大多数写实场景                       |
 
 ### 像素风格纹理的设置
 
 如果你想要像素化的效果：
 
 ```js
-const pixelTexture = textureLoader.load('/textures/pixel.png')
+const pixelTexture = textureLoader.load("/textures/pixel.png");
 
-pixelTexture.generateMipmaps = false  // 关闭 mipmap 生成
-pixelTexture.minFilter = THREE.NearestFilter
-pixelTexture.magFilter = THREE.NearestFilter
+pixelTexture.generateMipmaps = false; // 关闭 mipmap 生成
+pixelTexture.minFilter = THREE.NearestFilter;
+pixelTexture.magFilter = THREE.NearestFilter;
 ```
 
 :::warning
@@ -521,18 +526,18 @@ Mipmap 是默认开启的，通常不需要手动处理。只有在你要使用 
 **颜色贴图**（人眼能看到的颜色）需要标记为 sRGB：
 
 ```js
-colorTexture.colorSpace = THREE.SRGBColorSpace
+colorTexture.colorSpace = THREE.SRGBColorSpace;
 ```
 
 **其他类型纹理**（法线、粗糙度、金属度、AO、高度等）**不应该**设置色彩空间 -- 它们本身就是线性数据：
 
 ```js
 // 这些纹理不需要设置 colorSpace
-normalTexture  // 保持默认（线性）
-roughnessTexture
-metalnessTexture
-aoMapTexture
-heightTexture
+normalTexture; // 保持默认（线性）
+roughnessTexture;
+metalnessTexture;
+aoMapTexture;
+heightTexture;
 ```
 
 :::warning
@@ -541,12 +546,12 @@ heightTexture
 
 ## 图像格式选择
 
-| 格式 | 支持透明通道 | 压缩方式 | 适用场景 |
-|------|:---------:|---------|---------|
-| **JPG** | 不支持 | 有损压缩 | 颜色贴图（不需要透明度的场景） |
-| **PNG** | 支持 | 无损压缩 | 需要透明通道的纹理（树叶、标志等） |
-| **WebP** | 支持 | 有损/无损 | 现代项目中推荐使用，体积小、质量好 |
-| **AVIF** | 支持 | 有损/无损 | 更新一代格式，压缩率更高但兼容性稍差 |
+| 格式     | 支持透明通道 | 压缩方式  | 适用场景                             |
+| -------- | :----------: | --------- | ------------------------------------ |
+| **JPG**  |    不支持    | 有损压缩  | 颜色贴图（不需要透明度的场景）       |
+| **PNG**  |     支持     | 无损压缩  | 需要透明通道的纹理（树叶、标志等）   |
+| **WebP** |     支持     | 有损/无损 | 现代项目中推荐使用，体积小、质量好   |
+| **AVIF** |     支持     | 有损/无损 | 更新一代格式，压缩率更高但兼容性稍差 |
 
 :::tip
 对于颜色贴图，优先使用 JPG 或 WebP（不需要透明度时文件更小）。对于需要透明度的贴图，使用 PNG 或 WebP。在实际项目中，WebP 是最好的平衡选择。
@@ -577,42 +582,42 @@ ambientCG 和 Poly Haven 提供的纹理都遵循 PBR 标准，自带颜色、�
 ## 完整代码示例
 
 ```js
-import * as THREE from 'three'
+import * as THREE from "three";
 
 // === 加载管理器 ===
-const loadingManager = new THREE.LoadingManager()
-loadingManager.onStart = () => console.log('开始加载')
-loadingManager.onLoad = () => console.log('全部加载完成')
+const loadingManager = new THREE.LoadingManager();
+loadingManager.onStart = () => console.log("开始加载");
+loadingManager.onLoad = () => console.log("全部加载完成");
 loadingManager.onProgress = (url, loaded, total) => {
-    console.log(`加载进度: ${loaded}/${total} - ${url}`)
-}
+  console.log(`加载进度: ${loaded}/${total} - ${url}`);
+};
 
 // === 纹理加载器 ===
-const textureLoader = new THREE.TextureLoader(loadingManager)
+const textureLoader = new THREE.TextureLoader(loadingManager);
 
 // === 加载纹理 ===
-const colorTexture = textureLoader.load('/textures/door/color.jpg')
-const normalTexture = textureLoader.load('/textures/door/normal.jpg')
-const roughnessTexture = textureLoader.load('/textures/door/roughness.jpg')
-const metalnessTexture = textureLoader.load('/textures/door/metalness.jpg')
-const aoTexture = textureLoader.load('/textures/door/ambientOcclusion.jpg')
+const colorTexture = textureLoader.load("/textures/door/color.jpg");
+const normalTexture = textureLoader.load("/textures/door/normal.jpg");
+const roughnessTexture = textureLoader.load("/textures/door/roughness.jpg");
+const metalnessTexture = textureLoader.load("/textures/door/metalness.jpg");
+const aoTexture = textureLoader.load("/textures/door/ambientOcclusion.jpg");
 
 // 设置色彩空间 -- 只有颜色贴图需要
-colorTexture.colorSpace = THREE.SRGBColorSpace
+colorTexture.colorSpace = THREE.SRGBColorSpace;
 
 // === 创建材质 ===
 const material = new THREE.MeshStandardMaterial({
-    map: colorTexture,
-    normalMap: normalTexture,
-    roughnessMap: roughnessTexture,
-    metalnessMap: metalnessTexture,
-    aoMap: aoTexture
-})
+  map: colorTexture,
+  normalMap: normalTexture,
+  roughnessMap: roughnessTexture,
+  metalnessMap: metalnessTexture,
+  aoMap: aoTexture,
+});
 
 // === 创建几何体和网格 ===
-const geometry = new THREE.BoxGeometry(1, 1, 1)
-const mesh = new THREE.Mesh(geometry, material)
-scene.add(mesh)
+const geometry = new THREE.BoxGeometry(1, 1, 1);
+const mesh = new THREE.Mesh(geometry, material);
+scene.add(mesh);
 
 // === 纹理变换示例 ===
 // colorTexture.wrapS = THREE.RepeatWrapping
@@ -624,6 +629,7 @@ scene.add(mesh)
 ```
 
 > Three.js 文档参考：
+>
 > - [TextureLoader](https://threejs.org/docs/#api/en/loaders/TextureLoader)
 > - [LoadingManager](https://threejs.org/docs/#api/en/loaders/LoadingManager)
 > - [Texture](https://threejs.org/docs/#api/en/textures/Texture)

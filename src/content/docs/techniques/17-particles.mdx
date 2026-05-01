@@ -3,8 +3,7 @@ title: 17 粒子
 description: 深入学习 Three.js 粒子系统——从创建基本粒子到纹理、颜色、透明度问题和动画
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 什么是粒子？
 
@@ -22,16 +21,17 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 你可以用 `new THREE.Mesh()` 创建几千个小球或小方块来模拟粒子效果。但这会有严重的**性能问题**——每个 Mesh 都是一次独立的绘制调用（draw call），GPU 需要分别处理每一个。
 
 而使用粒子系统（`THREE.Points`），**成千上万个粒子只需要一次绘制调用**，GPU 可以高效地批量处理它们。这就是粒子的核心优势。
+
 <LessonPreview lesson="17-particles" />
 
 ## 创建粒子的基本步骤
 
 创建粒子和创建 Mesh 非常类似，只有两个区别：
 
-| 创建 Mesh | 创建 Points |
-|---|---|
-| `THREE.BufferGeometry` | `THREE.BufferGeometry` |
-| `THREE.MeshStandardMaterial` | **`THREE.PointsMaterial`** |
+| 创建 Mesh                            | 创建 Points                                |
+| ------------------------------------ | ------------------------------------------ |
+| `THREE.BufferGeometry`               | `THREE.BufferGeometry`                     |
+| `THREE.MeshStandardMaterial`         | **`THREE.PointsMaterial`**                 |
 | `new THREE.Mesh(geometry, material)` | **`new THREE.Points(geometry, material)`** |
 
 参考文档：[THREE.Points](https://threejs.org/docs/#api/en/objects/Points)、[THREE.PointsMaterial](https://threejs.org/docs/#api/en/materials/PointsMaterial)
@@ -41,15 +41,15 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 你可以像创建 Mesh 一样，用 Three.js 自带的几何体来生成粒子：
 
 ```js
-const particlesGeometry = new THREE.SphereGeometry(1, 32, 32)
+const particlesGeometry = new THREE.SphereGeometry(1, 32, 32);
 
 const particlesMaterial = new THREE.PointsMaterial({
-    size: 0.02,
-    sizeAttenuation: true
-})
+  size: 0.02,
+  sizeAttenuation: true,
+});
 
-const particles = new THREE.Points(particlesGeometry, particlesMaterial)
-scene.add(particles)
+const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+scene.add(particles);
 ```
 
 你会看到粒子的形状和球体表面上顶点的分布一样——粒子出现在球面的顶点位置上。
@@ -61,17 +61,17 @@ scene.add(particles)
 ### size — 粒子大小
 
 ```js
-particlesMaterial.size = 0.02  // 世界单位中的大小（当 sizeAttenuation 为 true 时）
+particlesMaterial.size = 0.02; // 世界单位中的大小（当 sizeAttenuation 为 true 时）
 ```
 
 ### sizeAttenuation — 透视衰减
 
 ```js
-particlesMaterial.sizeAttenuation = true   // 靠近相机的粒子大，远处的小（3D 透视效果）
-particlesMaterial.sizeAttenuation = false  // 所有粒子大小相同，不随距离变化
+particlesMaterial.sizeAttenuation = true; // 靠近相机的粒子大，远处的小（3D 透视效果）
+particlesMaterial.sizeAttenuation = false; // 所有粒子大小相同，不随距离变化
 ```
 
-:::info
+:::note
 当 `sizeAttenuation` 为 `false` 时，`size` 的单位变为**屏幕像素**。例如 `size: 4` 意味着每个粒子都是 4x4 像素的正方形。这种方式**性能更好**，但效果不够真实。
 
 通常我们会用 `sizeAttenuation: true` 来获得更真实的效果——雪花靠近你时看起来更大，远离你时更小。
@@ -92,11 +92,11 @@ GPU 处理数据时，效率最高的数据格式是 `Float32Array`（32 位浮�
 每个粒子占 3 个值（x, y, z），所以如果有 `count` 个粒子，数组总长度就是 `count * 3`：
 
 ```js
-const count = 5000
-const positions = new Float32Array(count * 3)
+const count = 5000;
+const positions = new Float32Array(count * 3);
 ```
 
-:::info
+:::note
 为什么要用 `Float32Array` 而不是普通数组 `[]`？因为 `Float32Array` 是一块连续的、固定大小的内存，GPU 可以直接读取，传输速度远快于普通 JavaScript 数组或对象数组。
 :::
 
@@ -106,12 +106,13 @@ const positions = new Float32Array(count * 3)
 
 ```js
 for (let i = 0; i < count * 3; i++) {
-    positions[i] = (Math.random() - 0.5) * 10  // -5 到 +5
+  positions[i] = (Math.random() - 0.5) * 10; // -5 到 +5
 }
 ```
 
 :::tip
 为什么是 `(Math.random() - 0.5) * 10`？
+
 - `Math.random()` → 0 到 1
 - `Math.random() - 0.5` → -0.5 到 +0.5
 - `(Math.random() - 0.5) * 10` → -5 到 +5
@@ -125,9 +126,9 @@ for (let i = 0; i < count * 3; i++) {
 
 ```js
 particlesGeometry.setAttribute(
-    'position',
-    new THREE.BufferAttribute(positions, 3)  // 3 = 每个顶点 3 个分量（x, y, z）
-)
+  "position",
+  new THREE.BufferAttribute(positions, 3), // 3 = 每个顶点 3 个分量（x, y, z）
+);
 ```
 
 :::caution
@@ -137,27 +138,24 @@ particlesGeometry.setAttribute(
 ### 完整代码
 
 ```js
-const count = 5000
-const particlesGeometry = new THREE.BufferGeometry()
-const positions = new Float32Array(count * 3)
+const count = 5000;
+const particlesGeometry = new THREE.BufferGeometry();
+const positions = new Float32Array(count * 3);
 
 for (let i = 0; i < count * 3; i++) {
-    positions[i] = (Math.random() - 0.5) * 10
+  positions[i] = (Math.random() - 0.5) * 10;
 }
 
-particlesGeometry.setAttribute(
-    'position',
-    new THREE.BufferAttribute(positions, 3)
-)
+particlesGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
 
 const particlesMaterial = new THREE.PointsMaterial({
-    size: 0.1,
-    sizeAttenuation: true,
-    color: '#ff88cc'
-})
+  size: 0.1,
+  sizeAttenuation: true,
+  color: "#ff88cc",
+});
 
-const particles = new THREE.Points(particlesGeometry, particlesMaterial)
-scene.add(particles)
+const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+scene.add(particles);
 ```
 
 ## 粒子纹理
@@ -169,9 +167,9 @@ scene.add(particles)
 你可以使用 PNG 格式的粒子纹理（白色代表可见部分，黑色/透明代表不可见部分）。Three.js 官方和一些社区提供了大量免费的粒子纹理。
 
 ```js
-const particleTexture = textureLoader.load('/textures/particles/2.png')
+const particleTexture = textureLoader.load("/textures/particles/2.png");
 
-particlesMaterial.map = particleTexture
+particlesMaterial.map = particleTexture;
 ```
 
 参考文档：[PointsMaterial.map](https://threejs.org/docs/#api/en/materials/PointsMaterial.map)
@@ -181,9 +179,9 @@ particlesMaterial.map = particleTexture
 如果你的粒子纹理中间有内容、四周是黑色的（或透明的），你需要使用 `alphaMap` 而不是 `map`，这样才能让黑色区域变得透明：
 
 ```js
-particlesMaterial.map = particleTexture
-particlesMaterial.transparent = true
-particlesMaterial.alphaMap = particleTexture
+particlesMaterial.map = particleTexture;
+particlesMaterial.transparent = true;
+particlesMaterial.alphaMap = particleTexture;
 ```
 
 :::caution
@@ -205,7 +203,7 @@ particlesMaterial.alphaMap = particleTexture
 ### 方案 1：alphaTest（推荐新手使用）
 
 ```js
-particlesMaterial.alphaTest = 0.001
+particlesMaterial.alphaTest = 0.001;
 ```
 
 参考文档：[Material.alphaTest](https://threejs.org/docs/#api/en/materials/Material.alphaTest)
@@ -218,7 +216,7 @@ particlesMaterial.alphaTest = 0.001
 ### 方案 2：depthWrite = false（推荐通用使用）
 
 ```js
-particlesMaterial.depthWrite = false
+particlesMaterial.depthWrite = false;
 ```
 
 参考文档：[Material.depthWrite](https://threejs.org/docs/#api/en/materials/Material.depthWrite)
@@ -231,7 +229,7 @@ particlesMaterial.depthWrite = false
 ### 方案 3：depthTest = false（不推荐）
 
 ```js
-particlesMaterial.depthTest = false
+particlesMaterial.depthTest = false;
 ```
 
 告诉 GPU **不要做深度测试**，无论粒子是在前面还是后面，都直接画上去。
@@ -242,8 +240,8 @@ particlesMaterial.depthTest = false
 ### 方案 4：AdditiveBlending（适合光效、火花）
 
 ```js
-particlesMaterial.depthWrite = false  // 仍需配合 depthWrite
-particlesMaterial.blending = THREE.AdditiveBlending
+particlesMaterial.depthWrite = false; // 仍需配合 depthWrite
+particlesMaterial.blending = THREE.AdditiveBlending;
 ```
 
 参考文档：[THREE.AdditiveBlending](https://threejs.org/docs/#api/en/constants/Materials)
@@ -266,10 +264,10 @@ particlesMaterial.blending = THREE.AdditiveBlending
 颜色也是三个一组（R, G, B），每个分量从 0 到 1：
 
 ```js
-const colors = new Float32Array(count * 3)
+const colors = new Float32Array(count * 3);
 
 for (let i = 0; i < count * 3; i++) {
-    colors[i] = Math.random()  // R, G, B 各自随机 0~1
+  colors[i] = Math.random(); // R, G, B 各自随机 0~1
 }
 ```
 
@@ -277,9 +275,9 @@ for (let i = 0; i < count * 3; i++) {
 
 ```js
 particlesGeometry.setAttribute(
-    'color',           // 注意：属性名必须是 'color'（单数！）
-    new THREE.BufferAttribute(colors, 3)
-)
+  "color", // 注意：属性名必须是 'color'（单数！）
+  new THREE.BufferAttribute(colors, 3),
+);
 ```
 
 :::caution
@@ -289,14 +287,14 @@ particlesGeometry.setAttribute(
 ### 启用顶点颜色
 
 ```js
-particlesMaterial.vertexColors = true  // 注意：属性名是复数！
+particlesMaterial.vertexColors = true; // 注意：属性名是复数！
 ```
 
 :::caution
 在 `PointsMaterial` 上启用顶点颜色的属性名是 `vertexColors`（复数，带 s）。不要和几何体属性名 `'color'`（单数）搞混了！
 :::
 
-:::info
+:::note
 当启用了顶点颜色后，粒子材质的 `color`（基础颜色）会和顶点颜色混合。如果你只想显示顶点颜色而不受基础颜色影响，可以注释掉 `particlesMaterial.color` 的设置。
 :::
 
@@ -308,17 +306,17 @@ particlesMaterial.vertexColors = true  // 注意：属性名是复数！
 
 ```js
 const tick = () => {
-    const elapsedTime = clock.getElapsedTime()
+  const elapsedTime = clock.getElapsedTime();
 
-    // 让所有粒子整体旋转
-    particles.rotation.y = elapsedTime * 0.1
+  // 让所有粒子整体旋转
+  particles.rotation.y = elapsedTime * 0.1;
 
-    // 或者让粒子整体下落（像雪花）
-    // particles.position.y = -elapsedTime * 2
+  // 或者让粒子整体下落（像雪花）
+  // particles.position.y = -elapsedTime * 2
 
-    renderer.render(scene, camera)
-    window.requestAnimationFrame(tick)
-}
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(tick);
+};
 ```
 
 ### 逐个粒子动画（性能需注意）
@@ -333,26 +331,25 @@ const tick = () => {
 
 ```js
 const tick = () => {
-    const elapsedTime = clock.getElapsedTime()
+  const elapsedTime = clock.getElapsedTime();
 
-    for (let i = 0; i < count; i++) {
-        // i3 是当前粒子在数组中的起始索引
-        const i3 = i * 3
+  for (let i = 0; i < count; i++) {
+    // i3 是当前粒子在数组中的起始索引
+    const i3 = i * 3;
 
-        // 获取当前粒子的 x 坐标，用来偏移波浪动画
-        const x = particlesGeometry.attributes.position.array[i3]
+    // 获取当前粒子的 x 坐标，用来偏移波浪动画
+    const x = particlesGeometry.attributes.position.array[i3];
 
-        // 更新 y 坐标：用 sin 函数 + x 偏移来创建波浪效果
-        particlesGeometry.attributes.position.array[i3 + 1] =
-            Math.sin(elapsedTime + x)
-    }
+    // 更新 y 坐标：用 sin 函数 + x 偏移来创建波浪效果
+    particlesGeometry.attributes.position.array[i3 + 1] = Math.sin(elapsedTime + x);
+  }
 
-    // 关键步骤！必须告诉 Three.js 属性已经更新了
-    particlesGeometry.attributes.position.needsUpdate = true
+  // 关键步骤！必须告诉 Three.js 属性已经更新了
+  particlesGeometry.attributes.position.needsUpdate = true;
 
-    renderer.render(scene, camera)
-    window.requestAnimationFrame(tick)
-}
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(tick);
+};
 ```
 
 :::caution
@@ -380,16 +377,16 @@ const tick = () => {
 
 ## 核心知识点总结
 
-| 概念 | 说明 |
-|---|---|
-| `THREE.Points` | 粒子系统的容器类，替代 `THREE.Mesh` |
+| 概念                   | 说明                                                  |
+| ---------------------- | ----------------------------------------------------- |
+| `THREE.Points`         | 粒子系统的容器类，替代 `THREE.Mesh`                   |
 | `THREE.PointsMaterial` | 粒子专用材质，有 `size`、`sizeAttenuation` 等特殊属性 |
-| `Float32Array` | GPU 友好的高效数据格式 |
-| `BufferAttribute` | 将 TypedArray 包装成 GPU 可识别的顶点属性 |
-| `size` | 粒子大小（单位取决于 `sizeAttenuation`） |
-| `sizeAttenuation` | `true` = 透视效果，`false` = 固定像素大小 |
-| `alphaTest` | 低于阈值时完全不渲染该像素 |
-| `depthWrite = false` | 不写入深度缓冲区（推荐用于透明粒子） |
-| `AdditiveBlending` | 加法混合模式，颜色叠加，适合光效 |
-| `vertexColors` | 启用顶点颜色（复数！） |
-| `needsUpdate = true` | 修改属性数组后必须设置，否则 GPU 不会更新 |
+| `Float32Array`         | GPU 友好的高效数据格式                                |
+| `BufferAttribute`      | 将 TypedArray 包装成 GPU 可识别的顶点属性             |
+| `size`                 | 粒子大小（单位取决于 `sizeAttenuation`）              |
+| `sizeAttenuation`      | `true` = 透视效果，`false` = 固定像素大小             |
+| `alphaTest`            | 低于阈值时完全不渲染该像素                            |
+| `depthWrite = false`   | 不写入深度缓冲区（推荐用于透明粒子）                  |
+| `AdditiveBlending`     | 加法混合模式，颜色叠加，适合光效                      |
+| `vertexColors`         | 启用顶点颜色（复数！）                                |
+| `needsUpdate = true`   | 修改属性数组后必须设置，否则 GPU 不会更新             |

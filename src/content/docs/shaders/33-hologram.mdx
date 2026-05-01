@@ -3,8 +3,7 @@ title: 33 全息着色器
 description: 创建科幻风格的全息投影效果，综合运用菲涅尔效应、扫描线和故障效果
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 概述
 
@@ -18,6 +17,7 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 :::tip
 全息效果完全依赖自定义着色器。尝试用 Three.js 的内置材质（如 `MeshBasicMaterial`）来实现这些效果几乎不可能——这正是自定义着色器的典型应用场景。
 :::
+
 <LessonPreview lesson="33-hologram-shader" />
 
 ## 顶点着色器
@@ -42,11 +42,11 @@ void main() {
 
 **需要传递的数据：**
 
-| 变量 | 来源 | 传递方式 | 用途 |
-|------|------|---------|------|
-| `vUv` | `uv`（Three.js 自动注入的 attribute） | `varying` | 扫描线效果（基于 Y 坐标） |
-| `vNormal` | `normal`（Three.js 自动注入）经 `normalMatrix` 变换 | `varying` | 菲涅尔效应（需要视图空间法线） |
-| `vPosition` | `modelMatrix * position` 的 xyz 分量 | `varying` | 菲涅尔效应（视线方向计算） |
+| 变量        | 来源                                                | 传递方式  | 用途                           |
+| ----------- | --------------------------------------------------- | --------- | ------------------------------ |
+| `vUv`       | `uv`（Three.js 自动注入的 attribute）               | `varying` | 扫描线效果（基于 Y 坐标）      |
+| `vNormal`   | `normal`（Three.js 自动注入）经 `normalMatrix` 变换 | `varying` | 菲涅尔效应（需要视图空间法线） |
+| `vPosition` | `modelMatrix * position` 的 xyz 分量                | `varying` | 菲涅尔效应（视线方向计算）     |
 
 :::caution
 `normalMatrix` 是 Three.js 自动注入的 `mat3` 矩阵，专门用于将法线从模型空间变换到视图空间。不要用 `modelMatrix` 来变换法线——如果模型有非均匀缩放，`modelMatrix` 会导致法线方向不正确。`normalMatrix` 已经处理了这个问题。
@@ -157,23 +157,23 @@ float glitchStrength = glitch * (random(vec2(uTime, vUv.y)) - 0.5) * 0.3;
 
 ```js
 const material = new THREE.ShaderMaterial({
-    vertexShader,
-    fragmentShader,
-    uniforms: {
-        uTime: { value: 0 },
-        uColor: { value: new THREE.Color('#00ffff') }
-    },
-    transparent: true,
-    side: THREE.DoubleSide,
-    depthWrite: false
-})
+  vertexShader,
+  fragmentShader,
+  uniforms: {
+    uTime: { value: 0 },
+    uColor: { value: new THREE.Color("#00ffff") },
+  },
+  transparent: true,
+  side: THREE.DoubleSide,
+  depthWrite: false,
+});
 ```
 
-| 属性 | 值 | 原因 |
-|------|-----|------|
-| `transparent` | `true` | 全息效果需要半透明 |
-| `side` | `DoubleSide` | 从任何角度都能看到全息投影 |
-| `depthWrite` | `false` | 避免半透明物体之间的遮挡问题 |
+| 属性          | 值           | 原因                         |
+| ------------- | ------------ | ---------------------------- |
+| `transparent` | `true`       | 全息效果需要半透明           |
+| `side`        | `DoubleSide` | 从任何角度都能看到全息投影   |
+| `depthWrite`  | `false`      | 避免半透明物体之间的遮挡问题 |
 
 :::caution
 如果 `depthWrite` 为 `true`，先渲染的全息物体可能会遮挡后面的物体，即使它们是半透明的。关闭深度写入可以避免这个问题，但可能导致排序问题。对于全息效果这种"半透明 + 不遮挡"的场景，关闭深度写入是正确的选择。
@@ -189,6 +189,7 @@ const material = new THREE.ShaderMaterial({
 ```
 
 每个效果都是独立的，你可以：
+
 - 增大扫描线系数让条纹更明显
 - 减小闪烁幅度让投影更稳定
 - 调整菲涅尔指数改变边缘发光的范围
@@ -202,13 +203,13 @@ const material = new THREE.ShaderMaterial({
 
 在这个着色器中，我们用到了多个 Three.js 自动注入的变量。使用 `ShaderMaterial` 时，以下变量无需手动声明：
 
-| 变量 | 类型 | 说明 |
-|------|------|------|
-| `modelMatrix` | `mat4` | 模型矩阵 |
-| `viewMatrix` | `mat4` | 视图矩阵 |
-| `projectionMatrix` | `mat4` | 投影矩阵 |
-| `normalMatrix` | `mat3` | 法线变换矩阵 |
-| `position` | `vec3` attribute | 顶点位置 |
-| `normal` | `vec3` attribute | 顶点法线 |
-| `uv` | `vec2` attribute | UV 坐标 |
-| `cameraPosition` | `vec3` uniform | 摄像机世界位置 |
+| 变量               | 类型             | 说明           |
+| ------------------ | ---------------- | -------------- |
+| `modelMatrix`      | `mat4`           | 模型矩阵       |
+| `viewMatrix`       | `mat4`           | 视图矩阵       |
+| `projectionMatrix` | `mat4`           | 投影矩阵       |
+| `normalMatrix`     | `mat3`           | 法线变换矩阵   |
+| `position`         | `vec3` attribute | 顶点位置       |
+| `normal`           | `vec3` attribute | 顶点法线       |
+| `uv`               | `vec2` attribute | UV 坐标        |
+| `cameraPosition`   | `vec3` uniform   | 摄像机世界位置 |

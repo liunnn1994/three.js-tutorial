@@ -3,8 +3,7 @@ title: 25 真实感渲染
 description: 通过色调映射、阴影优化和环境光照等技巧实现照片级渲染效果
 ---
 
-import LessonPreview from '../../../components/LessonPreview.astro';
-
+import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 什么是真实感渲染
 
@@ -23,6 +22,7 @@ import LessonPreview from '../../../components/LessonPreview.astro';
 :::caution
 本课中的某些技术可能会影响性能。在实际项目中需要根据目标设备进行权衡。
 :::
+
 <LessonPreview lesson="25-realistic-render" />
 
 ## 色调映射（Tone Mapping）
@@ -36,29 +36,30 @@ HDR（High Dynamic Range）图像的亮度范围远超普通显示器能显示�
 ### 启用色调映射
 
 ```js
-renderer.toneMapping = THREE.ACESFilmicToneMapping
-renderer.toneMappingExposure = 3
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 3;
 ```
 
 ### 可用的色调映射算法
 
-| 类型 | 效果 | 推荐场景 |
-|------|------|----------|
-| `NoToneMapping` | 无映射，默认 | 不推荐 |
-| `LinearToneMapping` | 线性压缩 | 简单场景 |
-| `ReinhardToneMapping` | 自然过渡 | 通用场景 |
-| `CineonToneMapping` | 电影感 | 影视风格 |
-| `ACESFilmicToneMapping` | 电影级效果 | **真实感渲染推荐** |
+| 类型                    | 效果         | 推荐场景           |
+| ----------------------- | ------------ | ------------------ |
+| `NoToneMapping`         | 无映射，默认 | 不推荐             |
+| `LinearToneMapping`     | 线性压缩     | 简单场景           |
+| `ReinhardToneMapping`   | 自然过渡     | 通用场景           |
+| `CineonToneMapping`     | 电影感       | 影视风格           |
+| `ACESFilmicToneMapping` | 电影级效果   | **真实感渲染推荐** |
 
 `ACESFilmicToneMapping` 是目前最受推荐的选择，它最初由美国电影艺术与科学学院开发，能产生电影级的色彩效果，高光不会过曝，阴影细节保留好。
 
 ### 曝光度
 
 ```js
-renderer.toneMappingExposure = 2.5
+renderer.toneMappingExposure = 2.5;
 ```
 
 曝光度控制整体亮度：
+
 - `1.0` — 默认值
 - `< 1.0` — 更暗
 - `> 1.0` — 更亮
@@ -71,9 +72,9 @@ renderer.toneMappingExposure = 2.5
 
 ```js
 const renderer = new THREE.WebGLRenderer({
-    canvas,
-    antialias: true
-})
+  canvas,
+  antialias: true,
+});
 ```
 
 启用 `antialias: true` 会使用 MSAA（多重采样抗锯齿），效果明显且性能开销可接受。在大多数项目中都应该开启。
@@ -87,22 +88,22 @@ Three.js 从 r155 开始默认使用物理正确的光照计算。确保使用�
 ```js
 // 推荐 — 标准 PBR
 const material = new THREE.MeshStandardMaterial({
-    map: colorTexture,
-    normalMap: normalTexture,
-    roughnessMap: roughnessTexture,
-    metalnessMap: metalnessTexture,
-    aoMap: aoTexture,
-    envMapIntensity: 1.0
-})
+  map: colorTexture,
+  normalMap: normalTexture,
+  roughnessMap: roughnessTexture,
+  metalnessMap: metalnessTexture,
+  aoMap: aoTexture,
+  envMapIntensity: 1.0,
+});
 
 // 或更高级的 PBR
 const physicalMaterial = new THREE.MeshPhysicalMaterial({
-    map: colorTexture,
-    roughness: 0.3,
-    metalness: 0.5,
-    clearcoat: 0.5,        // 清漆层
-    clearcoatRoughness: 0.1
-})
+  map: colorTexture,
+  roughness: 0.3,
+  metalness: 0.5,
+  clearcoat: 0.5, // 清漆层
+  clearcoatRoughness: 0.1,
+});
 ```
 
 不要使用 `MeshBasicMaterial`、`MeshLambertMaterial` 等非 PBR 材质 — 它们不会对光照做出真实的反应。
@@ -110,7 +111,7 @@ const physicalMaterial = new THREE.MeshPhysicalMaterial({
 ### 环境贴图提供间接光照
 
 ```js
-scene.environment = environmentMap
+scene.environment = environmentMap;
 ```
 
 环境贴图不仅影响反射，还影响整体光照。它是真实感渲染中最关键的因素之一。
@@ -121,22 +122,22 @@ scene.environment = environmentMap
 
 ```js
 // 渲染器开启阴影
-renderer.shadowMap.enabled = true
-renderer.shadowMap.type = THREE.PCFSoftShadowMap
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 // 光源设置
-directionalLight.castShadow = true
-directionalLight.shadow.normalBias = 0.027
-directionalLight.shadow.bias = -0.004
-directionalLight.shadow.mapSize.set(512, 512)
+directionalLight.castShadow = true;
+directionalLight.shadow.normalBias = 0.027;
+directionalLight.shadow.bias = -0.004;
+directionalLight.shadow.mapSize.set(512, 512);
 
 // 确保所有物体投射和接收阴影
 scene.traverse((child) => {
-    if (child.isMesh) {
-        child.castShadow = true
-        child.receiveShadow = true
-    }
-})
+  if (child.isMesh) {
+    child.castShadow = true;
+    child.receiveShadow = true;
+  }
+});
 ```
 
 ### 阴影参数说明
@@ -153,17 +154,17 @@ scene.traverse((child) => {
 
 ```js
 const updateAllMaterials = () => {
-    scene.traverse((child) => {
-        if (child.isMesh && child.material.isMeshStandardMaterial) {
-            // 调整环境贴图强度
-            child.material.envMapIntensity = debugObject.envMapIntensity
+  scene.traverse((child) => {
+    if (child.isMesh && child.material.isMeshStandardMaterial) {
+      // 调整环境贴图强度
+      child.material.envMapIntensity = debugObject.envMapIntensity;
 
-            // 确保投射和接收阴影
-            child.castShadow = true
-            child.receiveShadow = true
-        }
-    })
-}
+      // 确保投射和接收阴影
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+};
 ```
 
 `scene.traverse` 会递归遍历场景图中的所有对象。通过 `isMesh` 和 `isMeshStandardMaterial` 过滤出需要修改的对象。
@@ -174,14 +175,14 @@ const updateAllMaterials = () => {
 
 ```js
 const material = new THREE.MeshStandardMaterial({
-    map: colorTexture,               // 颜色贴图 — 表面颜色
-    normalMap: normalTexture,         // 法线贴图 — 表面细节
-    aoMap: aoTexture,                 // 环境遮蔽 — 接触阴影
-    roughnessMap: roughnessTexture,   // 粗糙度 — 光泽度
-    metalnessMap: metalnessTexture,   // 金属度 — 金属质感
-    displacementMap: heightTexture,   // 高度贴图 — 表面位移
-    displacementScale: 0.1
-})
+  map: colorTexture, // 颜色贴图 — 表面颜色
+  normalMap: normalTexture, // 法线贴图 — 表面细节
+  aoMap: aoTexture, // 环境遮蔽 — 接触阴影
+  roughnessMap: roughnessTexture, // 粗糙度 — 光泽度
+  metalnessMap: metalnessTexture, // 金属度 — 金属质感
+  displacementMap: heightTexture, // 高度贴图 — 表面位移
+  displacementScale: 0.1,
+});
 ```
 
 ### 纹理注意事项
@@ -194,39 +195,39 @@ const material = new THREE.MeshStandardMaterial({
 
 ```js
 // 1. 色调映射
-renderer.toneMapping = THREE.ACESFilmicToneMapping
-renderer.toneMappingExposure = 2.5
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 2.5;
 
 // 2. 阴影
-renderer.shadowMap.enabled = true
-renderer.shadowMap.type = THREE.PCFSoftShadowMap
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 // 3. 像素比（限制为 2 防止性能问题）
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 // 4. 输出色彩空间
-renderer.outputColorSpace = THREE.SRGBColorSpace
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 // 5. 环境贴图
-scene.environment = environmentMap
+scene.environment = environmentMap;
 
 // 6. 材质
-material.roughness = 0.3
-material.metalness = 0.5
-material.envMapIntensity = 1.0
+material.roughness = 0.3;
+material.metalness = 0.5;
+material.envMapIntensity = 1.0;
 ```
 
 ## 常见导致"不真实"的原因
 
-| 问题 | 解决方法 |
-|------|----------|
-| 模型看起来像塑料 | 调整粗糙度和金属度纹理 |
-| 颜色太亮或太暗 | 调整 toneMappingExposure |
-| 没有反射/高光 | 添加 HDR 环境贴图 |
-| 阴影有条纹瑕疵 | 调整 shadow.bias 和 normalBias |
-| 物体边缘锯齿 | 启用 antialias |
+| 问题             | 解决方法                        |
+| ---------------- | ------------------------------- |
+| 模型看起来像塑料 | 调整粗糙度和金属度纹理          |
+| 颜色太亮或太暗   | 调整 toneMappingExposure        |
+| 没有反射/高光    | 添加 HDR 环境贴图               |
+| 阴影有条纹瑕疵   | 调整 shadow.bias 和 normalBias  |
+| 物体边缘锯齿     | 启用 antialias                  |
 | 颜色看起来"洗掉" | 确保颜色贴图使用 SRGBColorSpace |
-| 整体画面太平 | 添加更强的方向光或调整环境贴图 |
+| 整体画面太平     | 添加更强的方向光或调整环境贴图  |
 
 ## 参考链接
 
