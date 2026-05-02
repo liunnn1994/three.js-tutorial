@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.4.6...v1.5.0) (2026-05-02)
+
+
+### Features
+
+* 🎸 仅保留 apk ([8f6945f](https://github.com/liunnn1994/three.js-tutorial/commit/8f6945fcc97a60cd43583e5e5db6962b1f33579d))
+
 ## [1.4.6](https://github.com/liunnn1994/three.js-tutorial/compare/v1.4.5...v1.4.6) (2026-05-02)
 
 
