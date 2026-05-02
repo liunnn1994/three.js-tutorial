@@ -1,6 +1,6 @@
 {
   "name": "tutorial",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "type": "module",
   "scripts": {
     "cz": "git-cz",
