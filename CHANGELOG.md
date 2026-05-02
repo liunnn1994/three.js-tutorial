@@ -1,3 +1,10 @@
+## [1.5.2](https://github.com/liunnn1994/three.js-tutorial/compare/v1.5.1...v1.5.2) (2026-05-02)
+
+
+### Bug Fixes
+
+* 🐛 修复错误的参数 ([fdbf900](https://github.com/liunnn1994/three.js-tutorial/commit/fdbf9000816cd16cc33e771f063644da6b0c08b6))
+
 ## [1.5.1](https://github.com/liunnn1994/three.js-tutorial/compare/v1.5.0...v1.5.1) (2026-05-02)
 
 
