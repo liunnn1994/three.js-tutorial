@@ -247,7 +247,25 @@ jobs:
         run: node scripts/sync-version.js
 
       - name: Build Android APK (arm64)
-        run: pnpm tauri android build --apk
+        shell: bash
+        env:
+          CARGO_TERM_VERBOSE: "true"
+          CARGO_TERM_PROGRESS_WHEN: always
+          RUST_BACKTRACE: full
+        run: |
+          set -euo pipefail
+
+          (
+            while true; do
+              echo "[heartbeat] $(date -u +'%Y-%m-%dT%H:%M:%SZ') Android build still running"
+              df -h / | tail -1
+              sleep 30
+            done
+          ) &
+          HEARTBEAT_PID=$!
+          trap 'kill "$HEARTBEAT_PID" 2>/dev/null || true' EXIT
+
+          pnpm tauri android build --apk --target aarch64 --verbose
 
       - name: Upload artifacts to release
         env:
