@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/liunnn1994/three.js-tutorial/compare/v1.5.0...v1.5.1) (2026-05-02)
+
+
+### Bug Fixes
+
+* 🐛 修复安卓构建失败的问题 ([5289a31](https://github.com/liunnn1994/three.js-tutorial/commit/5289a31f0bc7c2c8f8fec0dd57f72909a3702da8))
+
 # [1.5.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.4.6...v1.5.0) (2026-05-02)
 
 
