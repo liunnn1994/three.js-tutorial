@@ -246,11 +246,8 @@ jobs:
       - name: Sync version
         run: node scripts/sync-version.js
 
-      - name: Build Android APK
+      - name: Build Android APK (arm64)
         run: pnpm tauri android build --apk
-
-      - name: Build Android AAB
-        run: pnpm tauri android build --aab
 
       - name: Upload artifacts to release
         env:
@@ -259,7 +256,7 @@ jobs:
           files=()
           while IFS= read -r -d '' file; do
             files+=("$file")
-          done < <(find src-tauri/gen/android/app/build/outputs -type f \( -name "*.apk" -o -name "*.aab" \) -print0 2>/dev/null || true)
+          done < <(find src-tauri/gen/android/app/build/outputs -type f -name "*.apk" -print0 2>/dev/null || true)
           if [ "${#files[@]}" -eq 0 ]; then
             echo "No Android artifacts found"
             exit 0
