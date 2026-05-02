@@ -250,7 +250,6 @@ jobs:
         shell: bash
         env:
           CARGO_TERM_VERBOSE: "true"
-          CARGO_TERM_PROGRESS_WHEN: always
           RUST_BACKTRACE: full
         run: |
           set -euo pipefail
