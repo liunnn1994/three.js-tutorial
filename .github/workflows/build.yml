@@ -223,9 +223,7 @@ jobs:
         run: corepack enable && corepack prepare pnpm@latest --activate
 
       - name: Install Rust stable
-        uses: dtolnay/rust-toolchain
-          with:
-            toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Add Android Rust targets
         run: rustup target add aarch64-linux-android
@@ -248,6 +246,31 @@ jobs:
       - name: Initialize Android
         run: pnpm tauri android init
 
+      - name: Configure Android signing
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${ANDROID_KEYSTORE_BASE64:-}" || -z "${ANDROID_KEYSTORE_PASSWORD:-}" || -z "${ANDROID_KEY_ALIAS:-}" || -z "${ANDROID_KEY_PASSWORD:-}" ]]; then
+            echo "Missing Android signing secrets. Please set ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD."
+            exit 1
+          fi
+
+          KEYSTORE_PATH="$RUNNER_TEMP/android-release-keystore.jks"
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+
+          cat > src-tauri/gen/android/keystore.properties <<EOF
+          storeFile=$KEYSTORE_PATH
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+
       - name: Sync version
         run: node scripts/sync-version.js
 
@@ -269,7 +292,7 @@ jobs:
           HEARTBEAT_PID=$!
           trap 'kill "$HEARTBEAT_PID" 2>/dev/null || true' EXIT
 
-          pnpm tauri android build --apk --target aarch64
+          pnpm run tauri:android:build
 
       - name: Upload artifacts to release
         env:
@@ -278,9 +301,9 @@ jobs:
           files=()
           while IFS= read -r -d '' file; do
             files+=("$file")
-          done < <(find src-tauri/gen/android/app/build/outputs -type f -name "*.apk" -print0 2>/dev/null || true)
+          done < <(find src-tauri/gen/android/app/build/outputs -type f -name "*.apk" ! -name "*-unsigned.apk" -print0 2>/dev/null || true)
           if [ "${#files[@]}" -eq 0 ]; then
-            echo "No Android artifacts found"
-            exit 0
+            echo "No signed Android APK artifacts found"
+            exit 1
           fi
           gh release upload ${{ needs.check.outputs.tag_name }} "${files[@]}" --clobber

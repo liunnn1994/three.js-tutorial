@@ -4,9 +4,9 @@
   "type": "module",
   "scripts": {
     "cz": "git-cz",
-    "dev": "node scripts/generate-previews.js && astro dev",
-    "start": "node scripts/generate-previews.js && astro dev",
-    "build": "node scripts/generate-previews.js && astro build",
+    "dev": "node scripts/copy-vendor.js && node scripts/generate-previews.js && astro dev",
+    "start": "node scripts/copy-vendor.js && node scripts/generate-previews.js && astro dev",
+    "build": "node scripts/copy-vendor.js && node scripts/generate-previews.js && astro build",
     "preview": "astro preview",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
@@ -14,15 +14,12 @@
     "tauri:android:init": "tauri android init",
     "tauri:android:dev": "tauri android dev",
     "tauri:android:build": "tauri android build --apk --target aarch64",
-    "tauri:ios:init": "tauri ios init",
-    "tauri:ios:dev": "tauri ios dev",
-    "tauri:ios:build": "tauri ios build",
     "astro": "astro",
     "icons": "node scripts/generate-icons.mjs",
     "tauri:build:all": "run-s tauri:build:prepare -p tauri:build:desktop tauri:build:mobile",
     "tauri:build:desktop": "tauri build",
-    "tauri:build:mobile": "run-p tauri:android:build tauri:ios:build",
-    "tauri:build:prepare": "run-p icons tauri:android:init tauri:ios:init"
+    "tauri:build:mobile": "run-s build tauri:android:build",
+    "tauri:build:prepare": "run-s tauri:android:init tauri:ios:init icons"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.38.4",

@@ -1,18 +1,18 @@
-# Three.js 中文教程
+# Three.js 教程
 
 基于 Three.js 的交互式中文教程平台，支持网页文档、桌面端和移动端应用。
 
 ## 技术栈
 
-| 层级 | 技术 | 用途 |
-|------|------|------|
-| 文档框架 | [Astro](https://astro.build) + [Starlight](https://starlight.astro.build) | 静态站点生成、文档主题 |
-| 样式 | [Tailwind CSS](https://tailwindcss.com) v4 | 自定义样式 |
-| 代码高亮 | [Shiki](https://shiki.style) | 语法高亮 |
-| 桌面/移动端 | [Tauri](https://tauri.app) v2 | 跨平台原生应用 |
-| 3D 渲染 | [Three.js](https://threejs.org) | 教程核心内容 |
-| 动画 | [GSAP](https://gsap.com) | 动画示例 |
-| 物理 | [Cannon-ES](https://github.com/pmndrs/cannon-es) | 物理引擎示例 |
+| 层级        | 技术                                                                      | 用途                   |
+| ----------- | ------------------------------------------------------------------------- | ---------------------- |
+| 文档框架    | [Astro](https://astro.build) + [Starlight](https://starlight.astro.build) | 静态站点生成、文档主题 |
+| 样式        | [Tailwind CSS](https://tailwindcss.com) v4                                | 自定义样式             |
+| 代码高亮    | [Shiki](https://shiki.style)                                              | 语法高亮               |
+| 桌面/移动端 | [Tauri](https://tauri.app) v2                                             | 跨平台原生应用         |
+| 3D 渲染     | [Three.js](https://threejs.org)                                           | 教程核心内容           |
+| 动画        | [GSAP](https://gsap.com)                                                  | 动画示例               |
+| 物理        | [Cannon-ES](https://github.com/pmndrs/cannon-es)                          | 物理引擎示例           |
 
 ## 项目结构
 
@@ -67,13 +67,13 @@
 
 共 **53 节课**，从入门到实战，覆盖 Three.js 全部核心知识：
 
-| 分类 | 内容 |
-|------|------|
-| 基础入门 | 环境搭建、变换、动画、相机、几何体、材质、纹理、3D 文字 |
-| 技术技巧 | 光照、阴影、粒子系统、物理引擎、模型导入、光线投射、环境贴图 |
-| 着色器 | GLSL 基础、Shader Patterns、海面、星系、烟雾、全息、烟花、地形 |
-| 高级主题 | 后期处理、性能优化、加载进度、HTML 与 WebGL 混合 |
-| 场景创建 | Blender 建模、烘焙导出、导入优化、细节添加 |
+| 分类     | 内容                                                           |
+| -------- | -------------------------------------------------------------- |
+| 基础入门 | 环境搭建、变换、动画、相机、几何体、材质、纹理、3D 文字        |
+| 技术技巧 | 光照、阴影、粒子系统、物理引擎、模型导入、光线投射、环境贴图   |
+| 着色器   | GLSL 基础、Shader Patterns、海面、星系、烟雾、全息、烟花、地形 |
+| 高级主题 | 后期处理、性能优化、加载进度、HTML 与 WebGL 混合               |
+| 场景创建 | Blender 建模、烘焙导出、导入优化、细节添加                     |
 
 ## 开发
 
@@ -93,12 +93,12 @@ pnpm dev
 
 ### 常用命令
 
-| 命令 | 说明 |
-|------|------|
-| `pnpm dev` | 启动文档开发服务器 |
-| `pnpm build` | 构建文档站点到 `dist/` |
-| `pnpm preview` | 预览构建产物 |
-| `pnpm icons` | 从 `public/logo.png` 生成全平台图标 |
+| 命令           | 说明                                |
+| -------------- | ----------------------------------- |
+| `pnpm dev`     | 启动文档开发服务器                  |
+| `pnpm build`   | 构建文档站点到 `dist/`              |
+| `pnpm preview` | 预览构建产物                        |
+| `pnpm icons`   | 从 `public/logo.png` 生成全平台图标 |
 
 ## 课程预览系统
 
@@ -200,13 +200,13 @@ GitHub Actions 自动化构建全平台应用，配置文件：`.github/workflow
 
 ### 构建矩阵
 
-| 平台 | 运行环境 | 产物 |
-|------|----------|------|
-| macOS (Apple Silicon) | macos-latest | .dmg |
-| Windows | windows-latest | .msi, .exe (NSIS) |
-| Linux | ubuntu-22.04 | .deb, .AppImage |
-| Android | ubuntu-22.04 | .apk |
-| iOS | macos-latest | .ipa |
+| 平台                  | 运行环境       | 产物              |
+| --------------------- | -------------- | ----------------- |
+| macOS (Apple Silicon) | macos-latest   | .dmg              |
+| Windows               | windows-latest | .msi, .exe (NSIS) |
+| Linux                 | ubuntu-22.04   | .deb, .AppImage   |
+| Android               | ubuntu-22.04   | .apk              |
+| iOS                   | macos-latest   | .ipa              |
 
 桌面端构建会自动创建 GitHub Draft Release，移动端产物作为 Workflow Artifact 上传。
 
