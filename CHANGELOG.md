@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.5.3...v1.6.0) (2026-05-02)
+
+
+### Features
+
+* 🎸 更新 logo，给安卓添加签名 ([6fd41ea](https://github.com/liunnn1994/three.js-tutorial/commit/6fd41eafd8388319178155a4301bf795fc3dac9a))
+
 ## [1.5.3](https://github.com/liunnn1994/three.js-tutorial/compare/v1.5.2...v1.5.3) (2026-05-02)
 
 
