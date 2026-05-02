@@ -1,4 +1,7 @@
 name: Build and Release
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.event.inputs.tag_name || github.event.workflow_run.id || github.run_id }}
+  cancel-in-progress: false
 
 on:
   workflow_run:
@@ -220,7 +223,9 @@ jobs:
         run: corepack enable && corepack prepare pnpm@latest --activate
 
       - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain
+          with:
+            toolchain: stable
 
       - name: Add Android Rust targets
         run: rustup target add aarch64-linux-android
@@ -249,8 +254,8 @@ jobs:
       - name: Build Android APK (arm64)
         shell: bash
         env:
-          CARGO_TERM_VERBOSE: "true"
           RUST_BACKTRACE: full
+          CARGO_BUILD_JOBS: "2"
         run: |
           set -euo pipefail
 
@@ -264,7 +269,7 @@ jobs:
           HEARTBEAT_PID=$!
           trap 'kill "$HEARTBEAT_PID" 2>/dev/null || true' EXIT
 
-          pnpm tauri android build --apk --target aarch64 --verbose
+          pnpm tauri android build --apk --target aarch64
 
       - name: Upload artifacts to release
         env:
