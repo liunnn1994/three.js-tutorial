@@ -195,6 +195,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Free disk space (Ubuntu runner)
+        shell: bash
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /usr/share/swift || true
+          docker image prune --all --force || true
+          df -h
+
       - name: Setup Java
         uses: actions/setup-java@v5
         with:
@@ -222,6 +229,7 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri -> target'
+          cache-targets: false
 
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v6
