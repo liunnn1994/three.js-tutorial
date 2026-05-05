@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/liunnn1994/three.js-tutorial/compare/v1.6.0...v1.6.1) (2026-05-05)
+
+
+### Bug Fixes
+
+* 🐛 修复移动端没有加载 baked 贴图的问题 ([97bc437](https://github.com/liunnn1994/three.js-tutorial/commit/97bc437ff13ce2157a55d06ab49f88db5573436c))
+
 # [1.6.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.5.3...v1.6.0) (2026-05-02)
 
 
