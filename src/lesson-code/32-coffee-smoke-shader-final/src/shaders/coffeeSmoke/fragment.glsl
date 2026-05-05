@@ -12,7 +12,7 @@ void main()
     smokeUv.y -= uTime * 0.03;
 
     // Smoke
-    float smoke = texture(uPerlinTexture, smokeUv).r;
+    float smoke = texture2D(uPerlinTexture, smokeUv).r;
 
     // Remap
     smoke = smoothstep(0.4, 1.0, smoke);

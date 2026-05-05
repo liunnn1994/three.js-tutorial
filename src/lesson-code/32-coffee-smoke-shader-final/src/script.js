@@ -22,6 +22,20 @@ const textureLoader = new THREE.TextureLoader();
 const gltfLoader = new GLTFLoader();
 
 /**
+ * Textures
+ */
+const bakedTexture = textureLoader.load(
+  "/assets/32-coffee-smoke-shader-final/baked.jpg",
+);
+bakedTexture.flipY = false;
+bakedTexture.colorSpace = THREE.SRGBColorSpace;
+
+/**
+ * Materials
+ */
+const bakedMaterial = new THREE.MeshBasicMaterial({ map: bakedTexture });
+
+/**
  * Sizes
  */
 const sizes = {
@@ -47,7 +61,12 @@ window.addEventListener("resize", () => {
  * Camera
  */
 // Base camera
-const camera = new THREE.PerspectiveCamera(25, sizes.width / sizes.height, 0.1, 100);
+const camera = new THREE.PerspectiveCamera(
+  25,
+  sizes.width / sizes.height,
+  0.1,
+  100,
+);
 camera.position.x = 8;
 camera.position.y = 10;
 camera.position.z = 12;
@@ -71,10 +90,23 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 /**
  * Model
  */
-gltfLoader.load("/assets/32-coffee-smoke-shader-final/bakedModel.glb", (gltf) => {
-  gltf.scene.getObjectByName("baked").material.map.anisotropy = 8;
-  scene.add(gltf.scene);
-});
+gltfLoader.load(
+  "/assets/32-coffee-smoke-shader-final/bakedModel.glb",
+  (gltf) => {
+    bakedTexture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+
+    const baked = gltf.scene.getObjectByName("baked");
+    if (baked) {
+      baked.material = bakedMaterial;
+    }
+
+    scene.add(gltf.scene);
+  },
+  undefined,
+  (error) => {
+    console.error("Failed to load model:", error);
+  },
+);
 
 /**
  * Smoke
@@ -85,7 +117,9 @@ smokeGeometry.translate(0, 0.5, 0);
 smokeGeometry.scale(1.5, 6, 1.5);
 
 // Perlin texture
-const perlinTexture = textureLoader.load("/assets/32-coffee-smoke-shader-final/perlin.png");
+const perlinTexture = textureLoader.load(
+  "/assets/32-coffee-smoke-shader-final/perlin.png",
+);
 perlinTexture.wrapS = THREE.RepeatWrapping;
 perlinTexture.wrapT = THREE.RepeatWrapping;
 
