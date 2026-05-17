@@ -127,10 +127,11 @@ gltfLoader.load("/assets/33-hologram-shader-final/suzanne.glb", (gltf) => {
 /**
  * 动画循环
  */
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 更新材质
   material.uniforms.uTime.value = elapsedTime;

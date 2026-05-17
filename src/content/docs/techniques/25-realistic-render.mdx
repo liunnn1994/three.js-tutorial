@@ -123,7 +123,7 @@ scene.environment = environmentMap;
 ```js
 // 渲染器开启阴影
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 
 // 光源设置
 directionalLight.castShadow = true;
@@ -144,7 +144,7 @@ scene.traverse((child) => {
 
 - `normalBias` — 沿法线方向偏移，消除阴影瑕疵（shadow acne）
 - `bias` — 深度偏移，解决自阴影问题
-- `PCFSoftShadowMap` — 柔和阴影，更自然
+- `PCFShadowMap` — 柔和阴影，更自然
 
 这两个值需要根据场景反复调整，没有万能的最佳值。
 
@@ -200,7 +200,7 @@ renderer.toneMappingExposure = 2.5;
 
 // 2. 阴影
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 
 // 3. 像素比（限制为 2 防止性能问题）
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));

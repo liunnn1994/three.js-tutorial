@@ -62,7 +62,7 @@ Three.js 使用的是一种折中方案：**阴影贴图（Shadow Map）**。
 ```js
 const renderer = new THREE.WebGLRenderer({ canvas });
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 ```
 
 - `renderer.shadowMap.enabled = true`：告诉渲染器要处理阴影贴图。没有这一行，所有阴影相关代码都不会生效。
@@ -345,17 +345,11 @@ renderer.shadowMap.type = THREE.PCFShadowMap;
 - **特殊**：**支持 `shadow.radius` 属性**来控制模糊程度
 - **适用场景**：大多数项目的默认选择
 
-### PCFSoftShadowMap（推荐）
+### PCFSoftShadowMap（已弃用）
 
-```js
-renderer.shadowMap.type = THREE.PCFSoftMap;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-```
-
-- **性能**：稍慢于 PCFShadowMap
-- **效果**：更好——阴影边缘更加柔和自然
-- **特殊**：**不支持 `shadow.radius`**（使用此类型时 `radius` 会被忽略）
-- **适用场景**：追求视觉质量的项目
+:::caution[已弃用]
+`PCFSoftShadowMap` 已被弃用，其功能已合并到 `PCFShadowMap` 中。现在使用 `PCFShadowMap` 即可获得柔和自然的阴影效果，同时支持 `shadow.radius` 控制模糊程度。
+:::
 
 ### VSMShadowMap
 
@@ -364,7 +358,7 @@ renderer.shadowMap.type = THREE.VSMShadowMap;
 ```
 
 - **性能**：最慢
-- **效果**：与 PCFSoftShadowMap 类似，但可能有意外伪影
+- **效果**：与 PCFShadowMap 类似，但可能有意外伪影
 - **适用场景**：不推荐初学者使用
 
 ### shadow.radius 模糊控制
@@ -376,7 +370,7 @@ directionalLight.shadow.radius = 4;
 `shadow.radius` 控制 PCFShadowMap 模式下阴影的模糊程度。值越大，阴影边缘越模糊。
 
 :::caution
-`shadow.radius` **只对 `PCFShadowMap` 有效**，在 `PCFSoftShadowMap` 下无效。如果你使用了 `PCFSoftShadowMap`，就不要设置 `shadow.radius`，因为它不会产生任何效果。
+`shadow.radius` **只对 `PCFShadowMap` 有效**，使用其他阴影类型时 `radius` 会被忽略。
 :::
 
 ### 算法对比总结
@@ -384,12 +378,11 @@ directionalLight.shadow.radius = 4;
 | 算法               | 性能 | 阴影质量 | 支持 shadow.radius |
 | ------------------ | ---- | -------- | ------------------ |
 | `BasicShadowMap`   | 最快 | 锯齿明显 | 否                 |
-| `PCFShadowMap`     | 中等 | 较好     | 是                 |
-| `PCFSoftShadowMap` | 稍慢 | 柔和自然 | 否                 |
+| `PCFShadowMap`     | 中等 | 柔和自然 | 是                 |
 | `VSMShadowMap`     | 最慢 | 不稳定   | 否                 |
 
 :::tip[推荐]
-大多数情况下，使用 `THREE.PCFSoftShadowMap` 就好了。如果你需要自定义阴影模糊度，则使用 `THREE.PCFShadowMap` + `shadow.radius`。
+大多数情况下，使用 `THREE.PCFShadowMap` 就好了。通过 `shadow.radius` 可以控制阴影的模糊程度。
 :::
 
 **参考文档**：[Three.js WebGLShadowMap](https://threejs.org/docs/#api/en/renderers/webgl/WebGLShadowMap)
@@ -524,7 +517,8 @@ scene.add(sphereShadow);
 
 // 在动画循环中更新
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 更新球体位置
   sphere.position.x = Math.cos(elapsedTime) * 1.5;
@@ -570,7 +564,7 @@ const scene = new THREE.Scene();
 // 渲染器 - 开启阴影
 const renderer = new THREE.WebGLRenderer({ canvas });
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 
 // 材质
 const material = new THREE.MeshStandardMaterial({ roughness: 0.7 });

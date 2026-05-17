@@ -51,6 +51,8 @@
 
 .lesson-preview .lesson-code-details {
   border-top: 1px solid var(--sl-color-gray-5);
+  padding: 0.5rem 1rem;
+  border-inline-start: none;
 }
 
 .lesson-preview .lesson-code-details summary {
@@ -74,7 +76,6 @@
 .lesson-code-tabs {
   max-height: 400px;
   overflow-y: auto;
-  padding-bottom: 0.5rem;
 }
 
 .lesson-code-file {

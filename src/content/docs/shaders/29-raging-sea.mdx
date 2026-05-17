@@ -204,10 +204,11 @@ void main() {
 在 `animate` 函数中更新 `uTime`：
 
 ```js
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 const animate = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
   waterMaterial.uniforms.uTime.value = elapsedTime;
   controls.update();
   renderer.render(scene, camera);

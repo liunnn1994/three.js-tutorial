@@ -137,10 +137,11 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 /**
  * 动画循环
  */
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 更新对象
   sphere.rotation.y = 0.1 * elapsedTime;

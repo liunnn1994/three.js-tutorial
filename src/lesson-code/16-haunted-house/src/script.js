@@ -322,15 +322,16 @@ ghost3.shadow.mapSize.width = 256;
 ghost3.shadow.mapSize.height = 256;
 ghost3.shadow.camera.far = 7;
 
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 
 /**
  * 动画循环
  */
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 幽灵
   const ghost1Angle = elapsedTime * 0.5;

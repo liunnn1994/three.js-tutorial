@@ -75,7 +75,8 @@ material.onBeforeCompile = (shader) => {
 
 ```js
 const animate = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
   if (materialShader) {
     materialShader.uniforms.uTime.value = elapsedTime;
   }

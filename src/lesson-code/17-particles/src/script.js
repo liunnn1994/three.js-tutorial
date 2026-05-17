@@ -167,10 +167,11 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 /**
  * 动画循环
  */
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 更新粒子
   for (let i = 0; i < count; i++) {

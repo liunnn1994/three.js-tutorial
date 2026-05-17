@@ -71,7 +71,7 @@ const renderer = new THREE.WebGLRenderer({
   antialias: true,
 });
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
@@ -188,12 +188,13 @@ gui
 /**
  * 动画循环
  */
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 const tick = () => {
   stats.begin();
 
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 更新测试网格
   torusKnot.rotation.y = elapsedTime * 0.1;

@@ -36,6 +36,7 @@ const colorTexture = textureLoader.load(
   "/assets/10-textures-final/textures/minecraft.png",
   () => {
     console.log("textureLoader: loading finished");
+    updateTexture();
   },
   () => {
     console.log("textureLoader: loading progressing");
@@ -130,8 +131,6 @@ textureFolder
   .name("放大过滤")
   .onChange(updateTexture);
 
-updateTexture();
-
 const alphaTexture = textureLoader.load("/assets/10-textures-final/textures/door/alpha.jpg");
 const heightTexture = textureLoader.load("/assets/10-textures-final/textures/door/height.jpg");
 const normalTexture = textureLoader.load("/assets/10-textures-final/textures/door/normal.jpg");
@@ -202,10 +201,11 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 /**
  * 动画循环
  */
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 更新控制器
   controls.update();

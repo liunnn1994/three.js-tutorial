@@ -256,8 +256,8 @@ directionalLight.shadow.camera.bottom = -5;
 directionalLight.shadow.camera.near = 0.1;
 directionalLight.shadow.camera.far = 50;
 
-// 使用 PCFSoftShadowMap 获得柔和阴影，或使用 BasicShadowMap 获得最佳性能
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// 使用 PCFShadowMap 获得柔和阴影，或使用 BasicShadowMap 获得最佳性能
+renderer.shadowMap.type = THREE.PCFShadowMap;
 // renderer.shadowMap.type = THREE.BasicShadowMap // 性能最好，但边缘锯齿明显
 ```
 

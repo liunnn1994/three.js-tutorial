@@ -423,7 +423,8 @@ gui.addColor(parameters, "outsideColor").onFinishChange(generateGalaxy);
 
 ```js
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 整个银河绕 Y 轴缓慢旋转
   points.rotation.y = elapsedTime * 0.1;

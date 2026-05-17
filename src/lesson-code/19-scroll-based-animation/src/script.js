@@ -179,11 +179,12 @@ window.addEventListener("mousemove", (event) => {
 /**
  * 动画循环
  */
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 let previousTime = 0;
 
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
   const deltaTime = elapsedTime - previousTime;
   previousTime = elapsedTime;
 

@@ -48,13 +48,13 @@ import LessonPreview from "../../../components/LessonPreview.astro";
 HDR 等距矩形贴图是最常用的环境贴图格式。它使用 **RGBE 编码**（Red、Green、Blue + Exponent），其中指数（Exponent）存储了亮度信息。
 
 ```js
-import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 
 // 实例化加载器
-const rgbeLoader = new RGBELoader();
+const hdrLoader = new HDRLoader();
 
 // 加载 HDR 文件
-rgbeLoader.load("/environmentMaps/0/2k.hdr", (environmentMap) => {
+hdrLoader.load("/environmentMaps/0/2k.hdr", (environmentMap) => {
   // 告诉 Three.js 这是一张等距矩形投影
   environmentMap.mapping = THREE.EquirectangularReflectionMapping;
 
@@ -68,7 +68,7 @@ rgbeLoader.load("/environmentMaps/0/2k.hdr", (environmentMap) => {
 
 **代码解析**：
 
-- `RGBELoader` 是 Three.js 提供的专门加载 `.hdr` 文件的加载器，需要从 addons 路径导入
+- `HDRLoader` 是 Three.js 提供的专门加载 `.hdr` 文件的加载器，需要从 addons 路径导入
 - `EquirectangularReflectionMapping` 告诉 Three.js 如何将这张矩形的 2D 图片投影到 3D 球面上
 - 文件名中的 `2k` 表示分辨率（2048x1024），分辨率越高效果越好，但文件也越大
 
@@ -117,9 +117,9 @@ scene.background = environmentMap;
 立方体贴图的 6 张图片必须严格按照 `px, nx, py, ny, pz, nz` 的顺序传入数组。顺序错误会导致环境贴图的方向错乱。
 :::
 
-**CubeTextureLoader vs RGBELoader 对比**：
+**CubeTextureLoader vs HDRLoader 对比**：
 
-| 特性     | CubeTextureLoader       | RGBELoader           |
+| 特性     | CubeTextureLoader       | HDRLoader           |
 | -------- | ----------------------- | -------------------- |
 | 文件格式 | 6 张普通图片（PNG/JPG） | 1 个 HDR 文件        |
 | 动态范围 | LDR（低动态范围）       | HDR（高动态范围）    |
@@ -339,7 +339,7 @@ Three.js 提供了一个 `GroundProjectedSkybox` 工具，可以将等距矩形�
 ```js
 import { GroundProjectedSkybox } from "three/addons/objects/GroundProjectedSkybox.js";
 
-rgbeLoader.load("/environmentMaps/2/2k.hdr", (environmentMap) => {
+hdrLoader.load("/environmentMaps/2/2k.hdr", (environmentMap) => {
   environmentMap.mapping = THREE.EquirectangularReflectionMapping;
   scene.environment = environmentMap;
 
@@ -475,13 +475,13 @@ Blender 渲染的环境贴图分辨率建议使用 2 的幂次方（如 1024x512
 
 ```js
 import * as THREE from "three";
-import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 
 // 场景
 const scene = new THREE.Scene();
 
 // 加载器
-const rgbeLoader = new RGBELoader();
+const hdrLoader = new HDRLoader();
 
 // 全局变量
 const global = {};
@@ -501,7 +501,7 @@ scene.backgroundBlurriness = 0;
 scene.backgroundIntensity = 1;
 
 // 加载 HDR 环境贴图
-rgbeLoader.load("/environmentMaps/0/2k.hdr", (environmentMap) => {
+hdrLoader.load("/environmentMaps/0/2k.hdr", (environmentMap) => {
   environmentMap.mapping = THREE.EquirectangularReflectionMapping;
 
   scene.background = environmentMap;

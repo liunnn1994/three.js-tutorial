@@ -348,10 +348,11 @@ strength *= flicker;
 着色器中的 `uTime` 需要在每帧更新：
 
 ```js
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 更新萤火虫着色器的时间
   firefliesMaterial.uniforms.uTime.value = elapsedTime;
@@ -488,7 +489,7 @@ firefliesFolder.add(firefliesMaterial.uniforms.uSize, "value");
 :::warning
 **GUI 中不要绑定传送门的 `uTime`**
 
-上面的代码中，传送门的 `uTime` 也被加入了 GUI，但这仅用于调试。在实际的 `tick` 循环中，`uTime` 应该由 `clock.getElapsedTime()` 自动更新，而不是手动拖动。调试完毕后记得从 GUI 中移除手动时间控制。
+上面的代码中，传送门的 `uTime` 也被加入了 GUI，但这仅用于调试。在实际的 `tick` 循环中，`uTime` 应该由 `timer.getElapsed()` 自动更新，而不是手动拖动。调试完毕后记得从 GUI 中移除手动时间控制。
 :::
 
 ## 性能注意事项

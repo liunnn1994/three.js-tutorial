@@ -141,10 +141,11 @@ void main() {
 
 ```js
 // 在动画循环中
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 function animate() {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 切面来回移动
   material.uniforms.uSlicePosition.value = Math.sin(elapsedTime * 0.5) * 2;

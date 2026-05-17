@@ -362,12 +362,13 @@ const body = new CANNON.Body({
 物理引擎不会自己运行，你需要在**每一帧**告诉它更新：
 
 ```js
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 let oldElapsedTime = 0;
 
 const tick = () => {
   // 1. 计算时间增量（delta time）
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
   const deltaTime = elapsedTime - oldElapsedTime;
   oldElapsedTime = elapsedTime;
 
@@ -392,7 +393,7 @@ world.step(fixedTimeStep, deltaTime, maxSubSteps);
 | 参数            | 说明                         | 推荐值         |
 | --------------- | ---------------------------- | -------------- |
 | `fixedTimeStep` | 物理模拟的固定时间步长       | `1/60`（60Hz） |
-| `deltaTime`     | 自上次调用以来经过的真实时间 | 从 Clock 获取  |
+| `deltaTime`     | 自上次调用以来经过的真实时间 | 从 Timer 获取  |
 | `maxSubSteps`   | 最多执行多少步来追赶延迟     | `3`            |
 
 **为什么这么复杂？** 如果你的游戏卡顿了（比如某一帧花了 100ms），物理引擎不能一次性跳过 100ms 的模拟，否则物体会穿墙。它会把 100ms 分成多个小步（每步 1/60 秒），最多执行 `maxSubSteps` 步来追赶。
@@ -493,11 +494,12 @@ dirLight.castShadow = true;
 scene.add(dirLight);
 
 // --- 动画循环 ---
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 let oldElapsedTime = 0;
 
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
   const deltaTime = elapsedTime - oldElapsedTime;
   oldElapsedTime = elapsedTime;
 
@@ -669,7 +671,8 @@ const createBox = (width, height, depth, position) => {
 
 ```js
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
   const deltaTime = elapsedTime - oldElapsedTime;
   oldElapsedTime = elapsedTime;
 

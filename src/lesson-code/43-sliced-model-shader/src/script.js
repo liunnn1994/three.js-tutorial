@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import CustomShaderMaterial from "three-custom-shader-material/vanilla";
@@ -22,7 +22,7 @@ const canvas = document.querySelector("canvas.webgl");
 const scene = new THREE.Scene();
 
 // 加载器
-const rgbeLoader = new RGBELoader();
+const hdrLoader = new HDRLoader();
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath("/assets/43-sliced-model-shader-final/draco/");
 const gltfLoader = new GLTFLoader();
@@ -31,7 +31,7 @@ gltfLoader.setDRACOLoader(dracoLoader);
 /**
  * 环境贴图
  */
-rgbeLoader.load(
+hdrLoader.load(
   "/assets/43-sliced-model-shader-final/aerodynamics_workshop.hdr",
   (environmentMap) => {
     environmentMap.mapping = THREE.EquirectangularReflectionMapping;
@@ -79,7 +79,6 @@ const slicedMaterial = new CustomShaderMaterial({
   fragmentShader: slicedFragmentShader,
   uniforms: uniforms,
   patchMap: patchMap,
-  silent: true,
 
   // MeshStandardMaterial 材质
   metalness: 0.5,
@@ -96,7 +95,6 @@ const slicedDepthMaterial = new CustomShaderMaterial({
   fragmentShader: slicedFragmentShader,
   uniforms: uniforms,
   patchMap: patchMap,
-  silent: true,
 
   // MeshDepthMaterial 材质
   depthPacking: THREE.RGBADepthPacking,
@@ -198,7 +196,7 @@ const renderer = new THREE.WebGLRenderer({
   antialias: true,
 });
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1;
 renderer.setSize(sizes.width, sizes.height);
@@ -207,10 +205,11 @@ renderer.setPixelRatio(sizes.pixelRatio);
 /**
  * 动画循环
  */
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 更新模型
   if (model) model.rotation.y = elapsedTime * 0.1;

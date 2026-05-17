@@ -384,7 +384,8 @@ scene.add(ghost3);
 
 ```js
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 幽灵 1：绕房子旋转 + 上下浮动
   const ghost1Angle = elapsedTime * 0.5;
@@ -421,7 +422,7 @@ const tick = () => {
 
 ```js
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 使用柔和阴影
+renderer.shadowMap.type = THREE.PCFShadowMap; // 使用柔和阴影
 ```
 
 参考文档：[WebGLRenderer.shadowMap](https://threejs.org/docs/#api/en/renderers/WebGLRenderer.shadowMap)

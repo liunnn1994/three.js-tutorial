@@ -168,7 +168,7 @@ Three.js 的 `examples/jsm/loaders/` 目录中有很多加载器：
 | `DRACOLoader`   | Draco 压缩模型解码 |
 | `FBXLoader`     | 加载 FBX 模型      |
 | `OBJLoader`     | 加载 OBJ 模型      |
-| `RGBELoader`    | 加载 HDR 环境贴图  |
+| `HDRLoader`    | 加载 HDR 环境贴图  |
 | `SVGLoader`     | 加载 SVG 矢量图    |
 | `TextureLoader` | 加载纹理图片       |
 
@@ -454,11 +454,12 @@ gltfLoader.load("/models/Fox/glTF/Fox.gltf", (gltf) => {
 });
 
 // 在动画循环中更新混合器
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 let previousTime = 0;
 
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
   const deltaTime = elapsedTime - previousTime;
   previousTime = elapsedTime;
 
@@ -740,11 +741,12 @@ directionalLight.position.set(-5, 5, 0);
 scene.add(directionalLight);
 
 // --- 动画循环 ---
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 let previousTime = 0;
 
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
   const deltaTime = elapsedTime - previousTime;
   previousTime = elapsedTime;
 

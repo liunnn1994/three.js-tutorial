@@ -1,6 +1,6 @@
 ---
 title: 05 动画
-description: 学习使用 requestAnimationFrame 创建 Three.js 动画循环，掌握帧率独立性、Clock 工具、GSAP 动画库
+description: 学习使用 requestAnimationFrame 创建 Three.js 动画循环，掌握帧率独立性、Timer 工具、GSAP 动画库
 ---
 
 import LessonPreview from "../../../components/LessonPreview.astro";
@@ -147,27 +147,32 @@ tick();
 4. **更新时间记录**：`time = currentTime`，为下一帧的计算做准备
 5. **用时间差驱动动画**：乘以 deltaTime 后，无论帧率如何，动画速度都一样
 
-## Three.js Clock 工具类
+## Three.js Timer 工具类
 
-Three.js 提供了一个内置的 `THREE.Clock` 类，帮我们封装了上述的时间计算逻辑，使用起来更加简洁。
+Three.js 提供了一个内置的 `THREE.Timer` 类，帮我们封装了上述的时间计算逻辑，使用起来更加简洁。
 
-### 创建 Clock 实例
+### 创建 Timer 实例
 
 ```js
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 ```
 
-Clock 在实例化时会自动记录当前时间作为起点。
+Timer 在实例化时会自动记录当前时间作为起点。
 
-### getElapsedTime() — 获取经过时间
+:::note[关于 Clock]
+Three.js 早期版本使用 `THREE.Clock` 类，但从 v0.184 起已弃用，推荐使用 `THREE.Timer` 作为替代。
+:::
 
-`getElapsedTime()` 返回从 Clock 创建（或上次调用 `.start()`、`.getElapsedTime()`）到现在的**总秒数**。每次调用都会更新内部计时。
+### update() + getElapsed() — 获取经过时间
+
+`getElapsed()` 返回从 Timer 创建到现在的**总秒数**。与旧版 Clock 不同，你必须在每帧**先调用 `timer.update()`**，然后再获取时间值。
 
 ```js
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
   // elapsedTime 从 0 开始，每秒增加 1
 
   // 示例：每秒旋转一整圈
@@ -179,21 +184,22 @@ const tick = () => {
 tick();
 ```
 
-:::tip[Math.PI _ 2 的含义]
-在数学中，一个完整的圆周是 `2 _ PI`弧度（约 6.28 弧度）。所以`elapsedTime _ Math.PI _ 2` 表示：随着时间每过 1 秒，角度增加一个完整的圆周，即每秒转一圈。
+:::tip[Math.PI * 2 的含义]
+在数学中，一个完整的圆周是 `2 * PI`弧度（约 6.28 弧度）。所以`elapsedTime * Math.PI * 2` 表示：随着时间每过 1 秒，角度增加一个完整的圆周，即每秒转一圈。
 :::
 
 **注意**：这里用的是 `=` 赋值，不是 `+=` 增量。我们直接用时间值设置旋转角度，而不是在上一帧的基础上增加。这样动画天然就是帧率独立的。
 
 ### getDelta() — 获取帧间时间差
 
-`getDelta()` 返回**上一帧到这一帧之间的时间差**（秒）。
+`getDelta()` 返回**上一帧到这一帧之间的时间差**（秒）。同样需要先调用 `timer.update()`。
 
 ```js
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 const tick = () => {
-  const deltaTime = clock.getDelta();
+  timer.update();
+  const deltaTime = timer.getDelta();
   // deltaTime 通常是 0.016 左右（60fps 下约 16.67ms）
 
   mesh.rotation.y += 1 * deltaTime;
@@ -204,33 +210,31 @@ const tick = () => {
 tick();
 ```
 
-:::caution[重要警告：不要使用 getDelta()！]
-Three.js 的 `getDelta()` 和 `getElapsedTime()` 共享内部计时状态。**如果你同时使用了 `getElapsedTime()` 和 `getDelta()`，可能会导致非常奇怪的结果和数值，因为它们会互相干扰内部逻辑。**
-
-建议：**只使用 `getElapsedTime()`**，它能满足绝大多数需求。
+:::tip[优势：getDelta() 和 getElapsed() 不再冲突]
+与旧版 Clock 不同，Timer 的 `getDelta()` 和 `getElapsed()` **可以在同一帧内安全地同时使用**，因为 `update()` 已经统一更新了内部状态。
 :::
 
-参考文档：[Three.js - Clock](https://threejs.org/docs/#api/en/core/Clock)
+参考文档：[Three.js - Timer](https://threejs.org/docs/#api/en/core/Timer)
 
-### getElapsedTime() vs getDelta() 对比
+### getElapsed() vs getDelta() 对比
 
-| 特性          | `getElapsedTime()`                   | `getDelta()`                           |
+| 特性          | `getElapsed()`                      | `getDelta()`                           |
 | ------------- | ------------------------------------ | -------------------------------------- |
-| 返回值        | 从 Clock 启动到现在的总秒数          | 上一帧到这一帧的时间差（秒）           |
+| 返回值        | 从 Timer 启动到现在的总秒数         | 上一帧到这一帧的时间差（秒）           |
 | 使用方式      | 直接赋值 `rotation.y = time * speed` | 增量更新 `rotation.y += speed * delta` |
 | 典型场景      | 持续循环动画（旋转、摆动）           | 基于增量的物理模拟                     |
-| 推荐程度      | **推荐使用**                         | **不推荐使用**（内部状态问题）         |
 | 60fps 下的值  | 持续递增 0, 1, 2, 3...               | 约等于 0.0167                          |
 | 120fps 下的值 | 持续递增 0, 0.5, 1, 1.5...           | 约等于 0.0083                          |
 
 ## 使用三角函数创建动画
 
-通过结合 `getElapsedTime()` 和数学三角函数，我们可以创建各种丰富的动画效果。
+通过结合 `getElapsed()` 和数学三角函数，我们可以创建各种丰富的动画效果。
 
 ### 上下弹跳（正弦函数）
 
 ```js
-const elapsedTime = clock.getElapsedTime();
+timer.update();
+const elapsedTime = timer.getElapsed();
 mesh.position.y = Math.sin(elapsedTime);
 ```
 
@@ -249,7 +253,8 @@ mesh.position.y = Math.sin(elapsedTime);
 ### 圆形运动轨迹
 
 ```js
-const elapsedTime = clock.getElapsedTime();
+timer.update();
+const elapsedTime = timer.getElapsed();
 mesh.position.x = Math.sin(elapsedTime);
 mesh.position.z = Math.cos(elapsedTime);
 ```
@@ -259,7 +264,8 @@ mesh.position.z = Math.cos(elapsedTime);
 ### 呼吸缩放效果
 
 ```js
-const elapsedTime = clock.getElapsedTime();
+timer.update();
+const elapsedTime = timer.getElapsed();
 const scale = 1 + Math.sin(elapsedTime * 2) * 0.2;
 mesh.scale.set(scale, scale, scale);
 ```
@@ -272,7 +278,8 @@ mesh.scale.set(scale, scale, scale);
 
 ```js
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 旋转
   mesh.rotation.y = elapsedTime * 0.5;
@@ -297,7 +304,8 @@ tick();
 
 ```js
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 让摄像机绕着原点做圆形运动
   camera.position.x = Math.sin(elapsedTime) * 3;
@@ -460,14 +468,14 @@ gsap.to(mesh.position, {
 | 方案                                    | 适用场景                         | 优点                    | 缺点                  |
 | --------------------------------------- | -------------------------------- | ----------------------- | --------------------- |
 | `requestAnimationFrame` + 数学函数      | 持续循环动画（旋转、摆动、跟随） | 无额外依赖，性能好      | 复杂时序难以管理      |
-| `requestAnimationFrame` + `THREE.Clock` | 同上（推荐方式）                 | 帧率独立，Three.js 内置 | getDelta() 有已知问题 |
+| `requestAnimationFrame` + `THREE.Timer` | 同上（推荐方式）                 | 帧率独立，Three.js 内置 | —                    |
 | GSAP                                    | 一次性过渡动画、复杂时序         | 功能强大，API 简洁      | 增加包体积            |
 
 经验法则：
 
-- 如果只需要简单的 `Math.sin()` / `Math.cos()` 循环动画 → 直接用 Clock
+- 如果只需要简单的 `Math.sin()` / `Math.cos()` 循环动画 → 直接用 Timer
 - 如果需要复杂的过渡、缓动、时间线 → 用 GSAP
-- 很多时候两者可以结合使用：GSAP 处理一次性过渡，Clock 处理持续循环
+- 很多时候两者可以结合使用：GSAP 处理一次性过渡，Timer 处理持续循环
 
 ## 完整代码示例
 
@@ -499,15 +507,16 @@ scene.add(camera);
 const renderer = new THREE.WebGLRenderer({ canvas: canvas });
 renderer.setSize(sizes.width, sizes.height);
 
-// Clock
-const clock = new THREE.Clock();
+// Timer
+const timer = new THREE.Timer();
 
 // GSAP animation
 gsap.to(mesh.position, { duration: 1, delay: 1, x: 2 });
 
 // Animation loop
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // Update controls (if any)
   // controls.update()

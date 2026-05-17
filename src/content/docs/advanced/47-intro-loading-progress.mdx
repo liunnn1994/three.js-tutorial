@@ -43,7 +43,7 @@ const loadingManager = new THREE.LoadingManager(
 // 将同一个 manager 传递给所有 loader
 const textureLoader = new THREE.TextureLoader(loadingManager);
 const gltfLoader = new GLTFLoader(loadingManager);
-const rgbeLoader = new RGBELoader(loadingManager);
+const hdrLoader = new HDRLoader(loadingManager);
 ```
 
 :::tip
@@ -229,9 +229,9 @@ loadingManager.onLoad = () => {
 环境贴图（HDR）通常需要最先加载，因为它影响所有 PBR 材质的外观。如果模型先加载完成但没有环境贴图，材质看起来会很差。可以采用串行加载策略：
 
 ```js
-const rgbeLoader = new RGBELoader(loadingManager);
+const hdrLoader = new HDRLoader(loadingManager);
 
-rgbeLoader.load("/environment.hdr", (envMap) => {
+hdrLoader.load("/environment.hdr", (envMap) => {
   scene.environment = envMap;
   // 环境贴图加载完成后再加载模型
   loadModels();

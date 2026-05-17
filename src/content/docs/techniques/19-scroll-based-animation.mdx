@@ -282,7 +282,8 @@ const elementTop = sectionRect.top;
 
 ```js
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
   const deltaTime = elapsedTime - previousTime;
   previousTime = elapsedTime;
 
@@ -405,7 +406,8 @@ window.addEventListener("mousemove", (event) => {
 
 ```js
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
   const deltaTime = elapsedTime - previousTime;
   previousTime = elapsedTime;
 

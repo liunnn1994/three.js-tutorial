@@ -256,18 +256,19 @@ const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
 });
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
  * 动画循环
  */
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 let oldElapsedTime = 0;
 
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
   const deltaTime = elapsedTime - oldElapsedTime;
   oldElapsedTime = elapsedTime;
 

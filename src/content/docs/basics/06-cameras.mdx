@@ -281,7 +281,8 @@ tick();
 
 ```js
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // X 轴位置用 sin，Z 轴位置用 cos，形成圆形轨迹
   camera.position.x = Math.sin(cursor.x * Math.PI * 2) * 3;
@@ -506,12 +507,13 @@ controls.enableDamping = true;
 const renderer = new THREE.WebGLRenderer({ canvas: canvas });
 renderer.setSize(sizes.width, sizes.height);
 
-// Clock
-const clock = new THREE.Clock();
+// Timer
+const timer = new THREE.Timer();
 
 // Animate
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // Update controls（启用阻尼时必须调用）
   controls.update();

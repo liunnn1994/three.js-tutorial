@@ -2,13 +2,13 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import GUI from "lil-gui";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
+import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 
 /**
  * 加载器
  */
 const gltfLoader = new GLTFLoader();
-const rgbeLoader = new RGBELoader();
+const hdrLoader = new HDRLoader();
 const textureLoader = new THREE.TextureLoader();
 
 /**
@@ -52,7 +52,7 @@ gui
   .onChange(updateAllMaterials);
 
 // HDR（RGBE）等距矩形
-rgbeLoader.load("/assets/25-realistic-render-final/environmentMaps/0/2k.hdr", (environmentMap) => {
+hdrLoader.load("/assets/25-realistic-render-final/environmentMaps/0/2k.hdr", (environmentMap) => {
   environmentMap.mapping = THREE.EquirectangularReflectionMapping;
 
   scene.background = environmentMap;
@@ -241,7 +241,7 @@ gui.add(renderer, "toneMappingExposure").min(0).max(10).step(0.001).name("曝光
 
 // 阴影
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 
 /**
  * 动画循环

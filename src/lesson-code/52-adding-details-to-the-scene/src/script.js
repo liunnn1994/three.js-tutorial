@@ -201,10 +201,11 @@ gui
 /**
  * 动画循环
  */
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 更新材质
   portalLightMaterial.uniforms.uTime.value = elapsedTime;

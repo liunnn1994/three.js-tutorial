@@ -306,7 +306,8 @@ particlesMaterial.vertexColors = true; // 注意：属性名是复数！
 
 ```js
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 让所有粒子整体旋转
   particles.rotation.y = elapsedTime * 0.1;
@@ -331,7 +332,8 @@ const tick = () => {
 
 ```js
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   for (let i = 0; i < count; i++) {
     // i3 是当前粒子在数组中的起始索引

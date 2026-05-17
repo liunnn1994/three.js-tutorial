@@ -87,7 +87,8 @@ uniforms: {
 
 ```js
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
   material.uniforms.uTime.value = elapsedTime;
   // ...
 };

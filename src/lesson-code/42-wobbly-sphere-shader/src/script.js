@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
@@ -23,7 +23,7 @@ const canvas = document.querySelector("canvas.webgl");
 const scene = new THREE.Scene();
 
 // 加载器
-const rgbeLoader = new RGBELoader();
+const hdrLoader = new HDRLoader();
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath("/assets/42-wobbly-sphere-shader-final/draco/");
 const gltfLoader = new GLTFLoader();
@@ -32,7 +32,7 @@ gltfLoader.setDRACOLoader(dracoLoader);
 /**
  * 环境贴图
  */
-rgbeLoader.load("/assets/42-wobbly-sphere-shader-final/urban_alley_01_1k.hdr", (environmentMap) => {
+hdrLoader.load("/assets/42-wobbly-sphere-shader-final/urban_alley_01_1k.hdr", (environmentMap) => {
   environmentMap.mapping = THREE.EquirectangularReflectionMapping;
 
   scene.background = environmentMap;
@@ -64,7 +64,6 @@ const material = new CustomShaderMaterial({
   vertexShader: wobbleVertexShader,
   fragmentShader: wobbleFragmentShader,
   uniforms: uniforms,
-  silent: true,
 
   // MeshPhysicalMaterial 材质
   metalness: 0,
@@ -82,7 +81,6 @@ const depthMaterial = new CustomShaderMaterial({
   baseMaterial: THREE.MeshDepthMaterial,
   vertexShader: wobbleVertexShader,
   uniforms: uniforms,
-  silent: true,
 
   // MeshDepthMaterial 材质
   depthPacking: THREE.RGBADepthPacking,
@@ -197,7 +195,7 @@ const renderer = new THREE.WebGLRenderer({
   antialias: true,
 });
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1;
 renderer.setSize(sizes.width, sizes.height);
@@ -206,10 +204,11 @@ renderer.setPixelRatio(sizes.pixelRatio);
 /**
  * 动画循环
  */
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 材质
   uniforms.uTime.value = elapsedTime;

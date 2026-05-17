@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import GUI from "lil-gui";
-import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
+import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 
 /**
  * 调试
@@ -56,8 +56,8 @@ matcapTexture.colorSpace = THREE.SRGBColorSpace;
 /**
  * 环境贴图
  */
-const rgbeLoader = new RGBELoader();
-rgbeLoader.load("/assets/11-materials-final/textures/environmentMap/2k.hdr", (environmentMap) => {
+const hdrLoader = new HDRLoader();
+hdrLoader.load("/assets/11-materials-final/textures/environmentMap/2k.hdr", (environmentMap) => {
   environmentMap.mapping = THREE.EquirectangularReflectionMapping;
 
   scene.background = environmentMap;
@@ -238,10 +238,11 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 /**
  * 动画循环
  */
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 更新对象
   sphere.rotation.y = 0.1 * elapsedTime;

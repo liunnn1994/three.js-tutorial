@@ -149,10 +149,11 @@ gltfLoader.load(
 /**
  * 动画循环
  */
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 动画对象
   object1.position.y = Math.sin(elapsedTime * 0.3) * 1.5;

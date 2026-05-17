@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import GUI from "lil-gui";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
+import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 import { GroundedSkybox as GroundProjectedSkybox } from "three/examples/jsm/objects/GroundedSkybox.js";
 
@@ -11,7 +11,7 @@ import { GroundedSkybox as GroundProjectedSkybox } from "three/examples/jsm/obje
  */
 const gltfLoader = new GLTFLoader();
 const cubeTextureLoader = new THREE.CubeTextureLoader();
-const rgbeLoader = new RGBELoader();
+const hdrLoader = new HDRLoader();
 const exrLoader = new EXRLoader();
 const textureLoader = new THREE.TextureLoader();
 
@@ -72,7 +72,7 @@ gui
 // scene.background = environmentMap
 
 // // HDR（RGBE）等距矩形
-// rgbeLoader.load('/assets/24-environment-map-final/environmentMaps/blender-2k.hdr', (environmentMap) =>
+// hdrLoader.load('/assets/24-environment-map-final/environmentMaps/blender-2k.hdr', (environmentMap) =>
 // {
 //     environmentMap.mapping = THREE.EquirectangularReflectionMapping
 
@@ -97,7 +97,7 @@ gui
 // scene.environment = environmentMap
 
 // // Ground projected skybox
-// rgbeLoader.load('/assets/24-environment-map-final/environmentMaps/2/2k.hdr', (environmentMap) =>
+// hdrLoader.load('/assets/24-environment-map-final/environmentMaps/2/2k.hdr', (environmentMap) =>
 // {
 //     environmentMap.mapping = THREE.EquirectangularReflectionMapping
 //     scene.environment = environmentMap
@@ -215,10 +215,11 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 /**
  * 动画循环
  */
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 const tick = () => {
   // 时间
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 实时环境贴图
   if (holyDonut) {

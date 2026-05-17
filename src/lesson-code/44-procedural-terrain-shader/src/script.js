@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 import { SUBTRACTION, Evaluator, Brush } from "three-bvh-csg";
 import CustomShaderMaterial from "three-custom-shader-material/vanilla";
 import GUI from "lil-gui";
@@ -21,12 +21,12 @@ const canvas = document.querySelector("canvas.webgl");
 const scene = new THREE.Scene();
 
 // 加载器
-const rgbeLoader = new RGBELoader();
+const hdrLoader = new HDRLoader();
 
 /**
  * 环境贴图
  */
-rgbeLoader.load(
+hdrLoader.load(
   "/assets/44-procedural-terrain-shader-final/spruit_sunrise.hdr",
   (environmentMap) => {
     environmentMap.mapping = THREE.EquirectangularReflectionMapping;
@@ -103,7 +103,6 @@ const material = new CustomShaderMaterial({
   vertexShader: terrainVertexShader,
   fragmentShader: terrainFragmentShader,
   uniforms: uniforms,
-  silent: true,
 
   // MeshPhysicalMaterial 材质
   metalness: 0,
@@ -116,7 +115,6 @@ const depthMaterial = new CustomShaderMaterial({
   baseMaterial: THREE.MeshDepthMaterial,
   vertexShader: terrainVertexShader,
   uniforms: uniforms,
-  silent: true,
 
   // MeshDepthMaterial 材质
   depthPacking: THREE.RGBADepthPacking,
@@ -220,7 +218,7 @@ const renderer = new THREE.WebGLRenderer({
   antialias: true,
 });
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1;
 renderer.setSize(sizes.width, sizes.height);
@@ -229,10 +227,11 @@ renderer.setPixelRatio(sizes.pixelRatio);
 /**
  * 动画循环
  */
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // Uniform 变量
   uniforms.uTime.value = elapsedTime;

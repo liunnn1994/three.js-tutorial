@@ -258,11 +258,12 @@ geometry.setAttribute("aReference", new THREE.BufferAttribute(references, 2));
 
 ```js
 // 创建时钟
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 function animate() {
-  const elapsedTime = clock.getElapsedTime();
-  const delta = clock.getDelta();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
+  const delta = timer.getDelta();
 
   // 更新计算着色器的 uniforms
   gpuCompute.getVariable(0).material.uniforms.uTime.value = elapsedTime;

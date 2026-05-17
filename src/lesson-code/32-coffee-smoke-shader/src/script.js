@@ -136,10 +136,11 @@ scene.add(smoke);
 /**
  * 动画循环
  */
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
 
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  timer.update();
+  const elapsedTime = timer.getElapsed();
 
   // 更新烟雾
   smokeMaterial.uniforms.uTime.value = elapsedTime;
