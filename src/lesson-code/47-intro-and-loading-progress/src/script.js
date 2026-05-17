@@ -1,12 +1,36 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { gsap } from "gsap";
+import GUI from "lil-gui";
 
 /**
  * Loaders
  */
-const gltfLoader = new GLTFLoader();
-const cubeTextureLoader = new THREE.CubeTextureLoader();
+const loadingBarElement = document.querySelector(".loading-bar");
+const loadingManager = new THREE.LoadingManager(
+  // Loaded
+  () => {
+    // Wait a little
+    window.setTimeout(() => {
+      // Animate overlay
+      gsap.to(overlayMaterial.uniforms.uAlpha, { duration: 3, value: 0, delay: 1 });
+
+      // Update loadingBarElement
+      loadingBarElement.classList.add("ended");
+      loadingBarElement.style.transform = "";
+    }, 500);
+  },
+
+  // Progress
+  (itemUrl, itemsLoaded, itemsTotal) => {
+    // Calculate the progress and update the loadingBarElement
+    const progressRatio = itemsLoaded / itemsTotal;
+    loadingBarElement.style.transform = `scaleX(${progressRatio})`;
+  },
+);
+const gltfLoader = new GLTFLoader(loadingManager);
+const cubeTextureLoader = new THREE.CubeTextureLoader(loadingManager);
 
 /**
  * Base
@@ -19,6 +43,34 @@ const canvas = document.querySelector("canvas.webgl");
 
 // Scene
 const scene = new THREE.Scene();
+
+/**
+ * Overlay
+ */
+const overlayGeometry = new THREE.PlaneGeometry(2, 2, 1, 1);
+const overlayMaterial = new THREE.ShaderMaterial({
+  // wireframe: true,
+  transparent: true,
+  uniforms: {
+    uAlpha: { value: 1 },
+  },
+  vertexShader: `
+        void main()
+        {
+            gl_Position = vec4(position, 1.0);
+        }
+    `,
+  fragmentShader: `
+        uniform float uAlpha;
+
+        void main()
+        {
+            gl_FragColor = vec4(0.0, 0.0, 0.0, uAlpha);
+        }
+    `,
+});
+const overlay = new THREE.Mesh(overlayGeometry, overlayMaterial);
+scene.add(overlay);
 
 /**
  * Update all materials
@@ -39,12 +91,12 @@ const updateAllMaterials = () => {
  * Environment map
  */
 const environmentMap = cubeTextureLoader.load([
-  "/textures/environmentMaps/0/px.jpg",
-  "/textures/environmentMaps/0/nx.jpg",
-  "/textures/environmentMaps/0/py.jpg",
-  "/textures/environmentMaps/0/ny.jpg",
-  "/textures/environmentMaps/0/pz.jpg",
-  "/textures/environmentMaps/0/nz.jpg",
+  "/assets/47-intro-and-loading-progress-final/textures/environmentMaps/0/px.jpg",
+  "/assets/47-intro-and-loading-progress-final/textures/environmentMaps/0/nx.jpg",
+  "/assets/47-intro-and-loading-progress-final/textures/environmentMaps/0/py.jpg",
+  "/assets/47-intro-and-loading-progress-final/textures/environmentMaps/0/ny.jpg",
+  "/assets/47-intro-and-loading-progress-final/textures/environmentMaps/0/pz.jpg",
+  "/assets/47-intro-and-loading-progress-final/textures/environmentMaps/0/nz.jpg",
 ]);
 
 environmentMap.colorSpace = THREE.SRGBColorSpace;
@@ -55,16 +107,31 @@ scene.environment = environmentMap;
 debugObject.envMapIntensity = 2.5;
 
 /**
+ * Debug
+ */
+const gui = new GUI();
+gui
+  .add(debugObject, "envMapIntensity")
+  .min(0)
+  .max(5)
+  .step(0.1)
+  .name("Env Map Intensity")
+  .onChange(updateAllMaterials);
+
+/**
  * Models
  */
-gltfLoader.load("/models/FlightHelmet/glTF/FlightHelmet.gltf", (gltf) => {
-  gltf.scene.scale.set(10, 10, 10);
-  gltf.scene.position.set(0, -4, 0);
-  gltf.scene.rotation.y = Math.PI * 0.5;
-  scene.add(gltf.scene);
+gltfLoader.load(
+  "/assets/47-intro-and-loading-progress-final/models/FlightHelmet/glTF/FlightHelmet.gltf",
+  (gltf) => {
+    gltf.scene.scale.set(10, 10, 10);
+    gltf.scene.position.set(0, -4, 0);
+    gltf.scene.rotation.y = Math.PI * 0.5;
+    scene.add(gltf.scene);
 
-  updateAllMaterials();
-});
+    updateAllMaterials();
+  },
+);
 
 /**
  * Lights
@@ -84,20 +151,6 @@ const sizes = {
   width: window.innerWidth,
   height: window.innerHeight,
 };
-
-window.addEventListener("resize", () => {
-  // Update sizes
-  sizes.width = window.innerWidth;
-  sizes.height = window.innerHeight;
-
-  // Update camera
-  camera.aspect = sizes.width / sizes.height;
-  camera.updateProjectionMatrix();
-
-  // Update renderer
-  renderer.setSize(sizes.width, sizes.height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-});
 
 /**
  * Camera
@@ -124,6 +177,22 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+gui.add(renderer, "toneMappingExposure").min(0).max(10).step(0.1).name("Tone Mapping Exposure");
+
+window.addEventListener("resize", () => {
+  // Update sizes
+  sizes.width = window.innerWidth;
+  sizes.height = window.innerHeight;
+
+  // Update camera
+  camera.aspect = sizes.width / sizes.height;
+  camera.updateProjectionMatrix();
+
+  // Update renderer
+  renderer.setSize(sizes.width, sizes.height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+});
 
 /**
  * Animate

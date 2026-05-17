@@ -2,11 +2,14 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { gsap } from "gsap";
+import GUI from "lil-gui";
 
 /**
  * Loaders
  */
 const loadingBarElement = document.querySelector(".loading-bar");
+
+let sceneReady = false;
 const loadingManager = new THREE.LoadingManager(
   // Loaded
   () => {
@@ -19,6 +22,10 @@ const loadingManager = new THREE.LoadingManager(
       loadingBarElement.classList.add("ended");
       loadingBarElement.style.transform = "";
     }, 500);
+
+    window.setTimeout(() => {
+      sceneReady = true;
+    }, 2000);
   },
 
   // Progress
@@ -90,12 +97,12 @@ const updateAllMaterials = () => {
  * Environment map
  */
 const environmentMap = cubeTextureLoader.load([
-  "/textures/environmentMaps/0/px.jpg",
-  "/textures/environmentMaps/0/nx.jpg",
-  "/textures/environmentMaps/0/py.jpg",
-  "/textures/environmentMaps/0/ny.jpg",
-  "/textures/environmentMaps/0/pz.jpg",
-  "/textures/environmentMaps/0/nz.jpg",
+  "/assets/48-mixing-html-and-webgl-final/textures/environmentMaps/0/px.jpg",
+  "/assets/48-mixing-html-and-webgl-final/textures/environmentMaps/0/nx.jpg",
+  "/assets/48-mixing-html-and-webgl-final/textures/environmentMaps/0/py.jpg",
+  "/assets/48-mixing-html-and-webgl-final/textures/environmentMaps/0/ny.jpg",
+  "/assets/48-mixing-html-and-webgl-final/textures/environmentMaps/0/pz.jpg",
+  "/assets/48-mixing-html-and-webgl-final/textures/environmentMaps/0/nz.jpg",
 ]);
 
 environmentMap.colorSpace = THREE.SRGBColorSpace;
@@ -106,15 +113,49 @@ scene.environment = environmentMap;
 debugObject.envMapIntensity = 2.5;
 
 /**
+ * Debug
+ */
+const gui = new GUI();
+gui
+  .add(debugObject, "envMapIntensity")
+  .min(0)
+  .max(5)
+  .step(0.1)
+  .name("Env Map Intensity")
+  .onChange(updateAllMaterials);
+
+/**
  * Models
  */
-gltfLoader.load("/models/DamagedHelmet/glTF/DamagedHelmet.gltf", (gltf) => {
-  gltf.scene.scale.set(2.5, 2.5, 2.5);
-  gltf.scene.rotation.y = Math.PI * 0.5;
-  scene.add(gltf.scene);
+gltfLoader.load(
+  "/assets/48-mixing-html-and-webgl-final/models/DamagedHelmet/glTF/DamagedHelmet.gltf",
+  (gltf) => {
+    gltf.scene.scale.set(2.5, 2.5, 2.5);
+    gltf.scene.rotation.y = Math.PI * 0.5;
+    scene.add(gltf.scene);
 
-  updateAllMaterials();
-});
+    updateAllMaterials();
+  },
+);
+
+/**
+ * Points of interest
+ */
+const raycaster = new THREE.Raycaster();
+const points = [
+  {
+    position: new THREE.Vector3(1.55, 0.3, -0.6),
+    element: document.querySelector(".point-0"),
+  },
+  {
+    position: new THREE.Vector3(0.5, 0.8, -1.6),
+    element: document.querySelector(".point-1"),
+  },
+  {
+    position: new THREE.Vector3(1.6, -1.3, -0.7),
+    element: document.querySelector(".point-2"),
+  },
+];
 
 /**
  * Lights
@@ -134,20 +175,6 @@ const sizes = {
   width: window.innerWidth,
   height: window.innerHeight,
 };
-
-window.addEventListener("resize", () => {
-  // Update sizes
-  sizes.width = window.innerWidth;
-  sizes.height = window.innerHeight;
-
-  // Update camera
-  camera.aspect = sizes.width / sizes.height;
-  camera.updateProjectionMatrix();
-
-  // Update renderer
-  renderer.setSize(sizes.width, sizes.height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-});
 
 /**
  * Camera
@@ -175,12 +202,70 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
+gui.add(renderer, "toneMappingExposure").min(0).max(10).step(0.1).name("Tone Mapping Exposure");
+
+window.addEventListener("resize", () => {
+  // Update sizes
+  sizes.width = window.innerWidth;
+  sizes.height = window.innerHeight;
+
+  // Update camera
+  camera.aspect = sizes.width / sizes.height;
+  camera.updateProjectionMatrix();
+
+  // Update renderer
+  renderer.setSize(sizes.width, sizes.height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+});
+
 /**
  * Animate
  */
 const tick = () => {
   // Update controls
   controls.update();
+
+  // Update points only when the scene is ready
+  if (sceneReady) {
+    // Go through each point
+    for (const point of points) {
+      // Get 2D screen position
+      const screenPosition = point.position.clone();
+      screenPosition.project(camera);
+
+      // Set the raycaster
+      raycaster.setFromCamera(screenPosition, camera);
+      const intersects = raycaster.intersectObjects(scene.children, true);
+
+      // No intersect found
+      if (intersects.length === 0) {
+        // Show
+        point.element.classList.add("visible");
+      }
+
+      // Intersect found
+      else {
+        // Get the distance of the intersection and the distance of the point
+        const intersectionDistance = intersects[0].distance;
+        const pointDistance = point.position.distanceTo(camera.position);
+
+        // Intersection is close than the point
+        if (intersectionDistance < pointDistance) {
+          // Hide
+          point.element.classList.remove("visible");
+        }
+        // Intersection is further than the point
+        else {
+          // Show
+          point.element.classList.add("visible");
+        }
+      }
+
+      const translateX = screenPosition.x * sizes.width * 0.5;
+      const translateY = -screenPosition.y * sizes.height * 0.5;
+      point.element.style.transform = `translateX(${translateX}px) translateY(${translateY}px)`;
+    }
+  }
 
   // Render
   renderer.render(scene, camera);

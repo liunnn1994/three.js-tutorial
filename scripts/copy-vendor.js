@@ -60,15 +60,21 @@ fs.copyFileSync(
   path.join(nm, "cannon-es/dist/cannon-es.js"),
   path.join(vendorDir, "cannon-es.esm.js"),
 );
-fs.copyFileSync(
-  path.join(
-    nm,
-    "three-custom-shader-material/vanilla/three-custom-shader-material.es.js",
-  ),
+// three-custom-shader-material: bundle with esbuild, mark 'three' as external
+execSync(
+  `npx esbuild three-custom-shader-material/vanilla/three-custom-shader-material.es.js --bundle --format=esm --external:three --outfile=${JSON.stringify(path.join(vendorDir, "three-custom-shader-material-vanilla.esm.js"))}`,
+  { cwd: nm, stdio: "inherit" },
+);
+rewriteThreeImportsInFile(
   path.join(vendorDir, "three-custom-shader-material-vanilla.esm.js"),
 );
-fs.copyFileSync(
-  path.join(nm, "three-bvh-csg/build/index.module.js"),
+
+// three-bvh-csg: bundle with esbuild, mark 'three' as external (inlines three-mesh-bvh)
+execSync(
+  `npx esbuild three-bvh-csg/build/index.module.js --bundle --format=esm --external:three --outfile=${JSON.stringify(path.join(vendorDir, "three-bvh-csg.esm.js"))}`,
+  { cwd: nm, stdio: "inherit" },
+);
+rewriteThreeImportsInFile(
   path.join(vendorDir, "three-bvh-csg.esm.js"),
 );
 
@@ -94,25 +100,28 @@ function copyDir(src, dest) {
 }
 
 // Rewrite bare 'three' imports inside jsm addon files to the vendored path
+function rewriteThreeImportsInFile(filePath) {
+  const original = fs.readFileSync(filePath, "utf-8");
+  const rewritten = original
+    .replace(/from\s+['"]three['"]/g, "from '/vendor/three.module.js'")
+    .replace(
+      /from\s+['"]three\/addons\/(.+?)['"]/g,
+      "from '/vendor/three/examples/jsm/$1'",
+    )
+    .replace(
+      /from\s+['"]three\/examples\/jsm\/(.+?)['"]/g,
+      "from '/vendor/three/examples/jsm/$1'",
+    );
+  if (rewritten !== original) fs.writeFileSync(filePath, rewritten, "utf-8");
+}
+
 function rewriteThreeImportsInDir(dir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       rewriteThreeImportsInDir(fullPath);
     } else if (entry.name.endsWith(".js")) {
-      const original = fs.readFileSync(fullPath, "utf-8");
-      const rewritten = original
-        .replace(/from\s+['"]three['"]/g, "from '/vendor/three.module.js'")
-        .replace(
-          /from\s+['"]three\/addons\/(.+?)['"]/g,
-          "from '/vendor/three/examples/jsm/$1'",
-        )
-        .replace(
-          /from\s+['"]three\/examples\/jsm\/(.+?)['"]/g,
-          "from '/vendor/three/examples/jsm/$1'",
-        );
-      if (rewritten !== original)
-        fs.writeFileSync(fullPath, rewritten, "utf-8");
+      rewriteThreeImportsInFile(fullPath);
     }
   }
 }

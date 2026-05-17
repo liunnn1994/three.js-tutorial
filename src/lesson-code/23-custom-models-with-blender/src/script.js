@@ -20,14 +20,14 @@ const scene = new THREE.Scene();
  * Models
  */
 const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath("/draco/");
+dracoLoader.setDecoderPath("/assets/23-custom-models-with-blender-final/draco/");
 
 const gltfLoader = new GLTFLoader();
 gltfLoader.setDRACOLoader(dracoLoader);
 
 let mixer = null;
 
-gltfLoader.load("/models/hamburger.glb", (gltf) => {
+gltfLoader.load("/assets/23-custom-models-with-blender-final/models/hamburger.glb", (gltf) => {
   scene.add(gltf.scene);
 });
 

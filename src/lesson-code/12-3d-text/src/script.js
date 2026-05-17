@@ -24,7 +24,7 @@ const scene = new THREE.Scene();
  * Textures
  */
 const textureLoader = new THREE.TextureLoader();
-const matcapTexture = textureLoader.load("/assets/12-3d-text/matcaps/1.png");
+const matcapTexture = textureLoader.load("/assets/12-3d-text-final/textures/matcaps/1.png");
 
 /**
  * Fonts

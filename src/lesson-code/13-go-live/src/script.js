@@ -20,7 +20,7 @@ const scene = new THREE.Scene();
  * Textures
  */
 const textureLoader = new THREE.TextureLoader();
-const matcapTexture = textureLoader.load("textures/matcaps/8.png");
+const matcapTexture = textureLoader.load("/assets/13-go-live-final/textures/matcaps/8.png");
 matcapTexture.colorSpace = THREE.SRGBColorSpace;
 
 /**
@@ -28,12 +28,12 @@ matcapTexture.colorSpace = THREE.SRGBColorSpace;
  */
 const fontLoader = new FontLoader();
 
-fontLoader.load("/fonts/helvetiker_regular.typeface.json", (font) => {
+fontLoader.load("/assets/13-go-live-final/fonts/helvetiker_regular.typeface.json", (font) => {
   // Material
   const material = new THREE.MeshMatcapMaterial({ matcap: matcapTexture });
 
   // Text
-  const textGeometry = new TextGeometry("Hello Three.js", {
+  const textGeometry = new TextGeometry("Bruno Simon", {
     font: font,
     size: 0.5,
     height: 0.2,

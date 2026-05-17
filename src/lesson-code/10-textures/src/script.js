@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import GUI from "lil-gui";
 
 /**
  * Base
@@ -13,43 +14,151 @@ const scene = new THREE.Scene();
 /**
  * Textures
  */
-const textureLoader = new THREE.TextureLoader();
+const loadingManager = new THREE.LoadingManager();
+loadingManager.onStart = () => {
+  console.log("loadingManager: loading started");
+};
+loadingManager.onLoad = () => {
+  console.log("loadingManager: loading finished");
+};
+loadingManager.onProgress = () => {
+  console.log("loadingManager: loading progressing");
+};
+loadingManager.onError = () => {
+  console.log("loadingManager: loading error");
+};
 
-// Load a color texture
-const colorTexture = textureLoader.load("/assets/10-textures/textures/door/color.jpg");
-colorTexture.colorSpace = THREE.SRGBColorSpace;
+const textureLoader = new THREE.TextureLoader(loadingManager);
 
-// Load other texture types
-const normalTexture = textureLoader.load("/assets/10-textures/textures/door/normal.jpg");
-const roughnessTexture = textureLoader.load("/assets/10-textures/textures/door/roughness.jpg");
-const metalnessTexture = textureLoader.load("/assets/10-textures/textures/door/metalness.jpg");
-const ambientOcclusionTexture = textureLoader.load(
-  "/assets/10-textures/textures/door/ambientOcclusion.jpg",
+// const colorTexture = textureLoader.load('/assets/10-textures-final/textures/checkerboard-1024x1024.png')
+// const colorTexture = textureLoader.load('/assets/10-textures-final/textures/checkerboard-2x2.png')
+const colorTexture = textureLoader.load(
+  "/assets/10-textures-final/textures/minecraft.png",
+  () => {
+    console.log("textureLoader: loading finished");
+  },
+  () => {
+    console.log("textureLoader: loading progressing");
+  },
+  () => {
+    console.log("textureLoader: loading error");
+  },
 );
-const alphaTexture = textureLoader.load("/assets/10-textures/textures/door/alpha.jpg");
-const heightTexture = textureLoader.load("/assets/10-textures/textures/door/height.jpg");
+colorTexture.colorSpace = THREE.SRGBColorSpace;
+colorTexture.wrapS = THREE.MirroredRepeatWrapping;
+colorTexture.wrapT = THREE.MirroredRepeatWrapping;
+colorTexture.generateMipmaps = false;
+colorTexture.minFilter = THREE.NearestFilter;
+colorTexture.magFilter = THREE.NearestFilter;
+
+/**
+ * Debug
+ */
+const gui = new GUI();
+const params = {
+  repeatX: 2,
+  repeatY: 2,
+  offsetX: 0,
+  offsetY: 0,
+  rotation: 0,
+  wrapS: "MirroredRepeatWrapping",
+  wrapT: "MirroredRepeatWrapping",
+  minFilter: "NearestFilter",
+  magFilter: "NearestFilter",
+};
+
+const wrapModes = {
+  RepeatWrapping: THREE.RepeatWrapping,
+  ClampToEdgeWrapping: THREE.ClampToEdgeWrapping,
+  MirroredRepeatWrapping: THREE.MirroredRepeatWrapping,
+};
+const filterModes = { NearestFilter: THREE.NearestFilter, LinearFilter: THREE.LinearFilter };
+
+function updateTexture() {
+  colorTexture.repeat.x = params.repeatX;
+  colorTexture.repeat.y = params.repeatY;
+  colorTexture.offset.x = params.offsetX;
+  colorTexture.offset.y = params.offsetY;
+  colorTexture.rotation = params.rotation;
+  colorTexture.center.x = 0.5;
+  colorTexture.center.y = 0.5;
+  colorTexture.wrapS = wrapModes[params.wrapS];
+  colorTexture.wrapT = wrapModes[params.wrapT];
+  colorTexture.minFilter = filterModes[params.minFilter];
+  colorTexture.magFilter = filterModes[params.magFilter];
+  colorTexture.needsUpdate = true;
+}
+
+const textureFolder = gui.addFolder("Texture Properties");
+textureFolder
+  .add(params, "repeatX")
+  .min(1)
+  .max(10)
+  .step(1)
+  .name("Repeat X")
+  .onChange(updateTexture);
+textureFolder
+  .add(params, "repeatY")
+  .min(1)
+  .max(10)
+  .step(1)
+  .name("Repeat Y")
+  .onChange(updateTexture);
+textureFolder
+  .add(params, "offsetX")
+  .min(-1)
+  .max(1)
+  .step(0.05)
+  .name("Offset X")
+  .onChange(updateTexture);
+textureFolder
+  .add(params, "offsetY")
+  .min(-1)
+  .max(1)
+  .step(0.05)
+  .name("Offset Y")
+  .onChange(updateTexture);
+textureFolder
+  .add(params, "rotation")
+  .min(0)
+  .max(Math.PI * 2)
+  .step(0.01)
+  .name("Rotation")
+  .onChange(updateTexture);
+textureFolder.add(params, "wrapS", Object.keys(wrapModes)).name("Wrap S").onChange(updateTexture);
+textureFolder.add(params, "wrapT", Object.keys(wrapModes)).name("Wrap T").onChange(updateTexture);
+textureFolder
+  .add(params, "minFilter", Object.keys(filterModes))
+  .name("Min Filter")
+  .onChange(updateTexture);
+textureFolder
+  .add(params, "magFilter", Object.keys(filterModes))
+  .name("Mag Filter")
+  .onChange(updateTexture);
+
+updateTexture();
+
+const alphaTexture = textureLoader.load("/assets/10-textures-final/textures/door/alpha.jpg");
+const heightTexture = textureLoader.load("/assets/10-textures-final/textures/door/height.jpg");
+const normalTexture = textureLoader.load("/assets/10-textures-final/textures/door/normal.jpg");
+const ambientOcclusionTexture = textureLoader.load(
+  "/assets/10-textures-final/textures/door/ambientOcclusion.jpg",
+);
+const metalnessTexture = textureLoader.load(
+  "/assets/10-textures-final/textures/door/metalness.jpg",
+);
+const roughnessTexture = textureLoader.load(
+  "/assets/10-textures-final/textures/door/roughness.jpg",
+);
 
 /**
  * Object
  */
 const geometry = new THREE.BoxGeometry(1, 1, 1);
-const material = new THREE.MeshStandardMaterial({
-  map: colorTexture,
-  normalMap: normalTexture,
-  roughnessMap: roughnessTexture,
-  metalnessMap: metalnessTexture,
-  aoMap: ambientOcclusionTexture,
-});
+console.log(geometry.attributes);
+const material = new THREE.MeshBasicMaterial({ map: colorTexture });
 const mesh = new THREE.Mesh(geometry, material);
 scene.add(mesh);
-
-// Add ambient light so PBR material is visible
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-scene.add(ambientLight);
-
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-directionalLight.position.set(2, 2, 2);
-scene.add(directionalLight);
 
 /**
  * Sizes

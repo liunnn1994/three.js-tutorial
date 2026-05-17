@@ -17,6 +17,27 @@ const canvas = document.querySelector("canvas.webgl");
 const scene = new THREE.Scene();
 
 /**
+ * Models
+ */
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath("/assets/21-imported-models-final/draco/");
+
+const gltfLoader = new GLTFLoader();
+gltfLoader.setDRACOLoader(dracoLoader);
+
+let mixer = null;
+
+gltfLoader.load("/assets/21-imported-models-final/models/Fox/glTF/Fox.gltf", (gltf) => {
+  gltf.scene.scale.set(0.025, 0.025, 0.025);
+  scene.add(gltf.scene);
+
+  // Animation
+  mixer = new THREE.AnimationMixer(gltf.scene);
+  const action = mixer.clipAction(gltf.animations[2]);
+  action.play();
+});
+
+/**
  * Floor
  */
 const floor = new THREE.Mesh(
@@ -45,51 +66,8 @@ directionalLight.shadow.camera.left = -7;
 directionalLight.shadow.camera.top = 7;
 directionalLight.shadow.camera.right = 7;
 directionalLight.shadow.camera.bottom = -7;
-directionalLight.position.set(5, 5, 5);
+directionalLight.position.set(-5, 5, 0);
 scene.add(directionalLight);
-
-/**
- * Model
- */
-// DRACOLoader
-const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath("/assets/21-imported-models/draco/");
-
-// GLTFLoader
-const gltfLoader = new GLTFLoader();
-gltfLoader.setDRACOLoader(dracoLoader);
-
-let mixer = null;
-
-gltfLoader.load(
-  "/assets/21-imported-models/models/Fox/glTF/Fox.gltf",
-  (gltf) => {
-    // Scale the model
-    gltf.scene.scale.set(0.025, 0.025, 0.025);
-
-    // Add to scene
-    scene.add(gltf.scene);
-
-    // Enable shadows on all meshes
-    gltf.scene.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-      }
-    });
-
-    // Animation
-    mixer = new THREE.AnimationMixer(gltf.scene);
-    const action = mixer.clipAction(gltf.animations[2]);
-    action.play();
-  },
-  (progress) => {
-    console.log("loading progress", progress);
-  },
-  (error) => {
-    console.log("an error happened", error);
-  },
-);
 
 /**
  * Sizes
@@ -148,8 +126,8 @@ const tick = () => {
   const deltaTime = elapsedTime - previousTime;
   previousTime = elapsedTime;
 
-  // Update mixer
-  if (mixer !== null) {
+  // Model animation
+  if (mixer) {
     mixer.update(deltaTime);
   }
 

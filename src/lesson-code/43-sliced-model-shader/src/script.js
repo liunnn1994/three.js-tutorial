@@ -3,7 +3,10 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+import CustomShaderMaterial from "three-custom-shader-material/vanilla";
 import GUI from "lil-gui";
+import slicedVertexShader from "./shaders/sliced/vertex.glsl";
+import slicedFragmentShader from "./shaders/sliced/fragment.glsl";
 
 /**
  * Base
@@ -21,28 +24,47 @@ const scene = new THREE.Scene();
 // Loaders
 const rgbeLoader = new RGBELoader();
 const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath("/assets/43-sliced-model-shader/draco/");
+dracoLoader.setDecoderPath("/assets/43-sliced-model-shader-final/draco/");
 const gltfLoader = new GLTFLoader();
 gltfLoader.setDRACOLoader(dracoLoader);
 
 /**
  * Environment map
  */
-rgbeLoader.load("/assets/43-sliced-model-shader/aerodynamics_workshop.hdr", (environmentMap) => {
-  environmentMap.mapping = THREE.EquirectangularReflectionMapping;
+rgbeLoader.load(
+  "/assets/43-sliced-model-shader-final/aerodynamics_workshop.hdr",
+  (environmentMap) => {
+    environmentMap.mapping = THREE.EquirectangularReflectionMapping;
 
-  scene.background = environmentMap;
-  scene.backgroundBlurriness = 0.5;
-  scene.environment = environmentMap;
-});
+    scene.background = environmentMap;
+    scene.backgroundBlurriness = 0.5;
+    scene.environment = environmentMap;
+  },
+);
 
 /**
  * Sliced model
  */
-// Geometry
-const geometry = new THREE.IcosahedronGeometry(2.5, 5);
-
 // Material
+const uniforms = {
+  uSliceStart: new THREE.Uniform(1.75),
+  uSliceArc: new THREE.Uniform(1.25),
+};
+
+gui.add(uniforms.uSliceStart, "value", -Math.PI, Math.PI, 0.001).name("uSliceStart");
+gui.add(uniforms.uSliceArc, "value", 0, Math.PI * 2, 0.001).name("uSliceArc");
+
+const patchMap = {
+  csm_Slice: {
+    "#include <colorspace_fragment>": `
+            #include <colorspace_fragment>
+
+            if(!gl_FrontFacing)
+                gl_FragColor = vec4(0.75, 0.15, 0.3, 1.0);
+        `,
+  },
+};
+
 const material = new THREE.MeshStandardMaterial({
   metalness: 0.5,
   roughness: 0.25,
@@ -50,9 +72,57 @@ const material = new THREE.MeshStandardMaterial({
   color: "#858080",
 });
 
-// Mesh
-const mesh = new THREE.Mesh(geometry, material);
-scene.add(mesh);
+const slicedMaterial = new CustomShaderMaterial({
+  // CSM
+  baseMaterial: THREE.MeshStandardMaterial,
+  vertexShader: slicedVertexShader,
+  fragmentShader: slicedFragmentShader,
+  uniforms: uniforms,
+  patchMap: patchMap,
+  silent: true,
+
+  // MeshStandardMaterial
+  metalness: 0.5,
+  roughness: 0.25,
+  envMapIntensity: 0.5,
+  color: "#858080",
+  side: THREE.DoubleSide,
+});
+
+const slicedDepthMaterial = new CustomShaderMaterial({
+  // CSM
+  baseMaterial: THREE.MeshDepthMaterial,
+  vertexShader: slicedVertexShader,
+  fragmentShader: slicedFragmentShader,
+  uniforms: uniforms,
+  patchMap: patchMap,
+  silent: true,
+
+  // MeshDepthMaterial
+  depthPacking: THREE.RGBADepthPacking,
+});
+
+// Model
+let model = null;
+gltfLoader.load("/assets/43-sliced-model-shader-final/gears.glb", (gltf) => {
+  model = gltf.scene;
+
+  model.traverse((child) => {
+    if (child.isMesh) {
+      if (child.name === "outerHull") {
+        child.material = slicedMaterial;
+        child.customDepthMaterial = slicedDepthMaterial;
+      } else {
+        child.material = material;
+      }
+
+      child.castShadow = true;
+      child.receiveShadow = true;
+    }
+  });
+
+  scene.add(model);
+});
 
 /**
  * Plane
@@ -141,6 +211,9 @@ const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+
+  // Update model
+  if (model) model.rotation.y = elapsedTime * 0.1;
 
   // Update controls
   controls.update();

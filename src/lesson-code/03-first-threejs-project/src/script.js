@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import GUI from "lil-gui";
 
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
@@ -7,20 +9,98 @@ const canvas = document.querySelector("canvas.webgl");
 const scene = new THREE.Scene();
 
 /**
- * Object
+ * Axes Helper
  */
-const geometry = new THREE.BoxGeometry(1, 1, 1);
+const axesHelper = new THREE.AxesHelper(2);
+scene.add(axesHelper);
+
+/**
+ * Objects
+ */
+const group = new THREE.Group();
+group.scale.y = 2;
+group.rotation.y = 0.2;
+scene.add(group);
+
 const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-const mesh = new THREE.Mesh(geometry, material);
-scene.add(mesh);
+
+const cube1 = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), material);
+cube1.position.x = -1.5;
+group.add(cube1);
+
+const cube2 = new THREE.Mesh(
+  new THREE.BoxGeometry(1, 1, 1),
+  new THREE.MeshBasicMaterial({ color: 0x00ff00 }),
+);
+cube2.position.x = 0;
+group.add(cube2);
+
+const cube3 = new THREE.Mesh(
+  new THREE.BoxGeometry(1, 1, 1),
+  new THREE.MeshBasicMaterial({ color: 0x0000ff }),
+);
+cube3.position.x = 1.5;
+group.add(cube3);
+
+/**
+ * Debug
+ */
+const gui = new GUI();
+const params = {
+  cube1Color: "#ff0000",
+  cube2Color: "#00ff00",
+  cube3Color: "#0000ff",
+  groupVisible: true,
+  axesVisible: true,
+};
+
+gui
+  .addColor(params, "cube1Color")
+  .name("Cube 1 Color")
+  .onChange(() => {
+    material.color.set(params.cube1Color);
+  });
+gui
+  .addColor(params, "cube2Color")
+  .name("Cube 2 Color")
+  .onChange(() => {
+    cube2.material.color.set(params.cube2Color);
+  });
+gui
+  .addColor(params, "cube3Color")
+  .name("Cube 3 Color")
+  .onChange(() => {
+    cube3.material.color.set(params.cube3Color);
+  });
+gui
+  .add(params, "groupVisible")
+  .name("Group Visible")
+  .onChange(() => {
+    group.visible = params.groupVisible;
+  });
+gui
+  .add(params, "axesVisible")
+  .name("Axes Helper")
+  .onChange(() => {
+    axesHelper.visible = params.axesVisible;
+  });
 
 /**
  * Sizes
  */
 const sizes = {
-  width: 800,
-  height: 600,
+  width: window.innerWidth,
+  height: window.innerHeight,
 };
+
+window.addEventListener("resize", () => {
+  sizes.width = window.innerWidth;
+  sizes.height = window.innerHeight;
+  camera.aspect = sizes.width / sizes.height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(sizes.width, sizes.height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+});
 
 /**
  * Camera
@@ -29,6 +109,10 @@ const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height);
 camera.position.z = 3;
 scene.add(camera);
 
+// Controls
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+
 /**
  * Renderer
  */
@@ -36,4 +120,15 @@ const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
 });
 renderer.setSize(sizes.width, sizes.height);
-renderer.render(scene, camera);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+/**
+ * Animate
+ */
+const tick = () => {
+  controls.update();
+  renderer.render(scene, camera);
+  window.requestAnimationFrame(tick);
+};
+
+tick();
