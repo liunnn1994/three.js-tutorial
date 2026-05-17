@@ -1,3 +1,19 @@
+# [1.7.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.6.1...v1.7.0) (2026-05-17)
+
+
+### Bug Fixes
+
+* 🐛 修复过时 api ([dbdbd8f](https://github.com/liunnn1994/three.js-tutorial/commit/dbdbd8fdcd31c83c91ff55b579db0cbbf9ed9d43))
+
+
+### Features
+
+* 🎸 优化代码，合并 *-final ([869b2d8](https://github.com/liunnn1994/three.js-tutorial/commit/869b2d8bdc5682a4eeec9d257b4fa4c739fe8021))
+* 🎸 优化代码块的显示 ([6008379](https://github.com/liunnn1994/three.js-tutorial/commit/6008379e5b7929e30ee7602270ececde84b34aef))
+* 🎸 全部汉化 ([e60d308](https://github.com/liunnn1994/three.js-tutorial/commit/e60d308c555ee7f547caaa7577b60b1a20bab3bc))
+* 🎸 新增 cdn 的选项 ([547b46e](https://github.com/liunnn1994/three.js-tutorial/commit/547b46e0bcc8184d980ad84d693aa28f2698e85f))
+* 🎸 细化教程并修复部分示例问题 ([4eaab9d](https://github.com/liunnn1994/three.js-tutorial/commit/4eaab9d06c0d9cbe45005322274d16fad34cc167))
+
 ## [1.6.1](https://github.com/liunnn1994/three.js-tutorial/compare/v1.6.0...v1.6.1) (2026-05-05)
 
 
