@@ -63,20 +63,15 @@ function resolveGlslIncludes(glslContent, filePath, glslFiles) {
   function resolve(content, currentPath) {
     if (visited.has(currentPath)) return content;
     visited.add(currentPath);
-    return content.replace(
-      /#include\s+([^\n<][^\n]*)/g,
-      (_match, includePath) => {
-        const fileDir = currentPath.substring(0, currentPath.lastIndexOf("/"));
-        const resolved = path.posix.normalize(
-          fileDir + "/" + includePath.trim(),
-        );
-        const included = glslFiles.get(resolved);
-        if (included !== undefined) {
-          return resolve(included, resolved);
-        }
-        return _match;
-      },
-    );
+    return content.replace(/#include\s+([^\n<][^\n]*)/g, (_match, includePath) => {
+      const fileDir = currentPath.substring(0, currentPath.lastIndexOf("/"));
+      const resolved = path.posix.normalize(fileDir + "/" + includePath.trim());
+      const included = glslFiles.get(resolved);
+      if (included !== undefined) {
+        return resolve(included, resolved);
+      }
+      return _match;
+    });
   }
   return resolve(glslContent, filePath);
 }
@@ -106,8 +101,7 @@ function resolveAndInlineJs(entryPath, jsFiles, glslFiles) {
   // Build export name map: resolvedPath → the default import name used by importers
   const exportNameMap = new Map();
   const defaultImportRe = /import\s+(\w+)\s+from\s+['"](\.\.?\/[^'"]+)['"]/g;
-  const namedImportRe =
-    /import\s*\{([^}]+)\}\s*from\s+['"](\.\.?\/[^'"]+)['"]/g;
+  const namedImportRe = /import\s*\{([^}]+)\}\s*from\s+['"](\.\.?\/[^'"]+)['"]/g;
 
   for (const [fp, content] of jsFiles) {
     let m;
@@ -173,14 +167,8 @@ function resolveAndInlineJs(entryPath, jsFiles, glslFiles) {
   for (const filePath of ordered) {
     let content = jsFiles.get(filePath);
     content = inlineGlslImports(content, filePath, glslFiles);
-    content = content.replace(
-      /import\s+\w+\s+from\s+['"]\.\.?\/[^'"]+['"]\s*;?\s*\n?/g,
-      "",
-    );
-    content = content.replace(
-      /import\s*\{[^}]+\}\s*from\s+['"]\.\.?\/[^'"]+['"]\s*;?\s*\n?/g,
-      "",
-    );
+    content = content.replace(/import\s+\w+\s+from\s+['"]\.\.?\/[^'"]+['"]\s*;?\s*\n?/g, "");
+    content = content.replace(/import\s*\{[^}]+\}\s*from\s+['"]\.\.?\/[^'"]+['"]\s*;?\s*\n?/g, "");
     content = content.replace(
       /import\s+(?:\*\s+as\s+\w+|\{[^}]+\}|\w+)\s+from\s+['"](?!\.\.?\/)[^'"]+['"]\s*;?\s*\n?/g,
       "",
@@ -197,14 +185,8 @@ function resolveAndInlineJs(entryPath, jsFiles, glslFiles) {
 
 function rewriteModuleSpecifiers(content) {
   return content
-    .replace(
-      /from\s+['"]three\/addons\/(.+?)['"]/g,
-      "from '/vendor/three/examples/jsm/$1'",
-    )
-    .replace(
-      /from\s+['"]three\/examples\/jsm\/(.+?)['"]/g,
-      "from '/vendor/three/examples/jsm/$1'",
-    )
+    .replace(/from\s+['"]three\/addons\/(.+?)['"]/g, "from '/vendor/three/examples/jsm/$1'")
+    .replace(/from\s+['"]three\/examples\/jsm\/(.+?)['"]/g, "from '/vendor/three/examples/jsm/$1'")
     .replace(/from\s+['"]three['"]/g, "from '/vendor/three.module.js'")
     .replace(/from\s+['"]lil-gui['"]/g, "from '/vendor/lil-gui.esm.js'")
     .replace(/from\s+['"]gsap['"]/g, "from '/vendor/gsap.esm.js'")
@@ -214,10 +196,7 @@ function rewriteModuleSpecifiers(content) {
       /from\s+['"]three-custom-shader-material\/vanilla['"]/g,
       "from '/vendor/three-custom-shader-material-vanilla.esm.js'",
     )
-    .replace(
-      /from\s+['"]three-bvh-csg['"]/g,
-      "from '/vendor/three-bvh-csg.esm.js'",
-    );
+    .replace(/from\s+['"]three-bvh-csg['"]/g, "from '/vendor/three-bvh-csg.esm.js'");
 }
 
 function collectFiles(dir) {
@@ -279,44 +258,25 @@ for (const lesson of lessons) {
   let combinedJs = "";
   for (const [fp, content] of jsFiles) {
     if (fp === "/script.js" || fp === "/script.ts") {
-      const hasLocalImports =
-        /import\s+(?:\w+\s+from\s+)?['"]\.\.?\/[^'"]+['"]/.test(content);
+      const hasLocalImports = /import\s+(?:\w+\s+from\s+)?['"]\.\.?\/[^'"]+['"]/.test(content);
       if (hasLocalImports) {
-        combinedJs = rewriteModuleSpecifiers(
-          resolveAndInlineJs(fp, jsFiles, glslFiles),
-        );
+        combinedJs = rewriteModuleSpecifiers(resolveAndInlineJs(fp, jsFiles, glslFiles));
       } else {
-        combinedJs = rewriteModuleSpecifiers(
-          inlineGlslImports(content, fp, glslFiles),
-        );
+        combinedJs = rewriteModuleSpecifiers(inlineGlslImports(content, fp, glslFiles));
       }
     }
   }
   if (!combinedJs) {
     for (const [fp, content] of jsFiles) {
-      combinedJs +=
-        rewriteModuleSpecifiers(inlineGlslImports(content, fp, glslFiles)) +
-        "\n";
+      combinedJs += rewriteModuleSpecifiers(inlineGlslImports(content, fp, glslFiles)) + "\n";
     }
   }
 
   const previewHtml = rawHtml
-    .replace(
-      /<link\s+rel=['"]stylesheet['"]\s+href=['"]\.\/style\.css['"]\s*\/?>/gi,
-      "",
-    )
-    .replace(
-      /<script\s+type=['"]module['"]\s+src=['"]\.\/script\.js['"]\s*><\/script>/gi,
-      "",
-    )
-    .replace(
-      "</head>",
-      `<style>${normalizeCss}\n${webglBaseCss}\n${rawCss}</style></head>`,
-    )
-    .replace(
-      "</body>",
-      `<script type="module">\n${combinedJs}\n</script></body>`,
-    );
+    .replace(/<link\s+rel=['"]stylesheet['"]\s+href=['"]\.\/style\.css['"]\s*\/?>/gi, "")
+    .replace(/<script\s+type=['"]module['"]\s+src=['"]\.\/script\.js['"]\s*><\/script>/gi, "")
+    .replace("</head>", `<style>${normalizeCss}\n${webglBaseCss}\n${rawCss}</style></head>`)
+    .replace("</body>", `<script type="module">\n${combinedJs}\n</script></body>`);
 
   let finalHtml = previewHtml;
 
@@ -337,15 +297,9 @@ for (const lesson of lessons) {
   if (!finalHtml.includes("normalize.css")) {
     const allCss = `${normalizeCss}\n${webglBaseCss}\n${rawCss}`;
     if (finalHtml.includes("</head>")) {
-      finalHtml = finalHtml.replace(
-        "</head>",
-        `<style>${allCss}</style></head>`,
-      );
+      finalHtml = finalHtml.replace("</head>", `<style>${allCss}</style></head>`);
     } else {
-      finalHtml = finalHtml.replace(
-        "<body>",
-        `<head><style>${allCss}</style></head><body>`,
-      );
+      finalHtml = finalHtml.replace("<body>", `<head><style>${allCss}</style></head><body>`);
     }
   }
 

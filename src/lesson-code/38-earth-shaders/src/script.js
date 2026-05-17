@@ -7,42 +7,48 @@ import atmosphereVertexShader from "./shaders/atmosphere/vertex.glsl";
 import atmosphereFragmentShader from "./shaders/atmosphere/fragment.glsl";
 
 /**
- * Base
+ * 基础
  */
-// Debug
+// 调试
 const gui = new GUI();
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
-// Loaders
+// 加载器
 const textureLoader = new THREE.TextureLoader();
 
 /**
- * Earth
+ * 地球
  */
 const earthParameters = {};
 earthParameters.atmosphereDayColor = "#00aaff";
 earthParameters.atmosphereTwilightColor = "#ff6600";
 
-gui.addColor(earthParameters, "atmosphereDayColor").onChange(() => {
-  earthMaterial.uniforms.uAtmosphereDayColor.value.set(earthParameters.atmosphereDayColor);
-  atmosphereMaterial.uniforms.uAtmosphereDayColor.value.set(earthParameters.atmosphereDayColor);
-});
+gui
+  .addColor(earthParameters, "atmosphereDayColor")
+  .name("大气白天颜色")
+  .onChange(() => {
+    earthMaterial.uniforms.uAtmosphereDayColor.value.set(earthParameters.atmosphereDayColor);
+    atmosphereMaterial.uniforms.uAtmosphereDayColor.value.set(earthParameters.atmosphereDayColor);
+  });
 
-gui.addColor(earthParameters, "atmosphereTwilightColor").onChange(() => {
-  earthMaterial.uniforms.uAtmosphereTwilightColor.value.set(
-    earthParameters.atmosphereTwilightColor,
-  );
-  atmosphereMaterial.uniforms.uAtmosphereTwilightColor.value.set(
-    earthParameters.atmosphereTwilightColor,
-  );
-});
+gui
+  .addColor(earthParameters, "atmosphereTwilightColor")
+  .name("大气黄昏颜色")
+  .onChange(() => {
+    earthMaterial.uniforms.uAtmosphereTwilightColor.value.set(
+      earthParameters.atmosphereTwilightColor,
+    );
+    atmosphereMaterial.uniforms.uAtmosphereTwilightColor.value.set(
+      earthParameters.atmosphereTwilightColor,
+    );
+  });
 
-// Textures
+// 纹理
 const earthDayTexture = textureLoader.load("/assets/38-earth-shaders-final/earth/day.jpg");
 earthDayTexture.colorSpace = THREE.SRGBColorSpace;
 earthDayTexture.anisotropy = 8;
@@ -56,7 +62,7 @@ const earthSpecularCloudsTexture = textureLoader.load(
 );
 earthSpecularCloudsTexture.anisotropy = 8;
 
-// Mesh
+// 网格
 const earthGeometry = new THREE.SphereGeometry(2, 64, 64);
 const earthMaterial = new THREE.ShaderMaterial({
   vertexShader: earthVertexShader,
@@ -75,7 +81,7 @@ const earthMaterial = new THREE.ShaderMaterial({
 const earth = new THREE.Mesh(earthGeometry, earthMaterial);
 scene.add(earth);
 
-// Atmosphere
+// 大气层
 const atmosphereMaterial = new THREE.ShaderMaterial({
   side: THREE.BackSide,
   transparent: true,
@@ -95,41 +101,41 @@ atmosphere.scale.set(1.04, 1.04, 1.04);
 scene.add(atmosphere);
 
 /**
- * Sun
+ * 太阳
  */
-// Coordinates
+// 坐标
 const sunSpherical = new THREE.Spherical(1, Math.PI * 0.5, 0.5);
 const sunDirection = new THREE.Vector3();
 
-// Debug
+// 调试
 const debugSun = new THREE.Mesh(
   new THREE.IcosahedronGeometry(0.1, 2),
   new THREE.MeshBasicMaterial(),
 );
 scene.add(debugSun);
 
-// Update
+// 更新
 const updateSun = () => {
-  // Sun direction
+  // 太阳方向
   sunDirection.setFromSpherical(sunSpherical);
 
-  // Debug
+  // 调试
   debugSun.position.copy(sunDirection).multiplyScalar(5);
 
-  // Uniforms
+  // Uniform 变量
   earthMaterial.uniforms.uSunDirection.value.copy(sunDirection);
   atmosphereMaterial.uniforms.uSunDirection.value.copy(sunDirection);
 };
 
 updateSun();
 
-// Tweaks
-gui.add(sunSpherical, "phi").min(0).max(Math.PI).onChange(updateSun);
+// 调试参数
+gui.add(sunSpherical, "phi").min(0).max(Math.PI).name("极角(phi)").onChange(updateSun);
 
-gui.add(sunSpherical, "theta").min(-Math.PI).max(Math.PI).onChange(updateSun);
+gui.add(sunSpherical, "theta").min(-Math.PI).max(Math.PI).name("方位角(theta)").onChange(updateSun);
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -138,36 +144,36 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
   sizes.pixelRatio = Math.min(window.devicePixelRatio, 2);
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(sizes.pixelRatio);
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(25, sizes.width / sizes.height, 0.1, 100);
 camera.position.x = 12;
 camera.position.y = 5;
 camera.position.z = 4;
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -178,7 +184,7 @@ renderer.setPixelRatio(sizes.pixelRatio);
 renderer.setClearColor("#000011");
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 
@@ -187,13 +193,13 @@ const tick = () => {
 
   earth.rotation.y = elapsedTime * 0.1;
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

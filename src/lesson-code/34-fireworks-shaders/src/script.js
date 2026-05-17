@@ -7,22 +7,22 @@ import fireworkVertexShader from "./shaders/firework/vertex.glsl";
 import fireworkFragmentShader from "./shaders/firework/fragment.glsl";
 
 /**
- * Base
+ * 基础
  */
-// Debug
+// 调试
 const gui = new GUI({ width: 340 });
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
-// Loaders
+// 加载器
 const textureLoader = new THREE.TextureLoader();
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -35,35 +35,35 @@ sizes.resolution = new THREE.Vector2(
 );
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
   sizes.pixelRatio = Math.min(window.devicePixelRatio, 2);
   sizes.resolution.set(sizes.width * sizes.pixelRatio, sizes.height * sizes.pixelRatio);
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(sizes.pixelRatio);
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(25, sizes.width / sizes.height, 0.1, 100);
 camera.position.set(1.5, 0, 6);
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -73,7 +73,7 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(sizes.pixelRatio);
 
 /**
- * Fireworks
+ * 烟花
  */
 const textures = [
   textureLoader.load("/assets/34-fireworks-shaders-final/particles/1.png"),
@@ -87,7 +87,7 @@ const textures = [
 ];
 
 const createFirework = (count, position, size, texture, radius, color) => {
-  // Geometry
+  // 几何体
   const positionsArray = new Float32Array(count * 3);
   const sizesArray = new Float32Array(count);
   const timeMultipliersArray = new Float32Array(count);
@@ -120,7 +120,7 @@ const createFirework = (count, position, size, texture, radius, color) => {
     new THREE.Float32BufferAttribute(timeMultipliersArray, 1),
   );
 
-  // Material
+  // 材质
   texture.flipY = false;
   const material = new THREE.ShaderMaterial({
     vertexShader: fireworkVertexShader,
@@ -137,19 +137,19 @@ const createFirework = (count, position, size, texture, radius, color) => {
     blending: THREE.AdditiveBlending,
   });
 
-  // Points
+  // 粒子点
   const firework = new THREE.Points(geometry, material);
   firework.position.copy(position);
   scene.add(firework);
 
-  // Destroy
+  // 销毁
   const destroy = () => {
     scene.remove(firework);
     geometry.dispose();
     material.dispose();
   };
 
-  // Animate
+  // 动画
   gsap.to(material.uniforms.uProgress, {
     value: 1,
     ease: "linear",
@@ -178,7 +178,7 @@ createRandomFirework();
 window.addEventListener("click", createRandomFirework);
 
 /**
- * Sky
+ * 天空
  */
 const sky = new Sky();
 sky.scale.setScalar(450000);
@@ -214,27 +214,33 @@ const updateSky = () => {
   renderer.render(scene, camera);
 };
 
-gui.add(skyParameters, "turbidity", 0.0, 20.0, 0.1).onChange(updateSky);
-gui.add(skyParameters, "rayleigh", 0.0, 4, 0.001).onChange(updateSky);
-gui.add(skyParameters, "mieCoefficient", 0.0, 0.1, 0.001).onChange(updateSky);
-gui.add(skyParameters, "mieDirectionalG", 0.0, 1, 0.001).onChange(updateSky);
-gui.add(skyParameters, "elevation", -3, 10, 0.01).onChange(updateSky);
-gui.add(skyParameters, "azimuth", -180, 180, 0.1).onChange(updateSky);
-gui.add(skyParameters, "exposure", 0, 1, 0.0001).onChange(updateSky);
+gui.add(skyParameters, "turbidity", 0.0, 20.0, 0.1).name("浑浊度(turbidity)").onChange(updateSky);
+gui.add(skyParameters, "rayleigh", 0.0, 4, 0.001).name("瑞利散射(rayleigh)").onChange(updateSky);
+gui
+  .add(skyParameters, "mieCoefficient", 0.0, 0.1, 0.001)
+  .name("米氏系数(mieCoefficient)")
+  .onChange(updateSky);
+gui
+  .add(skyParameters, "mieDirectionalG", 0.0, 1, 0.001)
+  .name("米氏方向性(mieDirectionalG)")
+  .onChange(updateSky);
+gui.add(skyParameters, "elevation", -3, 10, 0.01).name("仰角(elevation)").onChange(updateSky);
+gui.add(skyParameters, "azimuth", -180, 180, 0.1).name("方位角(azimuth)").onChange(updateSky);
+gui.add(skyParameters, "exposure", 0, 1, 0.0001).name("曝光度(exposure)").onChange(updateSky);
 
 updateSky();
 
 /**
- * Animate
+ * 动画循环
  */
 const tick = () => {
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

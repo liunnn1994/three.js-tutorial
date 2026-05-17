@@ -3,15 +3,15 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import GUI from "lil-gui";
 
 /**
- * Base
+ * 基础
  */
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
-// Object
+// 物体
 const mesh = new THREE.Mesh(
   new THREE.BoxGeometry(1, 1, 1, 5, 5, 5),
   new THREE.MeshBasicMaterial({ color: 0xff0000 }),
@@ -19,7 +19,7 @@ const mesh = new THREE.Mesh(
 scene.add(mesh);
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -36,18 +36,18 @@ window.addEventListener("resize", () => {
 });
 
 /**
- * Camera
+ * 相机
  */
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
 camera.position.z = 3;
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Debug
+ * 调试
  */
 const gui = new GUI();
 const params = {
@@ -59,7 +59,7 @@ const params = {
 
 gui
   .add(params, "cameraType", { perspective: "perspective", orthographic: "orthographic" })
-  .name("Camera Type")
+  .name("相机类型")
   .onChange((value) => {
     if (value === "orthographic") {
       const aspectRatio = sizes.width / sizes.height;
@@ -80,21 +80,21 @@ gui
   .min(10)
   .max(120)
   .step(1)
-  .name("FOV")
+  .name("视野角度(FOV)")
   .onChange(() => {
     camera.fov = params.fov;
     camera.updateProjectionMatrix();
   });
 gui
   .addColor(params, "meshColor")
-  .name("Mesh Color")
+  .name("网格颜色")
   .onChange(() => {
     mesh.material.color.set(params.meshColor);
   });
-gui.add(params, "cursorSensitivity").min(0.1).max(3).step(0.1).name("Cursor Sensitivity");
+gui.add(params, "cursorSensitivity").min(0.1).max(3).step(0.1).name("光标灵敏度");
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -103,7 +103,7 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
- * Cursor
+ * 光标
  */
 const cursor = {
   x: 0,
@@ -116,7 +116,7 @@ window.addEventListener("mousemove", (event) => {
 });
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 

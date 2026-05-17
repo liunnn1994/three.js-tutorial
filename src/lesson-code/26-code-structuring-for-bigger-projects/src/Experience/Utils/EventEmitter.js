@@ -5,7 +5,7 @@ export default class EventEmitter {
   }
 
   on(_names, callback) {
-    // Errors
+    // 错误
     if (typeof _names === "undefined" || _names === "") {
       console.warn("wrong names");
       return false;
@@ -16,22 +16,22 @@ export default class EventEmitter {
       return false;
     }
 
-    // Resolve names
+    // 解析名称
     const names = this.resolveNames(_names);
 
-    // Each name
+    // 每个名称
     names.forEach((_name) => {
-      // Resolve name
+      // 解析名称
       const name = this.resolveName(_name);
 
-      // Create namespace if not exist
+      // 如果不存在则创建命名空间
       if (!(this.callbacks[name.namespace] instanceof Object)) this.callbacks[name.namespace] = {};
 
-      // Create callback if not exist
+      // 如果不存在则创建回调
       if (!(this.callbacks[name.namespace][name.value] instanceof Array))
         this.callbacks[name.namespace][name.value] = [];
 
-      // Add callback
+      // 添加回调
       this.callbacks[name.namespace][name.value].push(callback);
     });
 
@@ -39,30 +39,30 @@ export default class EventEmitter {
   }
 
   off(_names) {
-    // Errors
+    // 错误
     if (typeof _names === "undefined" || _names === "") {
       console.warn("wrong name");
       return false;
     }
 
-    // Resolve names
+    // 解析名称
     const names = this.resolveNames(_names);
 
-    // Each name
+    // 每个名称
     names.forEach((_name) => {
-      // Resolve name
+      // 解析名称
       const name = this.resolveName(_name);
 
-      // Remove namespace
+      // 移除命名空间
       if (name.namespace !== "base" && name.value === "") {
         delete this.callbacks[name.namespace];
       }
 
-      // Remove specific callback in namespace
+      // 移除命名空间中的特定回调
       else {
-        // Default
+        // 默认
         if (name.namespace === "base") {
-          // Try to remove from each namespace
+          // 尝试从每个命名空间中移除
           for (const namespace in this.callbacks) {
             if (
               this.callbacks[namespace] instanceof Object &&
@@ -70,21 +70,21 @@ export default class EventEmitter {
             ) {
               delete this.callbacks[namespace][name.value];
 
-              // Remove namespace if empty
+              // 如果为空则移除命名空间
               if (Object.keys(this.callbacks[namespace]).length === 0)
                 delete this.callbacks[namespace];
             }
           }
         }
 
-        // Specified namespace
+        // 指定命名空间
         else if (
           this.callbacks[name.namespace] instanceof Object &&
           this.callbacks[name.namespace][name.value] instanceof Array
         ) {
           delete this.callbacks[name.namespace][name.value];
 
-          // Remove namespace if empty
+          // 如果为空则移除命名空间
           if (Object.keys(this.callbacks[name.namespace]).length === 0)
             delete this.callbacks[name.namespace];
         }
@@ -95,7 +95,7 @@ export default class EventEmitter {
   }
 
   trigger(_name, _args) {
-    // Errors
+    // 错误
     if (typeof _name === "undefined" || _name === "") {
       console.warn("wrong name");
       return false;
@@ -104,18 +104,18 @@ export default class EventEmitter {
     let finalResult = null;
     let result = null;
 
-    // Default args
+    // 默认参数
     const args = !(_args instanceof Array) ? [] : _args;
 
-    // Resolve names (should on have one event)
+    // 解析名称
     let name = this.resolveNames(_name);
 
-    // Resolve name
+    // 解析名称
     name = this.resolveName(name[0]);
 
-    // Default namespace
+    // 默认命名空间
     if (name.namespace === "base") {
-      // Try to find callback in each namespace
+      // 尝试在每个命名空间中查找回调
       for (const namespace in this.callbacks) {
         if (
           this.callbacks[namespace] instanceof Object &&
@@ -132,7 +132,7 @@ export default class EventEmitter {
       }
     }
 
-    // Specified namespace
+    // 指定命名空间
     else if (this.callbacks[name.namespace] instanceof Object) {
       if (name.value === "") {
         console.warn("wrong name");
@@ -166,7 +166,7 @@ export default class EventEmitter {
     newName.value = parts[0];
     newName.namespace = "base"; // Base namespace
 
-    // Specified namespace
+    // 指定命名空间
     if (parts.length > 1 && parts[1] !== "") {
       newName.namespace = parts[1];
     }

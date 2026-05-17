@@ -12,13 +12,13 @@ void main()
 {
     vec4 particle = texture(uParticlesTexture, aParticlesUv);
 
-    // Final position
+    // 最终位置
     vec4 modelPosition = modelMatrix * vec4(particle.xyz, 1.0);
     vec4 viewPosition = viewMatrix * modelPosition;
     vec4 projectedPosition = projectionMatrix * viewPosition;
     gl_Position = projectedPosition;
 
-    // Point size
+    // 点大小
     float sizeIn = smoothstep(0.0, 0.1, particle.a);
     float sizeOut = 1.0 - smoothstep(0.7, 1.0, particle.a);
     float size = min(sizeIn, sizeOut);
@@ -26,6 +26,6 @@ void main()
     gl_PointSize = size * aSize * uSize * uResolution.y;
     gl_PointSize *= (1.0 / - viewPosition.z);
 
-    // Varyings
+    // varying 变量
     vColor = aColor;
 }

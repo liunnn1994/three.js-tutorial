@@ -4,19 +4,19 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import GUI from "lil-gui";
 
 /**
- * Base
+ * 基础
  */
-// Debug
+// 调试
 const gui = new GUI();
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
 /**
- * Objects
+ * 对象
  */
 const object1 = new THREE.Mesh(
   new THREE.SphereGeometry(0.5, 16, 16),
@@ -38,7 +38,7 @@ object3.position.x = 2;
 scene.add(object1, object2, object3);
 
 /**
- * Raycaster
+ * 射线投射
  */
 const raycaster = new THREE.Raycaster();
 let currentIntersect = null;
@@ -49,7 +49,7 @@ rayDirection.normalize();
 // raycaster.set(rayOrigin, rayDirection)
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -57,21 +57,21 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
 /**
- * Mouse
+ * 鼠标
  */
 const mouse = new THREE.Vector2();
 
@@ -99,19 +99,19 @@ window.addEventListener("click", () => {
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
 camera.position.z = 3;
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -120,19 +120,19 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
- * Lights
+ * 灯光
  */
-// Ambient light
+// 环境光
 const ambientLight = new THREE.AmbientLight("#ffffff", 0.9);
 scene.add(ambientLight);
 
-// Directional light
+// 平行光
 const directionalLight = new THREE.DirectionalLight("#ffffff", 2.1);
 directionalLight.position.set(1, 2, 3);
 scene.add(directionalLight);
 
 /**
- * Model
+ * 模型
  */
 const gltfLoader = new GLTFLoader();
 
@@ -147,19 +147,19 @@ gltfLoader.load(
 );
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  // Animate objects
+  // 动画对象
   object1.position.y = Math.sin(elapsedTime * 0.3) * 1.5;
   object2.position.y = Math.sin(elapsedTime * 0.8) * 1.5;
   object3.position.y = Math.sin(elapsedTime * 1.4) * 1.5;
 
-  // Cast a fixed ray
+  // 投射固定射线
   // const rayOrigin = new THREE.Vector3(- 3, 0, 0)
   // const rayDirection = new THREE.Vector3(1, 0, 0)
   // rayDirection.normalize()
@@ -179,7 +179,7 @@ const tick = () => {
   //     intersect.object.material.color.set('#0000ff')
   // }
 
-  // Cast a ray from the mouse
+  // 从鼠标位置投射射线
   // raycaster.setFromCamera(mouse, camera)
 
   // const objectsToTest = [object1, object2, object3]
@@ -198,7 +198,7 @@ const tick = () => {
   //     }
   // }
 
-  // Cast a ray from the mouse and handle events
+  // 从鼠标投射射线并处理事件
   raycaster.setFromCamera(mouse, camera);
 
   const objectsToTest = [object1, object2, object3];
@@ -218,7 +218,7 @@ const tick = () => {
     currentIntersect = null;
   }
 
-  // Test intersect with a model
+  // 测试与模型的相交
   if (model) {
     const modelIntersects = raycaster.intersectObject(model);
 
@@ -229,13 +229,13 @@ const tick = () => {
     }
   }
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

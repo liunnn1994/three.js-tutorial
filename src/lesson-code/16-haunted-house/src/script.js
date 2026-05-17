@@ -3,19 +3,19 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import GUI from "lil-gui";
 
 /**
- * Base
+ * 基础
  */
-// Debug
+// 调试
 const gui = new GUI();
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
 /**
- * Textures
+ * 纹理
  */
 const textureLoader = new THREE.TextureLoader();
 
@@ -86,13 +86,13 @@ grassNormalTexture.wrapT = THREE.RepeatWrapping;
 grassRoughnessTexture.wrapT = THREE.RepeatWrapping;
 
 /**
- * House
+ * 房屋
  */
-// House container
+// 房屋容器
 const house = new THREE.Group();
 scene.add(house);
 
-// Walls
+// 墙壁
 const walls = new THREE.Mesh(
   new THREE.BoxGeometry(4, 2.5, 4),
   new THREE.MeshStandardMaterial({
@@ -105,7 +105,7 @@ const walls = new THREE.Mesh(
 walls.position.y = 1.25;
 house.add(walls);
 
-// Roof
+// 屋顶
 const roof = new THREE.Mesh(
   new THREE.ConeGeometry(3.5, 1, 4),
   new THREE.MeshStandardMaterial({ color: "#b35f45" }),
@@ -114,7 +114,7 @@ roof.rotation.y = Math.PI * 0.25;
 roof.position.y = 2.5 + 0.5;
 house.add(roof);
 
-// Door
+// 门
 const door = new THREE.Mesh(
   new THREE.PlaneGeometry(2.2, 2.2, 100, 100),
   new THREE.MeshStandardMaterial({
@@ -133,7 +133,7 @@ door.position.y = 1;
 door.position.z = 2 + 0.01;
 house.add(door);
 
-// Bushes
+// 灌木
 const bushGeometry = new THREE.SphereGeometry(1, 16, 16);
 const bushMaterial = new THREE.MeshStandardMaterial({ color: "#89c854" });
 
@@ -155,7 +155,7 @@ bush4.position.set(-1, 0.05, 2.6);
 
 house.add(bush1, bush2, bush3, bush4);
 
-// Graves
+// 墓碑
 const graves = new THREE.Group();
 scene.add(graves);
 
@@ -163,27 +163,27 @@ const graveGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.2);
 const graveMaterial = new THREE.MeshStandardMaterial({ color: "#b2b6b1" });
 
 for (let i = 0; i < 50; i++) {
-  const angle = Math.random() * Math.PI * 2; // Random angle
-  const radius = 3 + Math.random() * 6; // Random radius
-  const x = Math.cos(angle) * radius; // Get the x position using cosinus
-  const z = Math.sin(angle) * radius; // Get the z position using sinus
+  const angle = Math.random() * Math.PI * 2; // 随机角度
+  const radius = 3 + Math.random() * 6; // 随机半径
+  const x = Math.cos(angle) * radius; // 使用余弦获取 x 位置
+  const z = Math.sin(angle) * radius; // 使用正弦获取 z 位置
 
-  // Create the mesh
+  // 创建网格
   const grave = new THREE.Mesh(graveGeometry, graveMaterial);
   grave.castShadow = true;
 
-  // Position
+  // 位置
   grave.position.set(x, 0.3, z);
 
-  // Rotation
+  // 旋转
   grave.rotation.z = (Math.random() - 0.5) * 0.4;
   grave.rotation.y = (Math.random() - 0.5) * 0.4;
 
-  // Add to the graves container
+  // 添加到墓碑容器
   graves.add(grave);
 }
 
-// Floor
+// 地板
 const floor = new THREE.Mesh(
   new THREE.PlaneGeometry(20, 20),
   new THREE.MeshStandardMaterial({
@@ -198,35 +198,35 @@ floor.position.y = 0;
 scene.add(floor);
 
 /**
- * Lights
+ * 灯光
  */
-// Ambient light
+// 环境光
 const ambientLight = new THREE.AmbientLight("#b9d5ff", 0.12);
-gui.add(ambientLight, "intensity").min(0).max(1).step(0.001);
+gui.add(ambientLight, "intensity").min(0).max(1).step(0.001).name("环境光强度");
 scene.add(ambientLight);
 
-// Directional light
+// 平行光
 const moonLight = new THREE.DirectionalLight("#b9d5ff", 0.26);
 moonLight.position.set(4, 5, -2);
-gui.add(moonLight, "intensity").min(0).max(1).step(0.001);
-gui.add(moonLight.position, "x").min(-5).max(5).step(0.001);
-gui.add(moonLight.position, "y").min(-5).max(5).step(0.001);
-gui.add(moonLight.position, "z").min(-5).max(5).step(0.001);
+gui.add(moonLight, "intensity").min(0).max(1).step(0.001).name("月光强度");
+gui.add(moonLight.position, "x").min(-5).max(5).step(0.001).name("位置 X");
+gui.add(moonLight.position, "y").min(-5).max(5).step(0.001).name("位置 Y");
+gui.add(moonLight.position, "z").min(-5).max(5).step(0.001).name("位置 Z");
 scene.add(moonLight);
 
-// Door light
+// 门灯
 const doorLight = new THREE.PointLight("#ff7d46", 3, 7);
 doorLight.position.set(0, 2.2, 2.7);
 house.add(doorLight);
 
 /**
- * Fog
+ * 雾
  */
 const fog = new THREE.Fog("#262837", 1, 15);
 scene.fog = fog;
 
 /**
- * Ghosts
+ * 幽灵
  */
 const ghost1 = new THREE.PointLight("#ff00ff", 6, 3);
 scene.add(ghost1);
@@ -238,7 +238,7 @@ const ghost3 = new THREE.PointLight("#ffff00", 6, 3);
 scene.add(ghost3);
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -246,35 +246,35 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
 camera.position.x = 4;
 camera.position.y = 2;
 camera.position.z = 5;
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -284,7 +284,7 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
- * Shadows
+ * 阴影
  */
 renderer.shadowMap.enabled = true;
 
@@ -325,14 +325,14 @@ ghost3.shadow.camera.far = 7;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  // Ghosts
+  // 幽灵
   const ghost1Angle = elapsedTime * 0.5;
   ghost1.position.x = Math.cos(ghost1Angle) * 4;
   ghost1.position.z = Math.sin(ghost1Angle) * 4;
@@ -348,13 +348,13 @@ const tick = () => {
   ghost3.position.z = Math.sin(ghost3Angle) * (7 + Math.sin(elapsedTime * 0.5));
   ghost3.position.y = Math.sin(elapsedTime * 4) + Math.sin(elapsedTime * 2.5);
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

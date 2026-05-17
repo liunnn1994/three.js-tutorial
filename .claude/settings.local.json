@@ -37,7 +37,9 @@
       "Bash(npx esbuild *)",
       "Bash(grep -v \"^$\")",
       "Bash(git *)",
-      "Bash(gh run *)"
+      "Bash(gh run *)",
+      "Bash(cat)",
+      "Read(//tmp/**)"
     ]
   }
 }

@@ -5,7 +5,7 @@ import GUI from "lil-gui";
 import * as CANNON from "cannon-es";
 
 /**
- * Debug
+ * 调试
  */
 const gui = new GUI();
 const debugObject = {};
@@ -18,7 +18,7 @@ debugObject.createSphere = () => {
   });
 };
 
-gui.add(debugObject, "createSphere");
+gui.add(debugObject, "createSphere").name("创建球体");
 
 debugObject.createBox = () => {
   createBox(Math.random(), Math.random(), Math.random(), {
@@ -27,34 +27,34 @@ debugObject.createBox = () => {
     z: (Math.random() - 0.5) * 3,
   });
 };
-gui.add(debugObject, "createBox");
+gui.add(debugObject, "createBox").name("创建立方体");
 
-// Reset
+// 重置
 debugObject.reset = () => {
   for (const object of objectsToUpdate) {
-    // Remove body
+    // 移除刚体
     object.body.removeEventListener("collide", playHitSound);
     world.removeBody(object.body);
 
-    // Remove mesh
+    // 移除网格
     scene.remove(object.mesh);
   }
 
   objectsToUpdate.splice(0, objectsToUpdate.length);
 };
-gui.add(debugObject, "reset");
+gui.add(debugObject, "reset").name("重置");
 
 /**
- * Base
+ * 基础
  */
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
 /**
- * Sounds
+ * 音效
  */
 const hitSound = new Audio("/assets/20-physics-final/sounds/hit.mp3");
 
@@ -69,7 +69,7 @@ const playHitSound = (collision) => {
 };
 
 /**
- * Textures
+ * 纹理
  */
 const textureLoader = new THREE.TextureLoader();
 const cubeTextureLoader = new THREE.CubeTextureLoader();
@@ -84,14 +84,14 @@ const environmentMapTexture = cubeTextureLoader.load([
 ]);
 
 /**
- * Physics
+ * 物理
  */
 const world = new CANNON.World();
 world.broadphase = new CANNON.SAPBroadphase(world);
 world.allowSleep = true;
 world.gravity.set(0, -9.82, 0);
 
-// Default material
+// 默认材质
 const defaultMaterial = new CANNON.Material("default");
 const defaultContactMaterial = new CANNON.ContactMaterial(defaultMaterial, defaultMaterial, {
   friction: 0.1,
@@ -99,7 +99,7 @@ const defaultContactMaterial = new CANNON.ContactMaterial(defaultMaterial, defau
 });
 world.defaultContactMaterial = defaultContactMaterial;
 
-// Floor
+// 地板
 const floorShape = new CANNON.Plane();
 const floorBody = new CANNON.Body();
 floorBody.mass = 0;
@@ -108,11 +108,11 @@ floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(-1, 0, 0), Math.PI * 0.5);
 world.addBody(floorBody);
 
 /**
- * Utils
+ * 工具
  */
 const objectsToUpdate = [];
 
-// Create sphere
+// 创建球体
 const sphereGeometry = new THREE.SphereGeometry(1, 20, 20);
 const sphereMaterial = new THREE.MeshStandardMaterial({
   metalness: 0.3,
@@ -122,14 +122,14 @@ const sphereMaterial = new THREE.MeshStandardMaterial({
 });
 
 const createSphere = (radius, position) => {
-  // Three.js mesh
+  // 三维网格
   const mesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
   mesh.castShadow = true;
   mesh.scale.set(radius, radius, radius);
   mesh.position.copy(position);
   scene.add(mesh);
 
-  // Cannon.js body
+  // Cannon.js 刚体
   const shape = new CANNON.Sphere(radius);
 
   const body = new CANNON.Body({
@@ -142,11 +142,11 @@ const createSphere = (radius, position) => {
   body.addEventListener("collide", playHitSound);
   world.addBody(body);
 
-  // Save in objects
+  // 保存到对象中
   objectsToUpdate.push({ mesh, body });
 };
 
-// Create box
+// 创建立方体
 const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
 const boxMaterial = new THREE.MeshStandardMaterial({
   metalness: 0.3,
@@ -155,14 +155,14 @@ const boxMaterial = new THREE.MeshStandardMaterial({
   envMapIntensity: 0.5,
 });
 const createBox = (width, height, depth, position) => {
-  // Three.js mesh
+  // 三维网格
   const mesh = new THREE.Mesh(boxGeometry, boxMaterial);
   mesh.scale.set(width, height, depth);
   mesh.castShadow = true;
   mesh.position.copy(position);
   scene.add(mesh);
 
-  // Cannon.js body
+  // Cannon.js 刚体
   const shape = new CANNON.Box(new CANNON.Vec3(width * 0.5, height * 0.5, depth * 0.5));
 
   const body = new CANNON.Body({
@@ -175,14 +175,14 @@ const createBox = (width, height, depth, position) => {
   body.addEventListener("collide", playHitSound);
   world.addBody(body);
 
-  // Save in objects
+  // 保存到对象中
   objectsToUpdate.push({ mesh, body });
 };
 
 createBox(1, 1.5, 2, { x: 0, y: 3, z: 0 });
 
 /**
- * Floor
+ * 地板
  */
 const floor = new THREE.Mesh(
   new THREE.PlaneGeometry(10, 10),
@@ -199,7 +199,7 @@ floor.rotation.x = -Math.PI * 0.5;
 scene.add(floor);
 
 /**
- * Lights
+ * 灯光
  */
 const ambientLight = new THREE.AmbientLight(0xffffff, 2.1);
 scene.add(ambientLight);
@@ -216,7 +216,7 @@ directionalLight.position.set(5, 5, 5);
 scene.add(directionalLight);
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -224,33 +224,33 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
 camera.position.set(-3, 3, 3);
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -261,7 +261,7 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 let oldElapsedTime = 0;
@@ -271,7 +271,7 @@ const tick = () => {
   const deltaTime = elapsedTime - oldElapsedTime;
   oldElapsedTime = elapsedTime;
 
-  // Update physics
+  // 更新物理
   world.step(1 / 60, deltaTime, 3);
 
   for (const object of objectsToUpdate) {
@@ -279,13 +279,13 @@ const tick = () => {
     object.mesh.quaternion.copy(object.body.quaternion);
   }
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

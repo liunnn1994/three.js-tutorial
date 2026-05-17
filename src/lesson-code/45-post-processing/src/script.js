@@ -13,26 +13,26 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass.js";
 
 /**
- * Base
+ * 基础
  */
-// Debug
+// 调试
 const gui = new GUI();
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
 /**
- * Loaders
+ * 加载器
  */
 const gltfLoader = new GLTFLoader();
 const cubeTextureLoader = new THREE.CubeTextureLoader();
 const textureLoader = new THREE.TextureLoader();
 
 /**
- * Update all materials
+ * 更新所有材质
  */
 const updateAllMaterials = () => {
   scene.traverse((child) => {
@@ -46,7 +46,7 @@ const updateAllMaterials = () => {
 };
 
 /**
- * Environment map
+ * 环境贴图
  */
 const environmentMap = cubeTextureLoader.load([
   "/assets/45-post-processing-final/textures/environmentMaps/0/px.jpg",
@@ -62,7 +62,7 @@ scene.background = environmentMap;
 scene.environment = environmentMap;
 
 /**
- * Models
+ * 模型
  */
 gltfLoader.load(
   "/assets/45-post-processing-final/models/DamagedHelmet/glTF/DamagedHelmet.gltf",
@@ -76,7 +76,7 @@ gltfLoader.load(
 );
 
 /**
- * Lights
+ * 灯光
  */
 const directionalLight = new THREE.DirectionalLight("#ffffff", 3);
 directionalLight.castShadow = true;
@@ -87,7 +87,7 @@ directionalLight.position.set(0.25, 3, -2.25);
 scene.add(directionalLight);
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -95,37 +95,37 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-  // Update effect composer
+  // 更新效果合成器
   effectComposer.setSize(sizes.width, sizes.height);
   effectComposer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
 camera.position.set(4, 1, -4);
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -139,42 +139,42 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
- * Post processing
+ * 后处理
  */
 const renderTarget = new THREE.WebGLRenderTarget(800, 600, {
   samples: 2,
 });
 
-// Effect composer
+// 效果合成器
 const effectComposer = new EffectComposer(renderer, renderTarget);
 effectComposer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 effectComposer.setSize(sizes.width, sizes.height);
 
-// Render pass
+// 渲染通道
 const renderPass = new RenderPass(scene, camera);
 effectComposer.addPass(renderPass);
 
-// Dot screen pass
+// 点阵屏幕通道
 const dotScreenPass = new DotScreenPass();
 dotScreenPass.enabled = false;
 effectComposer.addPass(dotScreenPass);
 
-// Glitch pass
+// 故障通道
 const glitchPass = new GlitchPass();
 glitchPass.goWild = true;
 glitchPass.enabled = false;
 effectComposer.addPass(glitchPass);
 
-// RGB Shift pass
+// RGB 偏移通道
 const rgbShiftPass = new ShaderPass(RGBShiftShader);
 rgbShiftPass.enabled = false;
 effectComposer.addPass(rgbShiftPass);
 
-// Gamma correction pass
+// 伽马校正通道
 const gammaCorrectionPass = new ShaderPass(GammaCorrectionShader);
 effectComposer.addPass(gammaCorrectionPass);
 
-// Antialias pass
+// 抗锯齿通道
 if (renderer.getPixelRatio() === 1 && !renderer.capabilities.isWebGL2) {
   const smaaPass = new SMAAPass();
   effectComposer.addPass(smaaPass);
@@ -182,7 +182,7 @@ if (renderer.getPixelRatio() === 1 && !renderer.capabilities.isWebGL2) {
   console.log("Using SMAA");
 }
 
-// Unreal Bloom pass
+// 虚幻泛光通道
 const unrealBloomPass = new UnrealBloomPass();
 unrealBloomPass.enabled = false;
 effectComposer.addPass(unrealBloomPass);
@@ -191,12 +191,12 @@ unrealBloomPass.strength = 0.3;
 unrealBloomPass.radius = 1;
 unrealBloomPass.threshold = 0.6;
 
-gui.add(unrealBloomPass, "enabled");
-gui.add(unrealBloomPass, "strength").min(0).max(2).step(0.001);
-gui.add(unrealBloomPass, "radius").min(0).max(2).step(0.001);
-gui.add(unrealBloomPass, "threshold").min(0).max(1).step(0.001);
+gui.add(unrealBloomPass, "enabled").name("启用");
+gui.add(unrealBloomPass, "strength").min(0).max(2).step(0.001).name("强度");
+gui.add(unrealBloomPass, "radius").min(0).max(2).step(0.001).name("半径");
+gui.add(unrealBloomPass, "threshold").min(0).max(1).step(0.001).name("阈值");
 
-// Tin pass
+// 锡通道
 const TintShader = {
   uniforms: {
     tDiffuse: { value: null },
@@ -232,11 +232,11 @@ const tintPass = new ShaderPass(TintShader);
 tintPass.material.uniforms.uTint.value = new THREE.Vector3();
 effectComposer.addPass(tintPass);
 
-gui.add(tintPass.material.uniforms.uTint.value, "x").min(-1).max(1).step(0.001).name("red");
-gui.add(tintPass.material.uniforms.uTint.value, "y").min(-1).max(1).step(0.001).name("green");
-gui.add(tintPass.material.uniforms.uTint.value, "z").min(-1).max(1).step(0.001).name("blue");
+gui.add(tintPass.material.uniforms.uTint.value, "x").min(-1).max(1).step(0.001).name("红色偏移");
+gui.add(tintPass.material.uniforms.uTint.value, "y").min(-1).max(1).step(0.001).name("绿色偏移");
+gui.add(tintPass.material.uniforms.uTint.value, "z").min(-1).max(1).step(0.001).name("蓝色偏移");
 
-// Displacement pass
+// 置换通道
 const DisplacementShader = {
   uniforms: {
     tDiffuse: { value: null },
@@ -283,24 +283,24 @@ displacementPass.material.uniforms.uNormalMap.value = textureLoader.load(
 effectComposer.addPass(displacementPass);
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  // Update passes
+  // 更新通道
   displacementPass.material.uniforms.uTime.value = elapsedTime;
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   // renderer.render(scene, camera)
   effectComposer.render();
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

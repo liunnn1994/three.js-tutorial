@@ -4,11 +4,11 @@ import gsap from "gsap";
 import GUI from "lil-gui";
 
 /**
- * Debug
+ * 调试
  */
 const gui = new GUI({
   width: 300,
-  title: "Nice debug UI",
+  title: "调试面板",
   closeFolders: false,
 });
 // gui.close()
@@ -20,16 +20,16 @@ window.addEventListener("keydown", (event) => {
 const debugObject = {};
 
 /**
- * Base
+ * 基础
  */
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
 /**
- * Object
+ * 物体
  */
 debugObject.color = "#a778d8";
 
@@ -38,27 +38,28 @@ const material = new THREE.MeshBasicMaterial({ color: "#a778d8", wireframe: true
 const mesh = new THREE.Mesh(geometry, material);
 scene.add(mesh);
 
-const cubeTweaks = gui.addFolder("Awesome cube");
+const cubeTweaks = gui.addFolder("超酷的立方体");
 // cubeTweaks.close()
 
-cubeTweaks.add(mesh.position, "y").min(-3).max(3).step(0.01).name("elevation");
+cubeTweaks.add(mesh.position, "y").min(-3).max(3).step(0.01).name("高度");
 
-cubeTweaks.add(mesh, "visible");
+cubeTweaks.add(mesh, "visible").name("可见性");
 
-cubeTweaks.add(material, "wireframe");
+cubeTweaks.add(material, "wireframe").name("线框模式");
 
-cubeTweaks.addColor(debugObject, "color").onChange(() => {
+cubeTweaks.addColor(debugObject, "color").name("颜色").onChange(() => {
   material.color.set(debugObject.color);
 });
 
 debugObject.spin = () => {
   gsap.to(mesh.rotation, { duration: 1, y: mesh.rotation.y + Math.PI * 2 });
 };
-cubeTweaks.add(debugObject, "spin");
+cubeTweaks.add(debugObject, "spin").name("旋转");
 
 debugObject.subdivision = 2;
 cubeTweaks
   .add(debugObject, "subdivision")
+  .name("细分")
   .min(1)
   .max(20)
   .step(1)
@@ -75,7 +76,7 @@ cubeTweaks
   });
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -83,35 +84,35 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
 camera.position.x = 1;
 camera.position.y = 1;
 camera.position.z = 2;
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -120,20 +121,20 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

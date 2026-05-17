@@ -32,17 +32,11 @@ fs.copyFileSync(
   path.join(nm, "three/build/three.module.js"),
   path.join(vendorDir, "three.module.js"),
 );
-fs.copyFileSync(
-  path.join(nm, "three/build/three.core.js"),
-  path.join(vendorDir, "three.core.js"),
-);
+fs.copyFileSync(path.join(nm, "three/build/three.core.js"), path.join(vendorDir, "three.core.js"));
 
 // Three.js addons (full directory for relative import resolution)
 // After copying, rewrite bare 'three' specifiers so the files work without importmap
-copyDir(
-  path.join(nm, "three/examples/jsm"),
-  path.join(vendorDir, "three/examples/jsm"),
-);
+copyDir(path.join(nm, "three/examples/jsm"), path.join(vendorDir, "three/examples/jsm"));
 rewriteThreeImportsInDir(path.join(vendorDir, "three/examples/jsm"));
 
 // lil-gui (standalone ESM, no external deps)
@@ -65,18 +59,14 @@ execSync(
   `npx esbuild three-custom-shader-material/vanilla/three-custom-shader-material.es.js --bundle --format=esm --external:three --outfile=${JSON.stringify(path.join(vendorDir, "three-custom-shader-material-vanilla.esm.js"))}`,
   { cwd: nm, stdio: "inherit" },
 );
-rewriteThreeImportsInFile(
-  path.join(vendorDir, "three-custom-shader-material-vanilla.esm.js"),
-);
+rewriteThreeImportsInFile(path.join(vendorDir, "three-custom-shader-material-vanilla.esm.js"));
 
 // three-bvh-csg: bundle with esbuild, mark 'three' as external (inlines three-mesh-bvh)
 execSync(
   `npx esbuild three-bvh-csg/build/index.module.js --bundle --format=esm --external:three --outfile=${JSON.stringify(path.join(vendorDir, "three-bvh-csg.esm.js"))}`,
   { cwd: nm, stdio: "inherit" },
 );
-rewriteThreeImportsInFile(
-  path.join(vendorDir, "three-bvh-csg.esm.js"),
-);
+rewriteThreeImportsInFile(path.join(vendorDir, "three-bvh-csg.esm.js"));
 
 // GSAP: bundle into a single ESM file via esbuild (npm dist is UMD)
 execSync(
@@ -104,14 +94,8 @@ function rewriteThreeImportsInFile(filePath) {
   const original = fs.readFileSync(filePath, "utf-8");
   const rewritten = original
     .replace(/from\s+['"]three['"]/g, "from '/vendor/three.module.js'")
-    .replace(
-      /from\s+['"]three\/addons\/(.+?)['"]/g,
-      "from '/vendor/three/examples/jsm/$1'",
-    )
-    .replace(
-      /from\s+['"]three\/examples\/jsm\/(.+?)['"]/g,
-      "from '/vendor/three/examples/jsm/$1'",
-    );
+    .replace(/from\s+['"]three\/addons\/(.+?)['"]/g, "from '/vendor/three/examples/jsm/$1'")
+    .replace(/from\s+['"]three\/examples\/jsm\/(.+?)['"]/g, "from '/vendor/three/examples/jsm/$1'");
   if (rewritten !== original) fs.writeFileSync(filePath, rewritten, "utf-8");
 }
 

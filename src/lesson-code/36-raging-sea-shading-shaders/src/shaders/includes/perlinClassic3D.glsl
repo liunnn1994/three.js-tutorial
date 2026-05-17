@@ -1,4 +1,4 @@
-// Classic Perlin 3D Noise 
+// 经典 Perlin 3D 噪声 
 // by Stefan Gustavson
 //
 vec4 permute(vec4 x)

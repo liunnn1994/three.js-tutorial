@@ -30,14 +30,14 @@ float waveElevation(vec3 position)
 
 void main()
 {
-    // Base position
+    // 基础位置
     vec4 modelPosition = modelMatrix * vec4(position, 1.0);
 
     float shift = 0.01;
     vec3 modelPositionA = modelPosition.xyz + vec3(shift, 0.0, 0.0);
     vec3 modelPositionB = modelPosition.xyz + vec3(0.0, 0.0, - shift);
 
-    // Elevation
+    // 高度
     float elevation = waveElevation(modelPosition.xyz);
     float elevationA = waveElevation(modelPositionA);
     float elevationB = waveElevation(modelPositionB);
@@ -46,17 +46,17 @@ void main()
     modelPositionA.y += elevationA;
     modelPositionB.y += elevationB;
 
-    // Compute normal
+    // 计算法线
     vec3 toA = normalize(modelPositionA - modelPosition.xyz);
     vec3 toB = normalize(modelPositionB - modelPosition.xyz);
     vec3 computedNormal = cross(toA, toB);
 
-    // Final position
+    // 最终位置
     vec4 viewPosition = viewMatrix * modelPosition;
     vec4 projectedPosition = projectionMatrix * viewPosition;
     gl_Position = projectedPosition;
 
-    // Varyings
+    // varying 变量
     vElevation = elevation;
     vNormal = computedNormal;
     vPosition = modelPosition.xyz;

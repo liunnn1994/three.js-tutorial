@@ -29,23 +29,23 @@ float getElevation(vec2 position)
 
 void main()
 {
-    // Neighbours positions
+    // 邻居位置
     float shift = 0.01;
     vec3 positionA = position.xyz + vec3(shift, 0.0, 0.0);
     vec3 positionB = position.xyz + vec3(0.0, 0.0, - shift);
 
-    // Elevation
+    // 高度
     float elevation = getElevation(csm_Position.xz);
     csm_Position.y += elevation;
     positionA.y    += getElevation(positionA.xz);
     positionB.y    += getElevation(positionB.xz);
     
-    // Compute normal
+    // 计算法线
     vec3 toA = normalize(positionA - csm_Position);
     vec3 toB = normalize(positionB - csm_Position);
     csm_Normal = cross(toA, toB);
 
-    // Varyings
+    // varying 变量
     vPosition = csm_Position;
     vPosition.xz += uTime * 0.2;
     vUpDot = dot(csm_Normal, vec3(0.0, 1.0, 0.0));

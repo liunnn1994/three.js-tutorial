@@ -9,7 +9,7 @@ varying vec3 vColor;
 
 void main()
 {
-    // Displacement
+    // 置换
     vec3 newPosition = position;
     float displacementIntensity = texture(uDisplacementTexture, uv).r;
     displacementIntensity = smoothstep(0.1, 0.3, displacementIntensity);
@@ -26,19 +26,19 @@ void main()
     
     newPosition += displacement;
 
-    // Final position
+    // 最终位置
     vec4 modelPosition = modelMatrix * vec4(newPosition, 1.0);
     vec4 viewPosition = viewMatrix * modelPosition;
     vec4 projectedPosition = projectionMatrix * viewPosition;
     gl_Position = projectedPosition;
 
-    // Picture
+    // 图片
     float pictureIntensity = texture(uPictureTexture, uv).r;
 
-    // Point size
+    // 点大小
     gl_PointSize = 0.15 * pictureIntensity * uResolution.y;
     gl_PointSize *= (1.0 / - viewPosition.z);
 
-    // Varyings
+    // varying 变量
     vColor = vec3(pow(pictureIntensity, 2.0));
 }

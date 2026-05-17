@@ -37,17 +37,17 @@ void main()
     vec3 positionA = csm_Position + tangent.xyz * shift;
     vec3 positionB = csm_Position + biTangent * shift;
 
-    // Wobble
+    // 摇晃
     float wobble = getWobble(csm_Position);
     csm_Position += wobble * normal;
     positionA    += getWobble(positionA) * normal;
     positionB    += getWobble(positionB) * normal;
 
-    // Compute normal
+    // 计算法线
     vec3 toA = normalize(positionA - csm_Position);
     vec3 toB = normalize(positionB - csm_Position);
     csm_Normal = cross(toA, toB);
 
-    // Varying
+    // varying 变量
     vWobble = wobble / uStrength;
 }

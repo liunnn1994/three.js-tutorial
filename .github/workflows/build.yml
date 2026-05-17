@@ -85,11 +85,11 @@ jobs:
       matrix:
         include:
           - platform: macos-latest
-            args: '--target aarch64-apple-darwin --bundles app'
+            args: "--target aarch64-apple-darwin --bundles app"
           - platform: windows-latest
-            args: '--target x86_64-pc-windows-msvc --no-bundle'
+            args: "--target x86_64-pc-windows-msvc --no-bundle"
           - platform: ubuntu-22.04
-            args: '--bundles appimage'
+            args: "--bundles appimage"
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -117,7 +117,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: './src-tauri -> target'
+          workspaces: "./src-tauri -> target"
 
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
@@ -209,7 +209,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
@@ -231,7 +231,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: './src-tauri -> target'
+          workspaces: "./src-tauri -> target"
           cache-targets: false
 
       - name: Gradle cache

@@ -386,8 +386,7 @@ window.addEventListener("dblclick", () => {
 在切换之前，我们需要知道当前是否已经处于全屏状态：
 
 ```js
-const fullscreenElement =
-  document.fullscreenElement || document.webkitFullscreenElement;
+const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
 ```
 
 - **`document.fullscreenElement`** — 如果当前有元素处于全屏状态，返回该元素；否则返回 `null`
@@ -486,8 +485,7 @@ window.addEventListener("resize", () => {
  * Fullscreen
  */
 window.addEventListener("dblclick", () => {
-  const fullscreenElement =
-    document.fullscreenElement || document.webkitFullscreenElement;
+  const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
 
   if (!fullscreenElement) {
     if (canvas.requestFullscreen) {
@@ -508,12 +506,7 @@ window.addEventListener("dblclick", () => {
  * Camera
  */
 // Base camera
-const camera = new THREE.PerspectiveCamera(
-  75,
-  sizes.width / sizes.height,
-  0.1,
-  100,
-);
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
 camera.position.z = 3;
 scene.add(camera);
 

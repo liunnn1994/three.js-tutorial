@@ -10,19 +10,19 @@ import wobbleVertexShader from "./shaders/wobble/vertex.glsl";
 import wobbleFragmentShader from "./shaders/wobble/fragment.glsl";
 
 /**
- * Base
+ * 基础
  */
-// Debug
+// 调试
 const gui = new GUI({ width: 325 });
 const debugObject = {};
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
-// Loaders
+// 加载器
 const rgbeLoader = new RGBELoader();
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath("/assets/42-wobbly-sphere-shader-final/draco/");
@@ -30,7 +30,7 @@ const gltfLoader = new GLTFLoader();
 gltfLoader.setDRACOLoader(dracoLoader);
 
 /**
- * Environment map
+ * 环境贴图
  */
 rgbeLoader.load("/assets/42-wobbly-sphere-shader-final/urban_alley_01_1k.hdr", (environmentMap) => {
   environmentMap.mapping = THREE.EquirectangularReflectionMapping;
@@ -40,9 +40,9 @@ rgbeLoader.load("/assets/42-wobbly-sphere-shader-final/urban_alley_01_1k.hdr", (
 });
 
 /**
- * Wobble
+ * 摇晃
  */
-// Material
+// 材质
 debugObject.colorA = "#0000ff";
 debugObject.colorB = "#ff0000";
 
@@ -59,14 +59,14 @@ const uniforms = {
 };
 
 const material = new CustomShaderMaterial({
-  // CSM
+  // CSM（级联阴影贴图）
   baseMaterial: THREE.MeshPhysicalMaterial,
   vertexShader: wobbleVertexShader,
   fragmentShader: wobbleFragmentShader,
   uniforms: uniforms,
   silent: true,
 
-  // MeshPhysicalMaterial
+  // MeshPhysicalMaterial 材质
   metalness: 0,
   roughness: 0.5,
   color: "#ffffff",
@@ -78,37 +78,43 @@ const material = new CustomShaderMaterial({
 });
 
 const depthMaterial = new CustomShaderMaterial({
-  // CSM
+  // CSM（级联阴影贴图）
   baseMaterial: THREE.MeshDepthMaterial,
   vertexShader: wobbleVertexShader,
   uniforms: uniforms,
   silent: true,
 
-  // MeshDepthMaterial
+  // MeshDepthMaterial 材质
   depthPacking: THREE.RGBADepthPacking,
 });
 
-// Tweaks
-gui.add(uniforms.uPositionFrequency, "value", 0, 2, 0.001).name("uPositionFrequency");
-gui.add(uniforms.uTimeFrequency, "value", 0, 2, 0.001).name("uTimeFrequency");
-gui.add(uniforms.uStrength, "value", 0, 2, 0.001).name("uStrength");
-gui.add(uniforms.uWarpPositionFrequency, "value", 0, 2, 0.001).name("uWarpPositionFrequency");
-gui.add(uniforms.uWarpTimeFrequency, "value", 0, 2, 0.001).name("uWarpTimeFrequency");
-gui.add(uniforms.uWarpStrength, "value", 0, 2, 0.001).name("uWarpStrength");
-gui.addColor(debugObject, "colorA").onChange(() => uniforms.uColorA.value.set(debugObject.colorA));
-gui.addColor(debugObject, "colorB").onChange(() => uniforms.uColorB.value.set(debugObject.colorB));
-gui.add(material, "metalness", 0, 1, 0.001);
-gui.add(material, "roughness", 0, 1, 0.001);
-gui.add(material, "transmission", 0, 1, 0.001);
-gui.add(material, "ior", 0, 10, 0.001);
-gui.add(material, "thickness", 0, 10, 0.001);
+// 调试参数
+gui.add(uniforms.uPositionFrequency, "value", 0, 2, 0.001).name("位置频率");
+gui.add(uniforms.uTimeFrequency, "value", 0, 2, 0.001).name("时间频率");
+gui.add(uniforms.uStrength, "value", 0, 2, 0.001).name("强度");
+gui.add(uniforms.uWarpPositionFrequency, "value", 0, 2, 0.001).name("扭曲位置频率");
+gui.add(uniforms.uWarpTimeFrequency, "value", 0, 2, 0.001).name("扭曲时间频率");
+gui.add(uniforms.uWarpStrength, "value", 0, 2, 0.001).name("扭曲强度");
+gui
+  .addColor(debugObject, "colorA")
+  .name("颜色 A")
+  .onChange(() => uniforms.uColorA.value.set(debugObject.colorA));
+gui
+  .addColor(debugObject, "colorB")
+  .name("颜色 B")
+  .onChange(() => uniforms.uColorB.value.set(debugObject.colorB));
+gui.add(material, "metalness", 0, 1, 0.001).name("金属度(metalness)");
+gui.add(material, "roughness", 0, 1, 0.001).name("粗糙度(roughness)");
+gui.add(material, "transmission", 0, 1, 0.001).name("透射(transmission)");
+gui.add(material, "ior", 0, 10, 0.001).name("折射率(IOR)");
+gui.add(material, "thickness", 0, 10, 0.001).name("厚度(thickness)");
 
-// Geometry
+// 几何体
 let geometry = new THREE.IcosahedronGeometry(2.5, 50);
 geometry = mergeVertices(geometry);
 geometry.computeTangents();
 
-// Mesh
+// 网格
 const wobble = new THREE.Mesh(geometry, material);
 wobble.customDepthMaterial = depthMaterial;
 wobble.receiveShadow = true;
@@ -127,7 +133,7 @@ scene.add(wobble);
 // })
 
 /**
- * Plane
+ * 平面
  */
 const plane = new THREE.Mesh(new THREE.PlaneGeometry(15, 15, 15), new THREE.MeshStandardMaterial());
 plane.receiveShadow = true;
@@ -137,7 +143,7 @@ plane.position.z = 5;
 scene.add(plane);
 
 /**
- * Lights
+ * 灯光
  */
 const directionalLight = new THREE.DirectionalLight("#ffffff", 3);
 directionalLight.castShadow = true;
@@ -148,7 +154,7 @@ directionalLight.position.set(0.25, 2, -2.25);
 scene.add(directionalLight);
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -157,34 +163,34 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
   sizes.pixelRatio = Math.min(window.devicePixelRatio, 2);
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(sizes.pixelRatio);
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(35, sizes.width / sizes.height, 0.1, 100);
 camera.position.set(13, -3, -5);
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -198,23 +204,23 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(sizes.pixelRatio);
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  // Materials
+  // 材质
   uniforms.uTime.value = elapsedTime;
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

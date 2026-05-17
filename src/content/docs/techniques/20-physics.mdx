@@ -427,12 +427,7 @@ import * as CANNON from "cannon-es";
 
 // --- 场景初始化 ---
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(
-  75,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  100,
-);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
 camera.position.set(0, 3, 5);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -448,14 +443,10 @@ world.gravity.set(0, -9.82, 0);
 
 // 物理材质
 const defaultMaterial = new CANNON.Material("default");
-const defaultContactMaterial = new CANNON.ContactMaterial(
-  defaultMaterial,
-  defaultMaterial,
-  {
-    friction: 0.1,
-    restitution: 0.7,
-  },
-);
+const defaultContactMaterial = new CANNON.ContactMaterial(defaultMaterial, defaultMaterial, {
+  friction: 0.1,
+  restitution: 0.7,
+});
 world.defaultContactMaterial = defaultContactMaterial;
 
 // --- 地面 ---
@@ -663,9 +654,7 @@ const createBox = (width, height, depth, position) => {
 
   const body = new CANNON.Body({
     mass: 1,
-    shape: new CANNON.Box(
-      new CANNON.Vec3(width * 0.5, height * 0.5, depth * 0.5),
-    ),
+    shape: new CANNON.Box(new CANNON.Vec3(width * 0.5, height * 0.5, depth * 0.5)),
     position: new CANNON.Vec3(position.x, position.y, position.z),
     material: defaultMaterial,
   });

@@ -4,19 +4,19 @@ import particlesVertexShader from "./shaders/particles/vertex.glsl";
 import particlesFragmentShader from "./shaders/particles/fragment.glsl";
 
 /**
- * Base
+ * 基础
  */
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
-// Loaders
+// 加载器
 const textureLoader = new THREE.TextureLoader();
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -25,40 +25,40 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
   sizes.pixelRatio = Math.min(window.devicePixelRatio, 2);
 
-  // Materials
+  // 材质
   particlesMaterial.uniforms.uResolution.value.set(
     sizes.width * sizes.pixelRatio,
     sizes.height * sizes.pixelRatio,
   );
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(sizes.pixelRatio);
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(35, sizes.width / sizes.height, 0.1, 100);
 camera.position.set(0, 0, 18);
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -69,7 +69,7 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(sizes.pixelRatio);
 
 /**
- * Displacement
+ * 置换
  */
 const displacement = {};
 
@@ -85,15 +85,15 @@ displacement.canvas.style.left = 0;
 displacement.canvas.style.zIndex = 10;
 document.body.append(displacement.canvas);
 
-// Context
+// 上下文
 displacement.context = displacement.canvas.getContext("2d");
 displacement.context.fillRect(0, 0, displacement.canvas.width, displacement.canvas.height);
 
-// Glow image
+// 发光图像
 displacement.glowImage = new Image();
 displacement.glowImage.src = "/assets/39-particles-cursor-animation-shader-final/glow.png";
 
-// Interactive plane
+// 交互平面
 displacement.interactivePlane = new THREE.Mesh(
   new THREE.PlaneGeometry(10, 10),
   new THREE.MeshBasicMaterial({ color: "red", side: THREE.DoubleSide }),
@@ -101,10 +101,10 @@ displacement.interactivePlane = new THREE.Mesh(
 displacement.interactivePlane.visible = false;
 scene.add(displacement.interactivePlane);
 
-// Raycaster
+// 射线投射
 displacement.raycaster = new THREE.Raycaster();
 
-// Coordinates
+// 坐标
 displacement.screenCursor = new THREE.Vector2(9999, 9999);
 displacement.canvasCursor = new THREE.Vector2(9999, 9999);
 displacement.canvasCursorPrevious = new THREE.Vector2(9999, 9999);
@@ -114,11 +114,11 @@ window.addEventListener("pointermove", (event) => {
   displacement.screenCursor.y = -(event.clientY / sizes.height) * 2 + 1;
 });
 
-// Texture
+// 纹理
 displacement.texture = new THREE.CanvasTexture(displacement.canvas);
 
 /**
- * Particles
+ * 粒子
  */
 const particlesGeometry = new THREE.PlaneGeometry(10, 10, 128, 128);
 particlesGeometry.setIndex(null);
@@ -153,14 +153,14 @@ const particles = new THREE.Points(particlesGeometry, particlesMaterial);
 scene.add(particles);
 
 /**
- * Animate
+ * 动画循环
  */
 const tick = () => {
-  // Update controls
+  // 更新控制器
   controls.update();
 
   /**
-   * Raycaster
+   * 射线投射
    */
   displacement.raycaster.setFromCamera(displacement.screenCursor, camera);
   const intersections = displacement.raycaster.intersectObject(displacement.interactivePlane);
@@ -173,19 +173,19 @@ const tick = () => {
   }
 
   /**
-   * Displacement
+   * 置换
    */
-  // Fade out
+  // 淡出
   displacement.context.globalCompositeOperation = "source-over";
   displacement.context.globalAlpha = 0.02;
   displacement.context.fillRect(0, 0, displacement.canvas.width, displacement.canvas.height);
 
-  // Speed alpha
+  // 速度透明度
   const cursorDistance = displacement.canvasCursorPrevious.distanceTo(displacement.canvasCursor);
   displacement.canvasCursorPrevious.copy(displacement.canvasCursor);
   const alpha = Math.min(cursorDistance * 0.05, 1);
 
-  // Draw glow
+  // 绘制光晕
   const glowSize = displacement.canvas.width * 0.25;
   displacement.context.globalCompositeOperation = "lighten";
   displacement.context.globalAlpha = alpha;
@@ -197,13 +197,13 @@ const tick = () => {
     glowSize,
   );
 
-  // Texture
+  // 纹理
   displacement.texture.needsUpdate = true;
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

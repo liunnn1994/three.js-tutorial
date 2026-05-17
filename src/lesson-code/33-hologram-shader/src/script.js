@@ -6,22 +6,22 @@ import holographicVertexShader from "./shaders/holographic/vertex.glsl";
 import holographicFragmentShader from "./shaders/holographic/fragment.glsl";
 
 /**
- * Base
+ * 基础
  */
-// Debug
+// 调试
 const gui = new GUI();
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
-// Loaders
+// 加载器
 const gltfLoader = new GLTFLoader();
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -29,33 +29,33 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(25, sizes.width / sizes.height, 0.1, 100);
 camera.position.set(7, 7, 7);
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const rendererParameters = {};
 rendererParameters.clearColor = "#1d1f2a";
@@ -68,19 +68,25 @@ renderer.setClearColor(rendererParameters.clearColor);
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-gui.addColor(rendererParameters, "clearColor").onChange(() => {
-  renderer.setClearColor(rendererParameters.clearColor);
-});
+gui
+  .addColor(rendererParameters, "clearColor")
+  .name("背景颜色")
+  .onChange(() => {
+    renderer.setClearColor(rendererParameters.clearColor);
+  });
 
 /**
- * Material
+ * 材质
  */
 const materialParameters = {};
 materialParameters.color = "#70c1ff";
 
-gui.addColor(materialParameters, "color").onChange(() => {
-  material.uniforms.uColor.value.set(materialParameters.color);
-});
+gui
+  .addColor(materialParameters, "color")
+  .name("全息颜色")
+  .onChange(() => {
+    material.uniforms.uColor.value.set(materialParameters.color);
+  });
 
 const material = new THREE.ShaderMaterial({
   vertexShader: holographicVertexShader,
@@ -96,19 +102,19 @@ const material = new THREE.ShaderMaterial({
 });
 
 /**
- * Objects
+ * 对象
  */
-// Torus knot
+// 环面纽结
 const torusKnot = new THREE.Mesh(new THREE.TorusKnotGeometry(0.6, 0.25, 128, 32), material);
 torusKnot.position.x = 3;
 scene.add(torusKnot);
 
-// Sphere
+// 球体
 const sphere = new THREE.Mesh(new THREE.SphereGeometry(), material);
 sphere.position.x = -3;
 scene.add(sphere);
 
-// Suzanne
+// 猴头模型
 let suzanne = null;
 gltfLoader.load("/assets/33-hologram-shader-final/suzanne.glb", (gltf) => {
   suzanne = gltf.scene;
@@ -119,17 +125,17 @@ gltfLoader.load("/assets/33-hologram-shader-final/suzanne.glb", (gltf) => {
 });
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  // Update material
+  // 更新材质
   material.uniforms.uTime.value = elapsedTime;
 
-  // Rotate objects
+  // 旋转对象
   if (suzanne) {
     suzanne.rotation.x = -elapsedTime * 0.1;
     suzanne.rotation.y = elapsedTime * 0.2;
@@ -141,13 +147,13 @@ const tick = () => {
   torusKnot.rotation.x = -elapsedTime * 0.1;
   torusKnot.rotation.y = elapsedTime * 0.2;
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

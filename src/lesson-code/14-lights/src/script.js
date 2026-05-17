@@ -4,45 +4,45 @@ import GUI from "lil-gui";
 import { RectAreaLightHelper } from "three/examples/jsm/helpers/RectAreaLightHelper.js";
 
 /**
- * Base
+ * 基础
  */
-// Debug
+// 调试
 const gui = new GUI();
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
 /**
- * Lights
+ * 灯光
  */
-// Ambient light
+// 环境光
 const ambientLight = new THREE.AmbientLight(0xffffff, 1);
 scene.add(ambientLight);
 
-// Directional light
+// 平行光
 const directionalLight = new THREE.DirectionalLight(0x00fffc, 0.9);
 directionalLight.position.set(1, 0.25, 0);
 scene.add(directionalLight);
 
-// Hemisphere light
+// 半球光
 const hemisphereLight = new THREE.HemisphereLight(0xff0000, 0x0000ff, 3);
 scene.add(hemisphereLight);
 
-// Point light
+// 点光源
 const pointLight = new THREE.PointLight(0xff9000, 1.5);
 pointLight.position.set(1, -0.5, 1);
 scene.add(pointLight);
 
-// Rect area light
+// 平面光
 const rectAreaLight = new THREE.RectAreaLight(0x4e00ff, 6, 1, 1);
 rectAreaLight.position.set(-1.5, 0, 1.5);
 rectAreaLight.lookAt(new THREE.Vector3());
 scene.add(rectAreaLight);
 
-// Spot light
+// 聚光灯
 const spotLight = new THREE.SpotLight(0x78ff00, 4.5, 10, Math.PI * 0.1, 0.25, 1);
 spotLight.position.set(0, 2, 3);
 spotLight.target.position.x = -0.75;
@@ -51,7 +51,7 @@ scene.add(spotLight);
 spotLight.target.position.x = -0.75;
 scene.add(spotLight.target);
 
-// Helpers
+// 辅助器
 const hemisphereLightHelper = new THREE.HemisphereLightHelper(hemisphereLight, 0.2);
 scene.add(hemisphereLightHelper);
 
@@ -68,13 +68,13 @@ const rectAreaLightHelper = new RectAreaLightHelper(rectAreaLight);
 scene.add(rectAreaLightHelper);
 
 /**
- * Objects
+ * 对象
  */
-// Material
+// 材质
 const material = new THREE.MeshStandardMaterial();
 material.roughness = 0.4;
 
-// Objects
+// 对象
 const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), material);
 sphere.position.x = -1.5;
 
@@ -90,7 +90,7 @@ plane.position.y = -0.65;
 scene.add(sphere, cube, torus, plane);
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -98,35 +98,35 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
 camera.position.x = 1;
 camera.position.y = 1;
 camera.position.z = 2;
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -135,14 +135,14 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  // Update objects
+  // 更新对象
   sphere.rotation.y = 0.1 * elapsedTime;
   cube.rotation.y = 0.1 * elapsedTime;
   torus.rotation.y = 0.1 * elapsedTime;
@@ -151,13 +151,13 @@ const tick = () => {
   cube.rotation.x = 0.15 * elapsedTime;
   torus.rotation.x = 0.15 * elapsedTime;
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

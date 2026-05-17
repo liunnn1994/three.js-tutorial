@@ -6,37 +6,35 @@ import coffeeSmokeVertexShader from "./shaders/coffeeSmoke/vertex.glsl";
 import coffeeSmokeFragmentShader from "./shaders/coffeeSmoke/fragment.glsl";
 
 /**
- * Base
+ * 基础
  */
-// Debug
+// 调试
 const gui = new GUI();
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
-// Loaders
+// 加载器
 const textureLoader = new THREE.TextureLoader();
 const gltfLoader = new GLTFLoader();
 
 /**
- * Textures
+ * 纹理
  */
-const bakedTexture = textureLoader.load(
-  "/assets/32-coffee-smoke-shader-final/baked.jpg",
-);
+const bakedTexture = textureLoader.load("/assets/32-coffee-smoke-shader-final/baked.jpg");
 bakedTexture.flipY = false;
 bakedTexture.colorSpace = THREE.SRGBColorSpace;
 
 /**
- * Materials
+ * 材质
  */
 const bakedMaterial = new THREE.MeshBasicMaterial({ map: bakedTexture });
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -44,41 +42,36 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
-const camera = new THREE.PerspectiveCamera(
-  25,
-  sizes.width / sizes.height,
-  0.1,
-  100,
-);
+// 基础相机
+const camera = new THREE.PerspectiveCamera(25, sizes.width / sizes.height, 0.1, 100);
 camera.position.x = 8;
 camera.position.y = 10;
 camera.position.z = 12;
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.target.y = 3;
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -88,7 +81,7 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
- * Model
+ * 模型
  */
 gltfLoader.load(
   "/assets/32-coffee-smoke-shader-final/bakedModel.glb",
@@ -109,21 +102,19 @@ gltfLoader.load(
 );
 
 /**
- * Smoke
+ * 烟雾
  */
-// Geometry
+// 几何体
 const smokeGeometry = new THREE.PlaneGeometry(1, 1, 16, 64);
 smokeGeometry.translate(0, 0.5, 0);
 smokeGeometry.scale(1.5, 6, 1.5);
 
-// Perlin texture
-const perlinTexture = textureLoader.load(
-  "/assets/32-coffee-smoke-shader-final/perlin.png",
-);
+// 柏林噪声纹理
+const perlinTexture = textureLoader.load("/assets/32-coffee-smoke-shader-final/perlin.png");
 perlinTexture.wrapS = THREE.RepeatWrapping;
 perlinTexture.wrapT = THREE.RepeatWrapping;
 
-// Material
+// 材质
 const smokeMaterial = new THREE.ShaderMaterial({
   vertexShader: coffeeSmokeVertexShader,
   fragmentShader: coffeeSmokeFragmentShader,
@@ -137,29 +128,29 @@ const smokeMaterial = new THREE.ShaderMaterial({
   // wireframe: true
 });
 
-// Mesh
+// 网格
 const smoke = new THREE.Mesh(smokeGeometry, smokeMaterial);
 smoke.position.y = 1.83;
 scene.add(smoke);
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  // Update smoke
+  // 更新烟雾
   smokeMaterial.uniforms.uTime.value = elapsedTime;
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

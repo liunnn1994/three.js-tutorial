@@ -3,19 +3,19 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import GUI from "lil-gui";
 
 /**
- * Base
+ * 基础
  */
-// Debug
+// 调试
 const gui = new GUI();
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
 /**
- * Galaxy
+ * 星系
  */
 const parameters = {};
 parameters.count = 100000;
@@ -33,7 +33,7 @@ let material = null;
 let points = null;
 
 const generateGalaxy = () => {
-  // Destroy old galaxy
+  // 销毁旧星系
   if (points !== null) {
     geometry.dispose();
     material.dispose();
@@ -41,7 +41,7 @@ const generateGalaxy = () => {
   }
 
   /**
-   * Geometry
+   * 几何体
    */
   geometry = new THREE.BufferGeometry();
 
@@ -52,7 +52,7 @@ const generateGalaxy = () => {
   const colorOutside = new THREE.Color(parameters.outsideColor);
 
   for (let i = 0; i < parameters.count; i++) {
-    // Position
+    // 位置
     const i3 = i * 3;
 
     const radius = Math.random() * parameters.radius;
@@ -80,7 +80,7 @@ const generateGalaxy = () => {
     positions[i3 + 1] = randomY;
     positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
 
-    // Color
+    // 颜色
     const mixedColor = colorInside.clone();
     mixedColor.lerp(colorOutside, radius / parameters.radius);
 
@@ -93,7 +93,7 @@ const generateGalaxy = () => {
   geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
   /**
-   * Material
+   * 材质
    */
   material = new THREE.PointsMaterial({
     size: parameters.size,
@@ -104,26 +104,68 @@ const generateGalaxy = () => {
   });
 
   /**
-   * Points
+   * 粒子点
    */
   points = new THREE.Points(geometry, material);
   scene.add(points);
 };
 
-gui.add(parameters, "count").min(100).max(1000000).step(100).onFinishChange(generateGalaxy);
-gui.add(parameters, "size").min(0.001).max(0.1).step(0.001).onFinishChange(generateGalaxy);
-gui.add(parameters, "radius").min(0.01).max(20).step(0.01).onFinishChange(generateGalaxy);
-gui.add(parameters, "branches").min(2).max(20).step(1).onFinishChange(generateGalaxy);
-gui.add(parameters, "spin").min(-5).max(5).step(0.001).onFinishChange(generateGalaxy);
-gui.add(parameters, "randomness").min(0).max(2).step(0.001).onFinishChange(generateGalaxy);
-gui.add(parameters, "randomnessPower").min(1).max(10).step(0.001).onFinishChange(generateGalaxy);
-gui.addColor(parameters, "insideColor").onFinishChange(generateGalaxy);
-gui.addColor(parameters, "outsideColor").onFinishChange(generateGalaxy);
+gui
+  .add(parameters, "count")
+  .min(100)
+  .max(1000000)
+  .step(100)
+  .name("粒子数量")
+  .onFinishChange(generateGalaxy);
+gui
+  .add(parameters, "size")
+  .min(0.001)
+  .max(0.1)
+  .step(0.001)
+  .name("粒子大小")
+  .onFinishChange(generateGalaxy);
+gui
+  .add(parameters, "radius")
+  .min(0.01)
+  .max(20)
+  .step(0.01)
+  .name("半径")
+  .onFinishChange(generateGalaxy);
+gui
+  .add(parameters, "branches")
+  .min(2)
+  .max(20)
+  .step(1)
+  .name("分支数")
+  .onFinishChange(generateGalaxy);
+gui
+  .add(parameters, "spin")
+  .min(-5)
+  .max(5)
+  .step(0.001)
+  .name("旋转(spin)")
+  .onFinishChange(generateGalaxy);
+gui
+  .add(parameters, "randomness")
+  .min(0)
+  .max(2)
+  .step(0.001)
+  .name("随机性")
+  .onFinishChange(generateGalaxy);
+gui
+  .add(parameters, "randomnessPower")
+  .min(1)
+  .max(10)
+  .step(0.001)
+  .name("随机力度")
+  .onFinishChange(generateGalaxy);
+gui.addColor(parameters, "insideColor").name("内部颜色").onFinishChange(generateGalaxy);
+gui.addColor(parameters, "outsideColor").name("外部颜色").onFinishChange(generateGalaxy);
 
 generateGalaxy();
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -131,35 +173,35 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
 camera.position.x = 3;
 camera.position.y = 3;
 camera.position.z = 3;
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -168,20 +210,20 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

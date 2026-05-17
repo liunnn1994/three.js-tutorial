@@ -15,33 +15,33 @@ void main()
     vec3 normal = normalize(vNormal);
     vec3 color = vec3(0.0);
 
-    // Sun orientation
+    // 太阳方向
     float sunOrientation = dot(uSunDirection, normal);
 
-    // Day / night color
+    // 昼夜颜色
     float dayMix = smoothstep(- 0.25, 0.5, sunOrientation);
     vec3 dayColor = texture(uDayTexture, vUv).rgb;
     vec3 nightColor = texture(uNightTexture, vUv).rgb;
     color = mix(nightColor, dayColor, dayMix);
 
-    // Specular cloud color
+    // 高光云颜色
     vec2 specularCloudsColor = texture(uSpecularCloudsTexture, vUv).rg;
 
-    // Clouds
+    // 云层
     float cloudsMix = smoothstep(0.5, 1.0, specularCloudsColor.g);
     cloudsMix *= dayMix;
     color = mix(color, vec3(1.0), cloudsMix);
 
-    // Fresnel
+    // 菲涅尔
     float fresnel = dot(viewDirection, normal) + 1.0;
     fresnel = pow(fresnel, 2.0);
 
-    // Atmosphere
+    // 大气层
     float atmosphereDayMix = smoothstep(- 0.5, 1.0, sunOrientation);
     vec3 atmosphereColor = mix(uAtmosphereTwilightColor, uAtmosphereDayColor, atmosphereDayMix);
     color = mix(color, atmosphereColor, fresnel * atmosphereDayMix);
 
-    // Specular
+    // 高光
     vec3 reflection = reflect(- uSunDirection, normal);
     float specular = - dot(reflection, viewDirection);
     specular = max(specular, 0.0);
@@ -51,7 +51,7 @@ void main()
     vec3 specularColor = mix(vec3(1.0), atmosphereColor, fresnel);
     color += specular * specularColor;
 
-    // Final color
+    // 最终颜色
     gl_FragColor = vec4(color, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>

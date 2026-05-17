@@ -5,20 +5,20 @@ import { gsap } from "gsap";
 import GUI from "lil-gui";
 
 /**
- * Loaders
+ * 加载器
  */
 const loadingBarElement = document.querySelector(".loading-bar");
 
 let sceneReady = false;
 const loadingManager = new THREE.LoadingManager(
-  // Loaded
+  // 已加载
   () => {
-    // Wait a little
+    // 等待一会儿
     window.setTimeout(() => {
-      // Animate overlay
+      // 动画遮罩
       gsap.to(overlayMaterial.uniforms.uAlpha, { duration: 3, value: 0, delay: 1 });
 
-      // Update loadingBarElement
+      // 更新加载条元素
       loadingBarElement.classList.add("ended");
       loadingBarElement.style.transform = "";
     }, 500);
@@ -28,9 +28,9 @@ const loadingManager = new THREE.LoadingManager(
     }, 2000);
   },
 
-  // Progress
+  // 进度
   (itemUrl, itemsLoaded, itemsTotal) => {
-    // Calculate the progress and update the loadingBarElement
+    // 计算进度并更新加载条元素
     const progressRatio = itemsLoaded / itemsTotal;
     loadingBarElement.style.transform = `scaleX(${progressRatio})`;
   },
@@ -39,19 +39,19 @@ const gltfLoader = new GLTFLoader(loadingManager);
 const cubeTextureLoader = new THREE.CubeTextureLoader(loadingManager);
 
 /**
- * Base
+ * 基础
  */
-// Debug
+// 调试
 const debugObject = {};
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
 /**
- * Overlay
+ * 遮罩
  */
 const overlayGeometry = new THREE.PlaneGeometry(2, 2, 1, 1);
 const overlayMaterial = new THREE.ShaderMaterial({
@@ -79,7 +79,7 @@ const overlay = new THREE.Mesh(overlayGeometry, overlayMaterial);
 scene.add(overlay);
 
 /**
- * Update all materials
+ * 更新所有材质
  */
 const updateAllMaterials = () => {
   scene.traverse((child) => {
@@ -94,7 +94,7 @@ const updateAllMaterials = () => {
 };
 
 /**
- * Environment map
+ * 环境贴图
  */
 const environmentMap = cubeTextureLoader.load([
   "/assets/48-mixing-html-and-webgl-final/textures/environmentMaps/0/px.jpg",
@@ -113,7 +113,7 @@ scene.environment = environmentMap;
 debugObject.envMapIntensity = 2.5;
 
 /**
- * Debug
+ * 调试
  */
 const gui = new GUI();
 gui
@@ -121,11 +121,11 @@ gui
   .min(0)
   .max(5)
   .step(0.1)
-  .name("Env Map Intensity")
+  .name("环境贴图强度")
   .onChange(updateAllMaterials);
 
 /**
- * Models
+ * 模型
  */
 gltfLoader.load(
   "/assets/48-mixing-html-and-webgl-final/models/DamagedHelmet/glTF/DamagedHelmet.gltf",
@@ -139,7 +139,7 @@ gltfLoader.load(
 );
 
 /**
- * Points of interest
+ * 兴趣点
  */
 const raycaster = new THREE.Raycaster();
 const points = [
@@ -158,7 +158,7 @@ const points = [
 ];
 
 /**
- * Lights
+ * 灯光
  */
 const directionalLight = new THREE.DirectionalLight("#ffffff", 3);
 directionalLight.castShadow = true;
@@ -169,7 +169,7 @@ directionalLight.position.set(0.25, 3, -2.25);
 scene.add(directionalLight);
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -177,19 +177,19 @@ const sizes = {
 };
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
 camera.position.set(4, 1, -4);
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -202,61 +202,61 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-gui.add(renderer, "toneMappingExposure").min(0).max(10).step(0.1).name("Tone Mapping Exposure");
+gui.add(renderer, "toneMappingExposure").min(0).max(10).step(0.1).name("色调映射曝光度");
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
 /**
- * Animate
+ * 动画循环
  */
 const tick = () => {
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Update points only when the scene is ready
+  // 仅在场景就绪时更新粒子
   if (sceneReady) {
-    // Go through each point
+    // 遍历每个点
     for (const point of points) {
-      // Get 2D screen position
+      // 获取 2D 屏幕位置
       const screenPosition = point.position.clone();
       screenPosition.project(camera);
 
-      // Set the raycaster
+      // 设置射线投射
       raycaster.setFromCamera(screenPosition, camera);
       const intersects = raycaster.intersectObjects(scene.children, true);
 
-      // No intersect found
+      // 未找到相交
       if (intersects.length === 0) {
-        // Show
+        // 显示
         point.element.classList.add("visible");
       }
 
-      // Intersect found
+      // 找到相交
       else {
-        // Get the distance of the intersection and the distance of the point
+        // 获取交点距离和点的距离
         const intersectionDistance = intersects[0].distance;
         const pointDistance = point.position.distanceTo(camera.position);
 
-        // Intersection is close than the point
+        // 交点比点更近
         if (intersectionDistance < pointDistance) {
-          // Hide
+          // 隐藏
           point.element.classList.remove("visible");
         }
-        // Intersection is further than the point
+        // 交点比点更远
         else {
-          // Show
+          // 显示
           point.element.classList.add("visible");
         }
       }
@@ -267,10 +267,10 @@ const tick = () => {
     }
   }
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

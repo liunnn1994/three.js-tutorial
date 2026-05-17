@@ -4,21 +4,21 @@ import GUI from "lil-gui";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 
 /**
- * Debug
+ * 调试
  */
 const gui = new GUI();
 
 /**
- * Base
+ * 基础
  */
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
 /**
- * Textures
+ * 纹理
  */
 const textureLoader = new THREE.TextureLoader();
 
@@ -42,7 +42,7 @@ doorColorTexture.colorSpace = THREE.SRGBColorSpace;
 matcapTexture.colorSpace = THREE.SRGBColorSpace;
 
 /**
- * Lights
+ * 灯光
  */
 // const ambientLight = new THREE.AmbientLight(0xffffff, 1)
 // scene.add(ambientLight)
@@ -54,7 +54,7 @@ matcapTexture.colorSpace = THREE.SRGBColorSpace;
 // scene.add(pointLight)
 
 /**
- * Environment map
+ * 环境贴图
  */
 const rgbeLoader = new RGBELoader();
 rgbeLoader.load("/assets/11-materials-final/textures/environmentMap/2k.hdr", (environmentMap) => {
@@ -65,7 +65,7 @@ rgbeLoader.load("/assets/11-materials-final/textures/environmentMap/2k.hdr", (en
 });
 
 /**
- * Objects
+ * 对象
  */
 // MeshBasicMaterial
 // const material = new THREE.MeshBasicMaterial()
@@ -125,7 +125,7 @@ rgbeLoader.load("/assets/11-materials-final/textures/environmentMap/2k.hdr", (en
 /**
  * MeshPhysicalMaterial
  */
-// Base material
+// 基础材质
 const material = new THREE.MeshPhysicalMaterial();
 material.metalness = 0;
 material.roughness = 0.15;
@@ -141,8 +141,8 @@ material.roughness = 0.15;
 // material.transparent = true
 // material.alphaMap = doorAlphaTexture
 
-gui.add(material, "metalness").min(0).max(1).step(0.0001);
-gui.add(material, "roughness").min(0).max(1).step(0.0001);
+gui.add(material, "metalness").min(0).max(1).step(0.0001).name("金属度(metalness)");
+gui.add(material, "roughness").min(0).max(1).step(0.0001).name("粗糙度(roughness)");
 
 // // Clearcoat
 // material.clearcoat = 1
@@ -170,16 +170,16 @@ gui.add(material, "roughness").min(0).max(1).step(0.0001);
 // gui.add(material.iridescenceThicknessRange, '0').min(1).max(1000).step(1)
 // gui.add(material.iridescenceThicknessRange, '1').min(1).max(1000).step(1)
 
-// Transmission
+// 透射
 material.transmission = 1;
 material.ior = 1.5;
 material.thickness = 0.5;
 
-gui.add(material, "transmission").min(0).max(1).step(0.0001);
-gui.add(material, "ior").min(1).max(10).step(0.0001);
-gui.add(material, "thickness").min(0).max(1).step(0.0001);
+gui.add(material, "transmission").min(0).max(1).step(0.0001).name("透射(transmission)");
+gui.add(material, "ior").min(1).max(10).step(0.0001).name("折射率(IOR)");
+gui.add(material, "thickness").min(0).max(1).step(0.0001).name("厚度(thickness)");
 
-// Objects
+// 对象
 const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 64, 64), material);
 sphere.position.x = -1.5;
 
@@ -191,7 +191,7 @@ torus.position.x = 1.5;
 scene.add(sphere, plane, torus);
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -199,35 +199,35 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
 camera.position.x = 1;
 camera.position.y = 1;
 camera.position.z = 2;
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -236,14 +236,14 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  // Update objects
+  // 更新对象
   sphere.rotation.y = 0.1 * elapsedTime;
   plane.rotation.y = 0.1 * elapsedTime;
   torus.rotation.y = 0.1 * elapsedTime;
@@ -252,13 +252,13 @@ const tick = () => {
   plane.rotation.x = -0.15 * elapsedTime;
   torus.rotation.x = -0.15 * elapsedTime;
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

@@ -40,26 +40,26 @@ void main()
     vec3 normal = normalize(vNormal);
     vec3 color = uColor;
 
-    // Lights
+    // 灯光
     vec3 light = vec3(0.0);
 
     light += ambientLight(
-        vec3(1.0), // Light color
-        1.0        // Light intensity,
+        vec3(1.0), // 灯光颜色
+        1.0        // 灯光强度,
     );
 
     light += directionalLight(
-        vec3(1.0, 1.0, 1.0), // Light color
-        1.0,                 // Light intensity
-        normal,              // Normal
-        vec3(1.0, 1.0, 0.0), // Light position
-        viewDirection,       // View direction
-        1.0                  // Specular power
+        vec3(1.0, 1.0, 1.0), // 灯光颜色
+        1.0,                 // 灯光强度
+        normal,              // 法线
+        vec3(1.0, 1.0, 0.0), // 灯光位置
+        viewDirection,       // 视线方向
+        1.0                  // 高光指数
     );
 
     color *= light;
 
-    // Halftone
+    // 半色调
     color = halftone(
         color,                 // Input color
         uShadowRepetitions,    // Repetitions
@@ -67,7 +67,7 @@ void main()
         - 0.8,                 // Low
         1.5,                   // High
         uShadowColor,          // Point color
-        normal                 // Normal
+        normal                 // 法线
     );
 
     color = halftone(
@@ -77,10 +77,10 @@ void main()
         0.5,                 // Low
         1.5,                 // High
         uLightColor,         // Point color
-        normal               // Normal
+        normal               // 法线
     );
 
-    // Final color
+    // 最终颜色
     gl_FragColor = vec4(color, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>

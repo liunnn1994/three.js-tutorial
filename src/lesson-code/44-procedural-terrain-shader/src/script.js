@@ -8,23 +8,23 @@ import terrainVertexShader from "./shaders/terrain/vertex.glsl";
 import terrainFragmentShader from "./shaders/terrain/fragment.glsl";
 
 /**
- * Base
+ * 基础
  */
-// Debug
+// 调试
 const gui = new GUI({ width: 325 });
 const debugObject = {};
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
-// Loaders
+// 加载器
 const rgbeLoader = new RGBELoader();
 
 /**
- * Environment map
+ * 环境贴图
  */
 rgbeLoader.load(
   "/assets/44-procedural-terrain-shader-final/spruit_sunrise.hdr",
@@ -38,15 +38,15 @@ rgbeLoader.load(
 );
 
 /**
- * Terrain
+ * 地形
  */
-// Geometry
+// 几何体
 const geometry = new THREE.PlaneGeometry(10, 10, 500, 500);
 geometry.deleteAttribute("uv");
 geometry.deleteAttribute("normal");
 geometry.rotateX(-Math.PI * 0.5);
 
-// Material
+// 材质
 debugObject.colorWaterDeep = "#002b3d";
 debugObject.colorWaterSurface = "#66a8ff";
 debugObject.colorSand = "#ffe894";
@@ -68,55 +68,61 @@ const uniforms = {
   uColorRock: new THREE.Uniform(new THREE.Color(debugObject.colorRock)),
 };
 
-gui.add(uniforms.uPositionFrequency, "value", 0, 1, 0.001).name("uPositionFrequency");
-gui.add(uniforms.uStrength, "value", 0, 10, 0.001).name("uStrength");
-gui.add(uniforms.uWarpFrequency, "value", 0, 10, 0.001).name("uWarpFrequency");
-gui.add(uniforms.uWarpStrength, "value", 0, 1, 0.001).name("uWarpStrength");
+gui.add(uniforms.uPositionFrequency, "value", 0, 1, 0.001).name("位置频率");
+gui.add(uniforms.uStrength, "value", 0, 10, 0.001).name("强度");
+gui.add(uniforms.uWarpFrequency, "value", 0, 10, 0.001).name("扭曲频率");
+gui.add(uniforms.uWarpStrength, "value", 0, 1, 0.001).name("扭曲强度");
 gui
   .addColor(debugObject, "colorWaterDeep")
+  .name("深水颜色")
   .onChange(() => uniforms.uColorWaterDeep.value.set(debugObject.colorWaterDeep));
 gui
   .addColor(debugObject, "colorWaterSurface")
+  .name("浅水颜色")
   .onChange(() => uniforms.uColorWaterSurface.value.set(debugObject.colorWaterSurface));
 gui
   .addColor(debugObject, "colorSand")
+  .name("沙子颜色")
   .onChange(() => uniforms.uColorSand.value.set(debugObject.colorSand));
 gui
   .addColor(debugObject, "colorGrass")
+  .name("草地颜色")
   .onChange(() => uniforms.uColorGrass.value.set(debugObject.colorGrass));
 gui
   .addColor(debugObject, "colorSnow")
+  .name("雪的颜色")
   .onChange(() => uniforms.uColorSnow.value.set(debugObject.colorSnow));
 gui
   .addColor(debugObject, "colorRock")
+  .name("岩石颜色")
   .onChange(() => uniforms.uColorRock.value.set(debugObject.colorRock));
 
 const material = new CustomShaderMaterial({
-  // CSM
+  // CSM（级联阴影贴图）
   baseMaterial: THREE.MeshStandardMaterial,
   vertexShader: terrainVertexShader,
   fragmentShader: terrainFragmentShader,
   uniforms: uniforms,
   silent: true,
 
-  // MeshPhysicalMaterial
+  // MeshPhysicalMaterial 材质
   metalness: 0,
   roughness: 0.5,
   color: "#85d534",
 });
 
 const depthMaterial = new CustomShaderMaterial({
-  // CSM
+  // CSM（级联阴影贴图）
   baseMaterial: THREE.MeshDepthMaterial,
   vertexShader: terrainVertexShader,
   uniforms: uniforms,
   silent: true,
 
-  // MeshDepthMaterial
+  // MeshDepthMaterial 材质
   depthPacking: THREE.RGBADepthPacking,
 });
 
-// Mesh
+// 网格
 const terrain = new THREE.Mesh(geometry, material);
 terrain.customDepthMaterial = depthMaterial;
 terrain.receiveShadow = true;
@@ -124,15 +130,15 @@ terrain.castShadow = true;
 scene.add(terrain);
 
 /**
- * Board
+ * 板
  */
-// Brushes
+// 刷子
 const boardFill = new Brush(new THREE.BoxGeometry(11, 2, 11));
 const boardHole = new Brush(new THREE.BoxGeometry(10, 2.1, 10));
 // boardHole.position.y = 0.2
 // boardHole.updateMatrixWorld()
 
-// Evaluate
+// 评估
 const evaluator = new Evaluator();
 const board = evaluator.evaluate(boardFill, boardHole, SUBTRACTION);
 board.geometry.clearGroups();
@@ -142,7 +148,7 @@ board.receiveShadow = true;
 scene.add(board);
 
 /**
- * Water
+ * 水面
  */
 const water = new THREE.Mesh(
   new THREE.PlaneGeometry(10, 10, 1, 1),
@@ -156,7 +162,7 @@ water.position.y = -0.1;
 scene.add(water);
 
 /**
- * Lights
+ * 灯光
  */
 const directionalLight = new THREE.DirectionalLight("#ffffff", 2);
 directionalLight.position.set(6.25, 3, 4);
@@ -171,7 +177,7 @@ directionalLight.shadow.camera.left = -8;
 scene.add(directionalLight);
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -180,34 +186,34 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
   sizes.pixelRatio = Math.min(window.devicePixelRatio, 2);
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(sizes.pixelRatio);
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(35, sizes.width / sizes.height, 0.1, 100);
 camera.position.set(-10, 6, -2);
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -221,23 +227,23 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(sizes.pixelRatio);
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  // Uniforms
+  // Uniform 变量
   uniforms.uTime.value = elapsedTime;
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

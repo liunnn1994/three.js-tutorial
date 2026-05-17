@@ -5,7 +5,7 @@ void main()
 {
     float textureAlpha = texture(uTexture, gl_PointCoord).r;
 
-    // Final color
+    // 最终颜色
     gl_FragColor = vec4(uColor, textureAlpha);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>

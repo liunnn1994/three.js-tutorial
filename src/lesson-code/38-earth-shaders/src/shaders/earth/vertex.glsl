@@ -4,14 +4,14 @@ varying vec3 vPosition;
 
 void main()
 {
-    // Position
+    // 位置
     vec4 modelPosition = modelMatrix * vec4(position, 1.0);
     gl_Position = projectionMatrix * viewMatrix * modelPosition;
 
-    // Model normal
+    // 模型法线
     vec3 modelNormal = (modelMatrix * vec4(normal, 0.0)).xyz;
 
-    // Varyings
+    // varying 变量
     vUv = uv;
     vNormal = modelNormal;
     vPosition = modelPosition.xyz;

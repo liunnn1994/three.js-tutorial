@@ -166,9 +166,7 @@ directionalLight.shadow.camera.left = -2;
 使用 `CameraHelper` 可以可视化阴影相机的范围：
 
 ```js
-const directionalLightCameraHelper = new THREE.CameraHelper(
-  directionalLight.shadow.camera,
-);
+const directionalLightCameraHelper = new THREE.CameraHelper(directionalLight.shadow.camera);
 scene.add(directionalLightCameraHelper);
 ```
 
@@ -613,9 +611,7 @@ directionalLight.shadow.camera.left = -2;
 scene.add(directionalLight);
 
 // 阴影相机辅助工具（调试用）
-const directionalLightCameraHelper = new THREE.CameraHelper(
-  directionalLight.shadow.camera,
-);
+const directionalLightCameraHelper = new THREE.CameraHelper(directionalLight.shadow.camera);
 directionalLightCameraHelper.visible = false;
 scene.add(directionalLightCameraHelper);
 ```

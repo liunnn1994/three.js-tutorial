@@ -268,15 +268,9 @@ gltfLoader.load("/models/room.glb", (gltf) => {
   });
 
   // 查找特定的发光物体
-  const poleLightAMesh = gltfScene.children.find(
-    (child) => child.name === "poleLightA",
-  );
-  const poleLightBMesh = gltfScene.children.find(
-    (child) => child.name === "poleLightB",
-  );
-  const portalLightMesh = gltfScene.children.find(
-    (child) => child.name === "PortalLight",
-  );
+  const poleLightAMesh = gltfScene.children.find((child) => child.name === "poleLightA");
+  const poleLightBMesh = gltfScene.children.find((child) => child.name === "poleLightB");
+  const portalLightMesh = gltfScene.children.find((child) => child.name === "PortalLight");
 
   scene.add(gltfScene);
 });
@@ -361,15 +355,9 @@ gltfLoader.load("/models/room.glb", (gltf) => {
   });
 
   // 查找发光物体并替换为独立材质
-  const poleLightAMesh = gltfScene.children.find(
-    (child) => child.name === "poleLightA",
-  );
-  const poleLightBMesh = gltfScene.children.find(
-    (child) => child.name === "poleLightB",
-  );
-  const portalLightMesh = gltfScene.children.find(
-    (child) => child.name === "PortalLight",
-  );
+  const poleLightAMesh = gltfScene.children.find((child) => child.name === "poleLightA");
+  const poleLightBMesh = gltfScene.children.find((child) => child.name === "poleLightB");
+  const portalLightMesh = gltfScene.children.find((child) => child.name === "PortalLight");
 
   if (poleLightAMesh) poleLightAMesh.material = poleLightMaterial;
   if (poleLightBMesh) poleLightBMesh.material = poleLightMaterial;
@@ -538,15 +526,9 @@ gltfLoader.load("/models/room-merged.glb", (gltf) => {
   }
 
   // 找到发光物体
-  const poleLightAMesh = gltfScene.children.find(
-    (child) => child.name === "poleLightA",
-  );
-  const poleLightBMesh = gltfScene.children.find(
-    (child) => child.name === "poleLightB",
-  );
-  const portalLightMesh = gltfScene.children.find(
-    (child) => child.name === "PortalLight",
-  );
+  const poleLightAMesh = gltfScene.children.find((child) => child.name === "poleLightA");
+  const poleLightBMesh = gltfScene.children.find((child) => child.name === "poleLightB");
+  const portalLightMesh = gltfScene.children.find((child) => child.name === "PortalLight");
 
   if (poleLightAMesh) poleLightAMesh.material = poleLightMaterial;
   if (poleLightBMesh) poleLightBMesh.material = poleLightMaterial;
@@ -677,12 +659,7 @@ import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 
 // === 场景、相机、渲染器基础设置 ===
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(
-  45,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  100,
-);
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
 camera.position.set(4, 2, 5);
 
 const renderer = new THREE.WebGLRenderer({
@@ -730,15 +707,9 @@ gltfLoader.load("models/room-merged.glb", (gltf) => {
   }
 
   // 找到发光物体，分配独立的发光材质
-  const poleLightAMesh = gltfScene.children.find(
-    (child) => child.name === "poleLightA",
-  );
-  const poleLightBMesh = gltfScene.children.find(
-    (child) => child.name === "poleLightB",
-  );
-  const portalLightMesh = gltfScene.children.find(
-    (child) => child.name === "PortalLight",
-  );
+  const poleLightAMesh = gltfScene.children.find((child) => child.name === "poleLightA");
+  const poleLightBMesh = gltfScene.children.find((child) => child.name === "poleLightB");
+  const portalLightMesh = gltfScene.children.find((child) => child.name === "PortalLight");
 
   if (poleLightAMesh) poleLightAMesh.material = poleLightMaterial;
   if (poleLightBMesh) poleLightBMesh.material = poleLightMaterial;

@@ -13,48 +13,48 @@ void main()
     vec3 viewDirection = normalize(vPosition - cameraPosition);
     vec3 color = uColor;
 
-    // Lights
+    // 灯光
     vec3 light = vec3(0.0);
 
     light += ambientLight(
-        vec3(1.0), // Light color
-        0.03       // Light intensity
+        vec3(1.0), // 灯光颜色
+        0.03       // 灯光强度
     );
 
     light += directionalLight(
-        vec3(0.1, 0.1, 1.0), // Light color
-        1.0,                 // Light intensity,
-        normal,              // Normal
-        vec3(0.0, 0.0, 3.0), // Light position
-        viewDirection,       // View direction
-        20.0                 // Specular power
+        vec3(0.1, 0.1, 1.0), // 灯光颜色
+        1.0,                 // 灯光强度,
+        normal,              // 法线
+        vec3(0.0, 0.0, 3.0), // 灯光位置
+        viewDirection,       // 视线方向
+        20.0                 // 高光指数
     );
 
     light += pointLight(
-        vec3(1.0, 0.1, 0.1), // Light color
-        1.0,                 // Light intensity,
-        normal,              // Normal
-        vec3(0.0, 2.5, 0.0), // Light position
-        viewDirection,       // View direction
-        20.0,                // Specular power
-        vPosition,           // Position
-        0.25                 // Light decay
+        vec3(1.0, 0.1, 0.1), // 灯光颜色
+        1.0,                 // 灯光强度,
+        normal,              // 法线
+        vec3(0.0, 2.5, 0.0), // 灯光位置
+        viewDirection,       // 视线方向
+        20.0,                // 高光指数
+        vPosition,           // 位置
+        0.25                 // 灯光衰减
     );
 
     light += pointLight(
-        vec3(0.1, 1.0, 0.5), // Light color
-        1.0,                 // Light intensity,
-        normal,              // Normal
-        vec3(2.0, 0.0, 2.0), // Light position
-        viewDirection,       // View direction
-        20.0,                // Specular power
-        vPosition,           // Position
-        0.2                  // Light decay
+        vec3(0.1, 1.0, 0.5), // 灯光颜色
+        1.0,                 // 灯光强度,
+        normal,              // 法线
+        vec3(2.0, 0.0, 2.0), // 灯光位置
+        viewDirection,       // 视线方向
+        20.0,                // 高光指数
+        vPosition,           // 位置
+        0.2                  // 灯光衰减
     );
 
     color *= light;
 
-    // Final color
+    // 最终颜色
     gl_FragColor = vec4(color, 1.0);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>

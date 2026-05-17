@@ -4,26 +4,26 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import GUI from "lil-gui";
 
 /**
- * Base
+ * 基础
  */
-// Debug
+// 调试
 const gui = new GUI();
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
 /**
- * Loaders
+ * 加载器
  */
 const textureLoader = new THREE.TextureLoader();
 const gltfLoader = new GLTFLoader();
 const cubeTextureLoader = new THREE.CubeTextureLoader();
 
 /**
- * Update all materials
+ * 更新所有材质
  */
 const updateAllMaterials = () => {
   scene.traverse((child) => {
@@ -37,7 +37,7 @@ const updateAllMaterials = () => {
 };
 
 /**
- * Environment map
+ * 环境贴图
  */
 const environmentMap = cubeTextureLoader.load([
   "/assets/31-modified-materials-final/textures/environmentMaps/0/px.jpg",
@@ -53,10 +53,10 @@ scene.background = environmentMap;
 scene.environment = environmentMap;
 
 /**
- * Material
+ * 材质
  */
 
-// Textures
+// 纹理
 const mapTexture = textureLoader.load(
   "/assets/31-modified-materials-final/models/LeePerrySmith/color.jpg",
 );
@@ -65,7 +65,7 @@ const normalTexture = textureLoader.load(
   "/assets/31-modified-materials-final/models/LeePerrySmith/normal.jpg",
 );
 
-// Material
+// 材质
 const material = new THREE.MeshStandardMaterial({
   map: mapTexture,
   normalMap: normalTexture,
@@ -146,25 +146,25 @@ depthMaterial.onBeforeCompile = (shader) => {
 };
 
 /**
- * Models
+ * 模型
  */
 gltfLoader.load(
   "/assets/31-modified-materials-final/models/LeePerrySmith/LeePerrySmith.glb",
   (gltf) => {
-    // Model
+    // 模型
     const mesh = gltf.scene.children[0];
     mesh.rotation.y = Math.PI * 0.5;
     mesh.material = material; // Update the material
     mesh.customDepthMaterial = depthMaterial; // Update the depth material
     scene.add(mesh);
 
-    // Update materials
+    // 更新材质
     updateAllMaterials();
   },
 );
 
 /**
- * Plane
+ * 平面
  */
 const plane = new THREE.Mesh(new THREE.PlaneGeometry(15, 15, 15), new THREE.MeshStandardMaterial());
 plane.rotation.y = Math.PI;
@@ -173,7 +173,7 @@ plane.position.z = 5;
 scene.add(plane);
 
 /**
- * Lights
+ * 灯光
  */
 const directionalLight = new THREE.DirectionalLight("#ffffff", 3);
 directionalLight.castShadow = true;
@@ -184,7 +184,7 @@ directionalLight.position.set(0.25, 2, -2.25);
 scene.add(directionalLight);
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -192,33 +192,33 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
 camera.position.set(4, 1, -4);
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -232,23 +232,23 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  // Update material
+  // 更新材质
   customUniforms.uTime.value = elapsedTime;
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

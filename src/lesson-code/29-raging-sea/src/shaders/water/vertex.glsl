@@ -10,7 +10,7 @@ uniform float uSmallIterations;
 
 varying float vElevation;
 
-// Classic Perlin 3D Noise 
+// 经典 Perlin 3D 噪声 
 // by Stefan Gustavson
 //
 vec4 permute(vec4 x)
@@ -99,7 +99,7 @@ void main()
 {
     vec4 modelPosition = modelMatrix * vec4(position, 1.0);
 
-    // Elevation
+    // 高度
     float elevation = sin(modelPosition.x * uBigWavesFrequency.x + uTime * uBigWavesSpeed) *
                       sin(modelPosition.z * uBigWavesFrequency.y + uTime * uBigWavesSpeed) *
                       uBigWavesElevation;

@@ -2,20 +2,20 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import GUI from "lil-gui";
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
 /**
- * Axes Helper
+ * 坐标轴辅助器
  */
 const axesHelper = new THREE.AxesHelper(2);
 scene.add(axesHelper);
 
 /**
- * Objects
+ * 对象
  */
 const group = new THREE.Group();
 scene.add(group);
@@ -42,34 +42,34 @@ cube3.position.x = 1.5;
 group.add(cube3);
 
 /**
- * Debug
+ * 调试
  */
 const gui = new GUI();
 
-gui.add(group.position, "y").min(-3).max(3).step(0.01).name("Position Y");
-gui.add(group.rotation, "x").min(-Math.PI).max(Math.PI).step(0.01).name("Rotation X");
-gui.add(group.rotation, "y").min(-Math.PI).max(Math.PI).step(0.01).name("Rotation Y");
-gui.add(group.rotation, "z").min(-Math.PI).max(Math.PI).step(0.01).name("Rotation Z");
-gui.add(group.scale, "x").min(0.1).max(3).step(0.01).name("Scale X");
-gui.add(group.scale, "y").min(0.1).max(3).step(0.01).name("Scale Y");
-gui.add(group.scale, "z").min(0.1).max(3).step(0.01).name("Scale Z");
+gui.add(group.position, "y").min(-3).max(3).step(0.01).name("位置 Y");
+gui.add(group.rotation, "x").min(-Math.PI).max(Math.PI).step(0.01).name("旋转 X");
+gui.add(group.rotation, "y").min(-Math.PI).max(Math.PI).step(0.01).name("旋转 Y");
+gui.add(group.rotation, "z").min(-Math.PI).max(Math.PI).step(0.01).name("旋转 Z");
+gui.add(group.scale, "x").min(0.1).max(3).step(0.01).name("缩放 X");
+gui.add(group.scale, "y").min(0.1).max(3).step(0.01).name("缩放 Y");
+gui.add(group.scale, "z").min(0.1).max(3).step(0.01).name("缩放 Z");
 
-const cube1Folder = gui.addFolder("Cube 1");
-cube1Folder.add(cube1.position, "x").min(-3).max(3).step(0.01).name("Position X");
-cube1Folder.addColor(cube1.material, "color").name("Color");
+const cube1Folder = gui.addFolder("立方体 1");
+cube1Folder.add(cube1.position, "x").min(-3).max(3).step(0.01).name("位置 X");
+cube1Folder.addColor(cube1.material, "color").name("颜色");
 
-const cube2Folder = gui.addFolder("Cube 2");
-cube2Folder.add(cube2.position, "x").min(-3).max(3).step(0.01).name("Position X");
-cube2Folder.addColor(cube2.material, "color").name("Color");
+const cube2Folder = gui.addFolder("立方体 2");
+cube2Folder.add(cube2.position, "x").min(-3).max(3).step(0.01).name("位置 X");
+cube2Folder.addColor(cube2.material, "color").name("颜色");
 
-const cube3Folder = gui.addFolder("Cube 3");
-cube3Folder.add(cube3.position, "x").min(-3).max(3).step(0.01).name("Position X");
-cube3Folder.addColor(cube3.material, "color").name("Color");
+const cube3Folder = gui.addFolder("立方体 3");
+cube3Folder.add(cube3.position, "x").min(-3).max(3).step(0.01).name("位置 X");
+cube3Folder.addColor(cube3.material, "color").name("颜色");
 
-gui.add(axesHelper, "visible").name("Axes Helper");
+gui.add(axesHelper, "visible").name("坐标轴辅助器");
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -86,18 +86,18 @@ window.addEventListener("resize", () => {
 });
 
 /**
- * Camera
+ * 相机
  */
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height);
 camera.position.z = 5;
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -106,7 +106,7 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
- * Animate
+ * 动画循环
  */
 const tick = () => {
   controls.update();

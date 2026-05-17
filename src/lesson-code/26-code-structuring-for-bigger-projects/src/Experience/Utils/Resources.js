@@ -24,7 +24,7 @@ export default class Resources extends EventEmitter {
   }
 
   startLoading() {
-    // Load each source
+    // 加载每个资源
     for (const source of this.sources) {
       if (source.type === "gltfModel") {
         this.loaders.gltfLoader.load(source.path, (file) => {

@@ -11,16 +11,16 @@ void main()
     vec3 normal = normalize(vNormal);
     vec3 color = vec3(0.0);
 
-    // Sun orientation
+    // 太阳方向
     float sunOrientation = dot(uSunDirection, normal);
 
-    // Atmosphere
+    // 大气层
     float atmosphereDayMix = smoothstep(- 0.5, 1.0, sunOrientation);
     vec3 atmosphereColor = mix(uAtmosphereTwilightColor, uAtmosphereDayColor, atmosphereDayMix);
     color = mix(color, atmosphereColor, atmosphereDayMix);
     color += atmosphereColor;
 
-    // Alpha
+    // 透明度
     float edgeAlpha = dot(viewDirection, normal);
     edgeAlpha = smoothstep(0.0, 0.5, edgeAlpha);
 
@@ -28,7 +28,7 @@ void main()
 
     float alpha = edgeAlpha * dayAlpha;
 
-    // Final color
+    // 最终颜色
     gl_FragColor = vec4(color, alpha);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>

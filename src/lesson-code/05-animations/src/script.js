@@ -4,16 +4,16 @@ import GUI from "lil-gui";
 import gsap from "gsap";
 
 /**
- * Base
+ * 基础
  */
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
 /**
- * Object
+ * 物体
  */
 const geometry = new THREE.BoxGeometry(1, 1, 1);
 const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
@@ -21,7 +21,7 @@ const mesh = new THREE.Mesh(geometry, material);
 scene.add(mesh);
 
 /**
- * Debug
+ * 调试
  */
 const gui = new GUI();
 const params = {
@@ -33,13 +33,13 @@ const params = {
 
 gui
   .addColor(params, "color")
-  .name("Color")
+  .name("颜色")
   .onChange(() => {
     material.color.set(params.color);
   });
-gui.add(params, "duration").min(0.1).max(5).step(0.1).name("Duration");
-gui.add(params, "delay").min(0).max(3).step(0.1).name("Delay");
-gui.add(params, "targetX").min(-3).max(3).step(0.1).name("Target X");
+gui.add(params, "duration").min(0.1).max(5).step(0.1).name("时长");
+gui.add(params, "delay").min(0).max(3).step(0.1).name("延迟");
+gui.add(params, "targetX").min(-3).max(3).step(0.1).name("目标 X");
 gui
   .add(
     {
@@ -54,7 +54,7 @@ gui
     },
     "replay",
   )
-  .name("Replay Animation");
+  .name("重播动画");
 gui
   .add(
     {
@@ -67,10 +67,10 @@ gui
     },
     "reset",
   )
-  .name("Reset");
+  .name("重置");
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -87,18 +87,18 @@ window.addEventListener("resize", () => {
 });
 
 /**
- * Camera
+ * 相机
  */
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height);
 camera.position.z = 3;
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -107,7 +107,7 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
- * Animate
+ * 动画循环
  */
 gsap.to(mesh.position, { duration: params.duration, delay: params.delay, x: params.targetX });
 

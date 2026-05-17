@@ -6,22 +6,22 @@ import shadingVertexShader from "./shaders/shading/vertex.glsl";
 import shadingFragmentShader from "./shaders/shading/fragment.glsl";
 
 /**
- * Base
+ * 基础
  */
-// Debug
+// 调试
 const gui = new GUI();
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
-// Loaders
+// 加载器
 const gltfLoader = new GLTFLoader();
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -30,36 +30,36 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
   sizes.pixelRatio = Math.min(window.devicePixelRatio, 2);
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(sizes.pixelRatio);
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(25, sizes.width / sizes.height, 0.1, 100);
 camera.position.x = 7;
 camera.position.y = 7;
 camera.position.z = 7;
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -71,7 +71,7 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(sizes.pixelRatio);
 
 /**
- * Material
+ * 材质
  */
 const materialParameters = {};
 materialParameters.color = "#ffffff";
@@ -84,12 +84,15 @@ const material = new THREE.ShaderMaterial({
   },
 });
 
-gui.addColor(materialParameters, "color").onChange(() => {
-  material.uniforms.uColor.value.set(materialParameters.color);
-});
+gui
+  .addColor(materialParameters, "color")
+  .name("颜色")
+  .onChange(() => {
+    material.uniforms.uColor.value.set(materialParameters.color);
+  });
 
 /**
- * Light helpers
+ * 灯光辅助器
  */
 const directionalLightHelper = new THREE.Mesh(
   new THREE.PlaneGeometry(),
@@ -117,19 +120,19 @@ pointLightHelper2.position.set(2, 0, 2);
 scene.add(pointLightHelper2);
 
 /**
- * Objects
+ * 对象
  */
-// Torus knot
+// 环面纽结
 const torusKnot = new THREE.Mesh(new THREE.TorusKnotGeometry(0.6, 0.25, 128, 32), material);
 torusKnot.position.x = 3;
 scene.add(torusKnot);
 
-// Sphere
+// 球体
 const sphere = new THREE.Mesh(new THREE.SphereGeometry(), material);
 sphere.position.x = -3;
 scene.add(sphere);
 
-// Suzanne
+// 猴头模型
 let suzanne = null;
 gltfLoader.load("/assets/35-lights-shading-shaders-final/suzanne.glb", (gltf) => {
   suzanne = gltf.scene;
@@ -140,14 +143,14 @@ gltfLoader.load("/assets/35-lights-shading-shaders-final/suzanne.glb", (gltf) =>
 });
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  // Rotate objects
+  // 旋转对象
   if (suzanne) {
     suzanne.rotation.x = -elapsedTime * 0.1;
     suzanne.rotation.y = elapsedTime * 0.2;
@@ -159,13 +162,13 @@ const tick = () => {
   torusKnot.rotation.x = -elapsedTime * 0.1;
   torusKnot.rotation.y = elapsedTime * 0.2;
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

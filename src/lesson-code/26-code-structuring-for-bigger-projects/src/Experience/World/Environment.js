@@ -8,7 +8,7 @@ export default class Environment {
     this.resources = this.experience.resources;
     this.debug = this.experience.debug;
 
-    // Debug
+    // 调试
     if (this.debug.active) {
       this.debugFolder = this.debug.ui.addFolder("environment");
     }
@@ -26,7 +26,7 @@ export default class Environment {
     this.sunLight.position.set(3.5, 2, -1.25);
     this.scene.add(this.sunLight);
 
-    // Debug
+    // 调试
     if (this.debug.active) {
       this.debugFolder
         .add(this.sunLight, "intensity")
@@ -77,7 +77,7 @@ export default class Environment {
     };
     this.environmentMap.updateMaterials();
 
-    // Debug
+    // 调试
     if (this.debug.active) {
       this.debugFolder
         .add(this.environmentMap, "intensity")

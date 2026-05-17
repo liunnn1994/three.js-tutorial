@@ -9,12 +9,12 @@ export default class Fox {
     this.time = this.experience.time;
     this.debug = this.experience.debug;
 
-    // Debug
+    // 调试
     if (this.debug.active) {
       this.debugFolder = this.debug.ui.addFolder("fox");
     }
 
-    // Resource
+    // 资源
     this.resource = this.resources.items.foxModel;
 
     this.setModel();
@@ -36,10 +36,10 @@ export default class Fox {
   setAnimation() {
     this.animation = {};
 
-    // Mixer
+    // 动画混合器
     this.animation.mixer = new THREE.AnimationMixer(this.model);
 
-    // Actions
+    // 动作
     this.animation.actions = {};
 
     this.animation.actions.idle = this.animation.mixer.clipAction(this.resource.animations[0]);
@@ -49,7 +49,7 @@ export default class Fox {
     this.animation.actions.current = this.animation.actions.idle;
     this.animation.actions.current.play();
 
-    // Play the action
+    // 播放动画
     this.animation.play = (name) => {
       const newAction = this.animation.actions[name];
       const oldAction = this.animation.actions.current;
@@ -61,7 +61,7 @@ export default class Fox {
       this.animation.actions.current = newAction;
     };
 
-    // Debug
+    // 调试
     if (this.debug.active) {
       const debugObject = {
         playIdle: () => {

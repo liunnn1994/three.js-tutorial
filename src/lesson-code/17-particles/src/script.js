@@ -3,9 +3,9 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import GUI from "lil-gui";
 
 /**
- * Base
+ * 基础
  */
-// Debug
+// 调试
 const gui = new GUI();
 const params = {
   size: 0.1,
@@ -34,21 +34,21 @@ gui
   .min(0.01)
   .max(0.5)
   .step(0.01)
-  .name("Particle Size")
+  .name("粒子大小")
   .onChange(() => {
     particlesMaterial.size = params.size;
   });
 gui
   .add(params, "sizeAttenuation")
-  .name("Size Attenuation")
+  .name("大小衰减(Size Attenuation)")
   .onChange(() => {
     particlesMaterial.sizeAttenuation = params.sizeAttenuation;
   });
-gui.add(params, "count").min(1000).max(200000).step(1000).name("Particle Count");
-gui.add(params, "regenerate").name("Regenerate Particles");
+gui.add(params, "count").min(1000).max(200000).step(1000).name("粒子数量");
+gui.add(params, "regenerate").name("重新生成粒子");
 gui
   .addColor(params, "color")
-  .name("Color")
+  .name("颜色")
   .onChange(() => {
     particlesMaterial.color.set(params.color);
   });
@@ -57,35 +57,35 @@ gui
     AdditiveBlending: THREE.AdditiveBlending,
     NormalBlending: THREE.NormalBlending,
   })
-  .name("Blending")
+  .name("混合模式")
   .onChange(() => {
     particlesMaterial.blending = params.blending;
     particlesMaterial.needsUpdate = true;
   });
 gui
   .add(params, "depthWrite")
-  .name("Depth Write")
+  .name("深度写入")
   .onChange(() => {
     particlesMaterial.depthWrite = params.depthWrite;
   });
-gui.add(params, "animSpeed").min(0).max(5).step(0.1).name("Animation Speed");
+gui.add(params, "animSpeed").min(0).max(5).step(0.1).name("动画速度");
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
 /**
- * Textures
+ * 纹理
  */
 const textureLoader = new THREE.TextureLoader();
 const particleTexture = textureLoader.load("/assets/17-particles-final/textures/particles/1.png");
 
 /**
- * Particles
+ * 粒子
  */
-// Geometry
+// 几何体
 const particlesGeometry = new THREE.BufferGeometry();
 const count = 50000;
 
@@ -100,7 +100,7 @@ for (let i = 0; i < count * 3; i++) {
 particlesGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
 particlesGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
-// Material
+// 材质
 const particlesMaterial = new THREE.PointsMaterial();
 
 particlesMaterial.size = 0.1;
@@ -117,12 +117,12 @@ particlesMaterial.blending = THREE.AdditiveBlending;
 
 particlesMaterial.vertexColors = true;
 
-// Points
+// 粒子点
 const particles = new THREE.Points(particlesGeometry, particlesMaterial);
 scene.add(particles);
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -130,33 +130,33 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
 camera.position.z = 3;
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -165,14 +165,14 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  // Update particles
+  // 更新粒子
   for (let i = 0; i < count; i++) {
     let i3 = i * 3;
 
@@ -183,13 +183,13 @@ const tick = () => {
   }
   particlesGeometry.attributes.position.needsUpdate = true;
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

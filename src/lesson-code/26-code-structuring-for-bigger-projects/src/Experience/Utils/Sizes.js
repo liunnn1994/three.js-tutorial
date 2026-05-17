@@ -4,12 +4,12 @@ export default class Sizes extends EventEmitter {
   constructor() {
     super();
 
-    // Setup
+    // 设置
     this.width = window.innerWidth;
     this.height = window.innerHeight;
     this.pixelRatio = Math.min(window.devicePixelRatio, 2);
 
-    // Resize event
+    // 调整大小事件
     window.addEventListener("resize", () => {
       this.width = window.innerWidth;
       this.height = window.innerHeight;

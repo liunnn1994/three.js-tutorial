@@ -9,9 +9,9 @@ export default class World {
     this.scene = this.experience.scene;
     this.resources = this.experience.resources;
 
-    // Wait for resources
+    // 等待资源加载
     this.resources.on("ready", () => {
-      // Setup
+      // 设置
       this.floor = new Floor();
       this.fox = new Fox();
       this.environment = new Environment();

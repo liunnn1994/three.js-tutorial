@@ -14,19 +14,19 @@ let instance = null;
 
 export default class Experience {
   constructor(_canvas) {
-    // Singleton
+    // 单例
     if (instance) {
       return instance;
     }
     instance = this;
 
-    // Global access
+    // 全局访问
     window.experience = this;
 
-    // Options
+    // 选项
     this.canvas = _canvas;
 
-    // Setup
+    // 设置
     this.debug = new Debug();
     this.sizes = new Sizes();
     this.time = new Time();
@@ -36,12 +36,12 @@ export default class Experience {
     this.renderer = new Renderer();
     this.world = new World();
 
-    // Resize event
+    // 调整大小事件
     this.sizes.on("resize", () => {
       this.resize();
     });
 
-    // Time tick event
+    // 时间帧事件
     this.time.on("tick", () => {
       this.update();
     });
@@ -62,17 +62,17 @@ export default class Experience {
     this.sizes.off("resize");
     this.time.off("tick");
 
-    // Traverse the whole scene
+    // 遍历整个场景
     this.scene.traverse((child) => {
-      // Test if it's a mesh
+      // 测试是否为网格
       if (child instanceof THREE.Mesh) {
         child.geometry.dispose();
 
-        // Loop through the material properties
+        // 遍历材质属性
         for (const key in child.material) {
           const value = child.material[key];
 
-          // Test if there is a dispose function
+          // 测试是否有 dispose 函数
           if (value && typeof value.dispose === "function") {
             value.dispose();
           }

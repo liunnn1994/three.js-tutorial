@@ -12,35 +12,35 @@ import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 // spector.displayUI()
 
 /**
- * Base
+ * 基础
  */
-// Debug
+// 调试
 const gui = new GUI({
   width: 400,
 });
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
 /**
- * Loaders
+ * 加载器
  */
-// Texture loader
+// 纹理加载器
 const textureLoader = new THREE.TextureLoader();
 
-// Draco loader
+// Draco 加载器
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath("draco/");
 
-// GLTF loader
+// GLTF 加载器
 const gltfLoader = new GLTFLoader();
 gltfLoader.setDRACOLoader(dracoLoader);
 
 /**
- * Textures
+ * 纹理
  */
 const bakedTexture = textureLoader.load(
   "/assets/51-importing-and-optimizing-the-scene-final/baked.jpg",
@@ -49,19 +49,19 @@ bakedTexture.flipY = false;
 bakedTexture.colorSpace = THREE.SRGBColorSpace;
 
 /**
- * Materials
+ * 材质
  */
-// Baked material
+// 烘焙材质
 const bakedMaterial = new THREE.MeshBasicMaterial({ map: bakedTexture });
 
-// Portal light material
+// 传送门光源材质
 const portalLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
-// Pole light material
+// 灯柱光源材质
 const poleLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffe5 });
 
 /**
- * Model
+ * 模型
  */
 gltfLoader.load("/assets/51-importing-and-optimizing-the-scene-final/portal.glb", (gltf) => {
   const bakedMesh = gltf.scene.children.find((child) => child.name === "baked");
@@ -78,7 +78,7 @@ gltfLoader.load("/assets/51-importing-and-optimizing-the-scene-final/portal.glb"
 });
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -86,35 +86,35 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(45, sizes.width / sizes.height, 0.1, 100);
 camera.position.x = 4;
 camera.position.y = 2;
 camera.position.z = 4;
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -124,20 +124,20 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

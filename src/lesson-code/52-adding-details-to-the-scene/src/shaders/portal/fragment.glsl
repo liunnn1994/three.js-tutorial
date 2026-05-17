@@ -4,7 +4,7 @@ uniform vec3 uColorEnd;
 
 varying vec2 vUv;
 
-//    Classic Perlin 3D Noise 
+//    经典 Perlin 3D 噪声 
 //    by Stefan Gustavson
 //
 vec4 permute(vec4 x){ return mod(((x*34.0)+1.0)*x, 289.0); }
@@ -83,23 +83,23 @@ float cnoise(vec3 P)
 
 void main()
 {
-    // Displace the UV
+    // 置换 UV
     vec2 displacedUv = vUv + cnoise(vec3(vUv * 5.0, uTime * 0.1));
 
-    // Perlin noise
+    // 柏林噪声
     float strength = cnoise(vec3(displacedUv * 5.0, uTime * 0.2));
 
-    // Outer glow
+    // 外发光
     float outerGlow = distance(vUv, vec2(0.5)) * 5.0 - 1.4;
     strength += outerGlow;
 
-    // Apply cool step
+    // 应用冷色阶
     strength += step(- 0.2, strength) * 0.8;
 
     // // Clamp the value from 0 to 1
     // strength = clamp(strength, 0.0, 1.0);
 
-    // Final color
+    // 最终颜色
     vec3 color = mix(uColorStart, uColorEnd, strength);
 
     gl_FragColor = vec4(color, 1.0);

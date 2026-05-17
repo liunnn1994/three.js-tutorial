@@ -1,4 +1,4 @@
-// Simplex 2D noise
+// Simplex 2D 噪声
 //
 vec3 permute(vec3 x) { return mod(((x*44.0)+1.0)*x, 299.0); }
 

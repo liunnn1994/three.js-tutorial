@@ -13,7 +13,7 @@ varying vec3 vColor;
 
 void main()
 {
-    // Mixed position
+    // 混合位置
     float noiseOrigin = simplexNoise3d(position * 0.2);
     float noiseTarget = simplexNoise3d(aPositionTarget * 0.2);
     float noise = mix(noiseOrigin, noiseTarget, uProgress);
@@ -25,16 +25,16 @@ void main()
     float progress = smoothstep(delay, end, uProgress);
     vec3 mixedPosition = mix(position, aPositionTarget, progress);
 
-    // Final position
+    // 最终位置
     vec4 modelPosition = modelMatrix * vec4(mixedPosition, 1.0);
     vec4 viewPosition = viewMatrix * modelPosition;
     vec4 projectedPosition = projectionMatrix * viewPosition;
     gl_Position = projectedPosition;
 
-    // Point size
+    // 点大小
     gl_PointSize = aSize * uSize * uResolution.y;
     gl_PointSize *= (1.0 / - viewPosition.z);
 
-    // Varyings
+    // varying 变量
     vColor = mix(uColorA, uColorB, noise);
 }

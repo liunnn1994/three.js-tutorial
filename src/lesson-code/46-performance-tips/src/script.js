@@ -5,23 +5,23 @@ import Stats from "stats.js";
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 /**
- * Stats
+ * 性能统计
  */
 const stats = new Stats();
 stats.showPanel(0);
 document.body.appendChild(stats.dom);
 
 /**
- * Base
+ * 基础
  */
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
 /**
- * Textures
+ * 纹理
  */
 const textureLoader = new THREE.TextureLoader();
 const displacementTexture = textureLoader.load(
@@ -29,7 +29,7 @@ const displacementTexture = textureLoader.load(
 );
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -37,33 +37,33 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
 camera.position.set(2, 2, 6);
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -76,7 +76,7 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
- * Test meshes
+ * 测试网格
  */
 const cube = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), new THREE.MeshStandardMaterial());
 cube.castShadow = true;
@@ -124,7 +124,7 @@ directionalLight.position.set(0.25, 3, 2.25);
 scene.add(directionalLight);
 
 /**
- * Debug
+ * 调试
  */
 const gui = new GUI();
 const params = {
@@ -186,7 +186,7 @@ gui
   });
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 
@@ -195,16 +195,16 @@ const tick = () => {
 
   const elapsedTime = clock.getElapsedTime();
 
-  // Update test mesh
+  // 更新测试网格
   torusKnot.rotation.y = elapsedTime * 0.1;
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 
   stats.end();
@@ -213,7 +213,7 @@ const tick = () => {
 tick();
 
 /**
- * Tips
+ * 技巧
  */
 
 // // Tip 4
@@ -341,7 +341,7 @@ tick();
 // // Tip 29
 // renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
-// Tip 31, 32, 34 and 35
+// 技巧 31、32、34 和 35
 const shaderGeometry = new THREE.PlaneGeometry(10, 10, 256, 256);
 
 const shaderMaterial = new THREE.ShaderMaterial({
@@ -359,17 +359,17 @@ const shaderMaterial = new THREE.ShaderMaterial({
 
         void main()
         {
-            // Position
+            // 位置
             vec4 modelPosition = modelMatrix * vec4(position, 1.0);
             float elevation = texture2D(uDisplacementTexture, uv).r;
             modelPosition.y += max(elevation, 0.5) * DISPLACMENT_STRENGH;
             gl_Position = projectionMatrix * viewMatrix * modelPosition;
 
-            // Color
+            // 颜色
             float colorElevation = max(elevation, 0.25);
             vec3 color = mix(vec3(1.0, 0.1, 0.1), vec3(0.1, 0.0, 0.5), colorElevation);
 
-            // Varying
+            // varying 变量
             vColor = color;
         }
     `,

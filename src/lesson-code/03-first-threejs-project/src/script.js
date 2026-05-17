@@ -2,20 +2,20 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import GUI from "lil-gui";
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
 /**
- * Axes Helper
+ * 坐标轴辅助器
  */
 const axesHelper = new THREE.AxesHelper(2);
 scene.add(axesHelper);
 
 /**
- * Objects
+ * 对象
  */
 const group = new THREE.Group();
 group.scale.y = 2;
@@ -43,7 +43,7 @@ cube3.position.x = 1.5;
 group.add(cube3);
 
 /**
- * Debug
+ * 调试
  */
 const gui = new GUI();
 const params = {
@@ -56,37 +56,37 @@ const params = {
 
 gui
   .addColor(params, "cube1Color")
-  .name("Cube 1 Color")
+  .name("立方体 1 颜色")
   .onChange(() => {
     material.color.set(params.cube1Color);
   });
 gui
   .addColor(params, "cube2Color")
-  .name("Cube 2 Color")
+  .name("立方体 2 颜色")
   .onChange(() => {
     cube2.material.color.set(params.cube2Color);
   });
 gui
   .addColor(params, "cube3Color")
-  .name("Cube 3 Color")
+  .name("立方体 3 颜色")
   .onChange(() => {
     cube3.material.color.set(params.cube3Color);
   });
 gui
   .add(params, "groupVisible")
-  .name("Group Visible")
+  .name("分组可见")
   .onChange(() => {
     group.visible = params.groupVisible;
   });
 gui
   .add(params, "axesVisible")
-  .name("Axes Helper")
+  .name("坐标轴辅助器")
   .onChange(() => {
     axesHelper.visible = params.axesVisible;
   });
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -103,18 +103,18 @@ window.addEventListener("resize", () => {
 });
 
 /**
- * Camera
+ * 相机
  */
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height);
 camera.position.z = 3;
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -123,7 +123,7 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
- * Animate
+ * 动画循环
  */
 const tick = () => {
   controls.update();

@@ -3,16 +3,16 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import GUI from "lil-gui";
 
 /**
- * Base
+ * 基础
  */
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
 /**
- * Textures
+ * 纹理
  */
 const loadingManager = new THREE.LoadingManager();
 loadingManager.onStart = () => {
@@ -52,7 +52,7 @@ colorTexture.minFilter = THREE.NearestFilter;
 colorTexture.magFilter = THREE.NearestFilter;
 
 /**
- * Debug
+ * 调试
  */
 const gui = new GUI();
 const params = {
@@ -89,51 +89,45 @@ function updateTexture() {
   colorTexture.needsUpdate = true;
 }
 
-const textureFolder = gui.addFolder("Texture Properties");
-textureFolder
-  .add(params, "repeatX")
-  .min(1)
-  .max(10)
-  .step(1)
-  .name("Repeat X")
-  .onChange(updateTexture);
-textureFolder
-  .add(params, "repeatY")
-  .min(1)
-  .max(10)
-  .step(1)
-  .name("Repeat Y")
-  .onChange(updateTexture);
+const textureFolder = gui.addFolder("纹理属性");
+textureFolder.add(params, "repeatX").min(1).max(10).step(1).name("重复 X").onChange(updateTexture);
+textureFolder.add(params, "repeatY").min(1).max(10).step(1).name("重复 Y").onChange(updateTexture);
 textureFolder
   .add(params, "offsetX")
   .min(-1)
   .max(1)
   .step(0.05)
-  .name("Offset X")
+  .name("偏移 X")
   .onChange(updateTexture);
 textureFolder
   .add(params, "offsetY")
   .min(-1)
   .max(1)
   .step(0.05)
-  .name("Offset Y")
+  .name("偏移 Y")
   .onChange(updateTexture);
 textureFolder
   .add(params, "rotation")
   .min(0)
   .max(Math.PI * 2)
   .step(0.01)
-  .name("Rotation")
+  .name("旋转")
   .onChange(updateTexture);
-textureFolder.add(params, "wrapS", Object.keys(wrapModes)).name("Wrap S").onChange(updateTexture);
-textureFolder.add(params, "wrapT", Object.keys(wrapModes)).name("Wrap T").onChange(updateTexture);
+textureFolder
+  .add(params, "wrapS", Object.keys(wrapModes))
+  .name("包裹方式 S")
+  .onChange(updateTexture);
+textureFolder
+  .add(params, "wrapT", Object.keys(wrapModes))
+  .name("包裹方式 T")
+  .onChange(updateTexture);
 textureFolder
   .add(params, "minFilter", Object.keys(filterModes))
-  .name("Min Filter")
+  .name("缩小过滤")
   .onChange(updateTexture);
 textureFolder
   .add(params, "magFilter", Object.keys(filterModes))
-  .name("Mag Filter")
+  .name("放大过滤")
   .onChange(updateTexture);
 
 updateTexture();
@@ -152,7 +146,7 @@ const roughnessTexture = textureLoader.load(
 );
 
 /**
- * Object
+ * 物体
  */
 const geometry = new THREE.BoxGeometry(1, 1, 1);
 console.log(geometry.attributes);
@@ -161,7 +155,7 @@ const mesh = new THREE.Mesh(geometry, material);
 scene.add(mesh);
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -169,35 +163,35 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
 camera.position.x = 1;
 camera.position.y = 1;
 camera.position.z = 1;
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -206,20 +200,20 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

@@ -5,19 +5,19 @@ import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import GUI from "lil-gui";
 
 /**
- * Base
+ * 基础
  */
-// Debug
+// 调试
 const gui = new GUI();
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
 /**
- * Models
+ * 模型
  */
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath("/assets/23-custom-models-with-blender-final/draco/");
@@ -32,7 +32,7 @@ gltfLoader.load("/assets/23-custom-models-with-blender-final/models/hamburger.gl
 });
 
 /**
- * Floor
+ * 地板
  */
 const floor = new THREE.Mesh(
   new THREE.PlaneGeometry(50, 50),
@@ -47,7 +47,7 @@ floor.rotation.x = -Math.PI * 0.5;
 scene.add(floor);
 
 /**
- * Lights
+ * 灯光
  */
 const ambientLight = new THREE.AmbientLight(0xffffff, 2.4);
 scene.add(ambientLight);
@@ -64,7 +64,7 @@ directionalLight.position.set(5, 5, 5);
 scene.add(directionalLight);
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -72,34 +72,34 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
 camera.position.set(-8, 4, 8);
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.target.set(0, 1, 0);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -110,7 +110,7 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 let previousTime = 0;
@@ -124,13 +124,13 @@ const tick = () => {
     mixer.update(deltaTime);
   }
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

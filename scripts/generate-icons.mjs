@@ -11,10 +11,7 @@ const INPUT = join(ROOT, "public/logo.png");
 const PUBLIC = join(ROOT, "public");
 const TAURI_ICONS = join(ROOT, "src-tauri/icons");
 const ANDROID_RES = join(ROOT, "src-tauri/gen/android/app/src/main/res");
-const IOS_APP_ICONSET = join(
-  ROOT,
-  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset",
-);
+const IOS_APP_ICONSET = join(ROOT, "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset");
 
 async function resizeSquare(input, size, output) {
   await sharp(input).resize(size, size).png().toFile(output);
@@ -26,10 +23,7 @@ async function resizeRect(input, w, h, output) {
 
 async function resizeWithPadding(input, size, scale, output) {
   const innerSize = Math.max(1, Math.round(size * scale));
-  const iconBuf = await sharp(input)
-    .resize(innerSize, innerSize)
-    .png()
-    .toBuffer();
+  const iconBuf = await sharp(input).resize(innerSize, innerSize).png().toBuffer();
   await sharp({
     create: {
       width: size,
@@ -112,12 +106,7 @@ async function generateTauriDesktopIcons() {
 
   // Wide (rectangular) logos
   await resizeRect(INPUT, 310, 150, join(TAURI_ICONS, "Wide310x150Logo.png"));
-  await resizeRect(
-    INPUT,
-    620,
-    300,
-    join(TAURI_ICONS, "Wide310x150Logo.scale-200.png"),
-  );
+  await resizeRect(INPUT, 620, 300, join(TAURI_ICONS, "Wide310x150Logo.scale-200.png"));
 
   // icon.ico (layers: 16, 24, 32, 48, 64, 256)
   const tmpDir = join(TAURI_ICONS, ".ico-tmp");
@@ -155,12 +144,7 @@ async function generateAndroidIcons() {
     const dirPath = join(ANDROID_RES, dir);
     await mkdir(dirPath, { recursive: true });
 
-    await resizeWithPadding(
-      INPUT,
-      launcher,
-      SAFE_ZONE_SCALE,
-      join(dirPath, "ic_launcher.png"),
-    );
+    await resizeWithPadding(INPUT, launcher, SAFE_ZONE_SCALE, join(dirPath, "ic_launcher.png"));
     await resizeWithPadding(
       INPUT,
       launcher,
@@ -253,9 +237,7 @@ async function generateICNS() {
 console.log("🎨 Icon Generator — source: public/logo.png");
 
 const meta = await sharp(INPUT).metadata();
-console.log(
-  `   Input: ${meta.width}x${meta.height} ${meta.channels}ch ${meta.format}`,
-);
+console.log(`   Input: ${meta.width}x${meta.height} ${meta.channels}ch ${meta.format}`);
 
 await generateFavicons();
 await generateTauriDesktopIcons();

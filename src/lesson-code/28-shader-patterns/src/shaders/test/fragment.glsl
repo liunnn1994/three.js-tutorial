@@ -15,7 +15,7 @@ vec2 rotate(vec2 uv, float rotation, vec2 mid)
     );
 }
 
-//	Classic Perlin 2D Noise 
+//	经典 Perlin 2D 噪声 
 //	by Stefan Gustavson
 //
 vec4 permute(vec4 x)
@@ -248,10 +248,10 @@ void main()
     // // Pattern 49
     // float strength = sin(cnoise(vUv * 10.0) * 20.0);
 
-    // Pattern 50
+    // 图案 50
     float strength = step(0.9, sin(cnoise(vUv * 10.0) * 20.0));
 
-    // Final color
+    // 最终颜色
     vec3 blackColor = vec3(0.0);
     vec3 uvColor = vec3(vUv, 1.0);
     vec3 mixedColor = mix(blackColor, uvColor, strength);

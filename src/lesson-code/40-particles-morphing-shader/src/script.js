@@ -8,26 +8,26 @@ import particlesVertexShader from "./shaders/particles/vertex.glsl";
 import particlesFragmentShader from "./shaders/particles/fragment.glsl";
 
 /**
- * Base
+ * 基础
  */
-// Debug
+// 调试
 const gui = new GUI({ width: 340 });
 const debugObject = {};
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
-// Loaders
+// 加载器
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath("/assets/40-particles-morphing-shader-final/draco/");
 const gltfLoader = new GLTFLoader();
 gltfLoader.setDRACOLoader(dracoLoader);
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -36,41 +36,41 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
   sizes.pixelRatio = Math.min(window.devicePixelRatio, 2);
 
-  // Materials
+  // 材质
   if (particles)
     particles.material.uniforms.uResolution.value.set(
       sizes.width * sizes.pixelRatio,
       sizes.height * sizes.pixelRatio,
     );
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(sizes.pixelRatio);
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(35, sizes.width / sizes.height, 0.1, 100);
 camera.position.set(0, 0, 8 * 2);
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -81,13 +81,16 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(sizes.pixelRatio);
 
 debugObject.clearColor = "#160920";
-gui.addColor(debugObject, "clearColor").onChange(() => {
-  renderer.setClearColor(debugObject.clearColor);
-});
+gui
+  .addColor(debugObject, "clearColor")
+  .onChange(() => {
+    renderer.setClearColor(debugObject.clearColor);
+  })
+  .name("背景颜色");
 renderer.setClearColor(debugObject.clearColor);
 
 /**
- * Particles
+ * 粒子
  */
 let particles = null;
 
@@ -95,7 +98,7 @@ gltfLoader.load("/assets/40-particles-morphing-shader-final/models.glb", (gltf) 
   particles = {};
   particles.index = 0;
 
-  // Positions
+  // 位置数据
   const positions = gltf.scene.children.map((child) => child.geometry.attributes.position);
 
   particles.maxCount = 0;
@@ -126,7 +129,7 @@ gltfLoader.load("/assets/40-particles-morphing-shader-final/models.glb", (gltf) 
     particles.positions.push(new THREE.Float32BufferAttribute(newArray, 3));
   }
 
-  // Geometry
+  // 几何体
   const sizesArray = new Float32Array(particles.maxCount);
 
   for (let i = 0; i < particles.maxCount; i++) sizesArray[i] = Math.random();
@@ -136,7 +139,7 @@ gltfLoader.load("/assets/40-particles-morphing-shader-final/models.glb", (gltf) 
   particles.geometry.setAttribute("aPositionTarget", particles.positions[3]);
   particles.geometry.setAttribute("aSize", new THREE.BufferAttribute(sizesArray, 1));
 
-  // Material
+  // 材质
   particles.colorA = "#ff7300";
   particles.colorB = "#0091ff";
 
@@ -156,41 +159,47 @@ gltfLoader.load("/assets/40-particles-morphing-shader-final/models.glb", (gltf) 
     depthWrite: false,
   });
 
-  // Points
+  // 粒子点
   particles.points = new THREE.Points(particles.geometry, particles.material);
   particles.points.frustumCulled = false;
   scene.add(particles.points);
 
-  // Methods
+  // 方法
   particles.morph = (index) => {
-    // Update attributes
+    // 更新属性
     particles.geometry.attributes.position = particles.positions[particles.index];
     particles.geometry.attributes.aPositionTarget = particles.positions[index];
 
-    // Animate uProgress
+    // 动画化 uProgress
     gsap.fromTo(
       particles.material.uniforms.uProgress,
       { value: 0 },
       { value: 1, duration: 3, ease: "linear" },
     );
 
-    // Save index
+    // 更新属性
     particles.index = index;
   };
 
-  // Tweaks
-  gui.addColor(particles, "colorA").onChange(() => {
-    particles.material.uniforms.uColorA.value.set(particles.colorA);
-  });
-  gui.addColor(particles, "colorB").onChange(() => {
-    particles.material.uniforms.uColorB.value.set(particles.colorB);
-  });
+  // 调试参数
+  gui
+    .addColor(particles, "colorA")
+    .name("颜色 A")
+    .onChange(() => {
+      particles.material.uniforms.uColorA.value.set(particles.colorA);
+    });
+  gui
+    .addColor(particles, "colorB")
+    .name("颜色 B")
+    .onChange(() => {
+      particles.material.uniforms.uColorB.value.set(particles.colorB);
+    });
   gui
     .add(particles.material.uniforms.uProgress, "value")
     .min(0)
     .max(1)
     .step(0.001)
-    .name("uProgress")
+    .name("变形进度")
     .listen();
 
   particles.morph0 = () => {
@@ -206,23 +215,23 @@ gltfLoader.load("/assets/40-particles-morphing-shader-final/models.glb", (gltf) 
     particles.morph(3);
   };
 
-  gui.add(particles, "morph0");
-  gui.add(particles, "morph1");
-  gui.add(particles, "morph2");
-  gui.add(particles, "morph3");
+  gui.add(particles, "morph0").name("变形到形状 0");
+  gui.add(particles, "morph1").name("变形到形状 1");
+  gui.add(particles, "morph2").name("变形到形状 2");
+  gui.add(particles, "morph3").name("变形到形状 3");
 });
 
 /**
- * Animate
+ * 动画循环
  */
 const tick = () => {
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render normal scene
+  // 渲染普通场景
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

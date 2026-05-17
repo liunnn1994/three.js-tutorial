@@ -9,19 +9,19 @@ import slicedVertexShader from "./shaders/sliced/vertex.glsl";
 import slicedFragmentShader from "./shaders/sliced/fragment.glsl";
 
 /**
- * Base
+ * 基础
  */
-// Debug
+// 调试
 const gui = new GUI({ width: 325 });
 const debugObject = {};
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
-// Loaders
+// 加载器
 const rgbeLoader = new RGBELoader();
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath("/assets/43-sliced-model-shader-final/draco/");
@@ -29,7 +29,7 @@ const gltfLoader = new GLTFLoader();
 gltfLoader.setDRACOLoader(dracoLoader);
 
 /**
- * Environment map
+ * 环境贴图
  */
 rgbeLoader.load(
   "/assets/43-sliced-model-shader-final/aerodynamics_workshop.hdr",
@@ -43,16 +43,16 @@ rgbeLoader.load(
 );
 
 /**
- * Sliced model
+ * 切片模型
  */
-// Material
+// 材质
 const uniforms = {
   uSliceStart: new THREE.Uniform(1.75),
   uSliceArc: new THREE.Uniform(1.25),
 };
 
-gui.add(uniforms.uSliceStart, "value", -Math.PI, Math.PI, 0.001).name("uSliceStart");
-gui.add(uniforms.uSliceArc, "value", 0, Math.PI * 2, 0.001).name("uSliceArc");
+gui.add(uniforms.uSliceStart, "value", -Math.PI, Math.PI, 0.001).name("切片起始角");
+gui.add(uniforms.uSliceArc, "value", 0, Math.PI * 2, 0.001).name("切片弧度");
 
 const patchMap = {
   csm_Slice: {
@@ -73,7 +73,7 @@ const material = new THREE.MeshStandardMaterial({
 });
 
 const slicedMaterial = new CustomShaderMaterial({
-  // CSM
+  // CSM（级联阴影贴图）
   baseMaterial: THREE.MeshStandardMaterial,
   vertexShader: slicedVertexShader,
   fragmentShader: slicedFragmentShader,
@@ -81,7 +81,7 @@ const slicedMaterial = new CustomShaderMaterial({
   patchMap: patchMap,
   silent: true,
 
-  // MeshStandardMaterial
+  // MeshStandardMaterial 材质
   metalness: 0.5,
   roughness: 0.25,
   envMapIntensity: 0.5,
@@ -90,7 +90,7 @@ const slicedMaterial = new CustomShaderMaterial({
 });
 
 const slicedDepthMaterial = new CustomShaderMaterial({
-  // CSM
+  // CSM（级联阴影贴图）
   baseMaterial: THREE.MeshDepthMaterial,
   vertexShader: slicedVertexShader,
   fragmentShader: slicedFragmentShader,
@@ -98,11 +98,11 @@ const slicedDepthMaterial = new CustomShaderMaterial({
   patchMap: patchMap,
   silent: true,
 
-  // MeshDepthMaterial
+  // MeshDepthMaterial 材质
   depthPacking: THREE.RGBADepthPacking,
 });
 
-// Model
+// 模型
 let model = null;
 gltfLoader.load("/assets/43-sliced-model-shader-final/gears.glb", (gltf) => {
   model = gltf.scene;
@@ -125,7 +125,7 @@ gltfLoader.load("/assets/43-sliced-model-shader-final/gears.glb", (gltf) => {
 });
 
 /**
- * Plane
+ * 平面
  */
 const plane = new THREE.Mesh(
   new THREE.PlaneGeometry(10, 10, 10),
@@ -139,7 +139,7 @@ plane.lookAt(new THREE.Vector3(0, 0, 0));
 scene.add(plane);
 
 /**
- * Lights
+ * 灯光
  */
 const directionalLight = new THREE.DirectionalLight("#ffffff", 4);
 directionalLight.position.set(6.25, 3, 4);
@@ -155,7 +155,7 @@ directionalLight.shadow.camera.left = -8;
 scene.add(directionalLight);
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -164,34 +164,34 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
   sizes.pixelRatio = Math.min(window.devicePixelRatio, 2);
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(sizes.pixelRatio);
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(35, sizes.width / sizes.height, 0.1, 100);
 camera.position.set(-5, 5, 12);
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -205,23 +205,23 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(sizes.pixelRatio);
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  // Update model
+  // 更新模型
   if (model) model.rotation.y = elapsedTime * 0.1;
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 

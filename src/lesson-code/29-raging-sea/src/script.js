@@ -5,36 +5,42 @@ import waterVertexShader from "./shaders/water/vertex.glsl";
 import waterFragmentShader from "./shaders/water/fragment.glsl";
 
 /**
- * Base
+ * 基础
  */
-// Debug
+// 调试
 const gui = new GUI({ width: 340 });
 const debugObject = {};
 
-// Canvas
+// 画布
 const canvas = document.querySelector("canvas.webgl");
 
-// Scene
+// 场景
 const scene = new THREE.Scene();
 
 /**
- * Water
+ * 水面
  */
-// Geometry
+// 几何体
 const waterGeometry = new THREE.PlaneGeometry(2, 2, 512, 512);
 
-// Colors
+// 颜色
 debugObject.depthColor = "#186691";
 debugObject.surfaceColor = "#9bd8ff";
 
-gui.addColor(debugObject, "depthColor").onChange(() => {
-  waterMaterial.uniforms.uDepthColor.value.set(debugObject.depthColor);
-});
-gui.addColor(debugObject, "surfaceColor").onChange(() => {
-  waterMaterial.uniforms.uSurfaceColor.value.set(debugObject.surfaceColor);
-});
+gui
+  .addColor(debugObject, "depthColor")
+  .name("深水颜色")
+  .onChange(() => {
+    waterMaterial.uniforms.uDepthColor.value.set(debugObject.depthColor);
+  });
+gui
+  .addColor(debugObject, "surfaceColor")
+  .name("浅水颜色")
+  .onChange(() => {
+    waterMaterial.uniforms.uSurfaceColor.value.set(debugObject.surfaceColor);
+  });
 
-// Material
+// 材质
 const waterMaterial = new THREE.ShaderMaterial({
   vertexShader: waterVertexShader,
   fragmentShader: waterFragmentShader,
@@ -62,71 +68,66 @@ gui
   .min(0)
   .max(1)
   .step(0.001)
-  .name("uBigWavesElevation");
+  .name("大波浪高度");
 gui
   .add(waterMaterial.uniforms.uBigWavesFrequency.value, "x")
   .min(0)
   .max(10)
   .step(0.001)
-  .name("uBigWavesFrequencyX");
+  .name("大波浪频率 X");
 gui
   .add(waterMaterial.uniforms.uBigWavesFrequency.value, "y")
   .min(0)
   .max(10)
   .step(0.001)
-  .name("uBigWavesFrequencyY");
+  .name("大波浪频率 Y");
 gui
   .add(waterMaterial.uniforms.uBigWavesSpeed, "value")
   .min(0)
   .max(4)
   .step(0.001)
-  .name("uBigWavesSpeed");
+  .name("大波浪速度");
 
 gui
   .add(waterMaterial.uniforms.uSmallWavesElevation, "value")
   .min(0)
   .max(1)
   .step(0.001)
-  .name("uSmallWavesElevation");
+  .name("小波浪高度");
 gui
   .add(waterMaterial.uniforms.uSmallWavesFrequency, "value")
   .min(0)
   .max(30)
   .step(0.001)
-  .name("uSmallWavesFrequency");
+  .name("小波浪频率");
 gui
   .add(waterMaterial.uniforms.uSmallWavesSpeed, "value")
   .min(0)
   .max(4)
   .step(0.001)
-  .name("uSmallWavesSpeed");
+  .name("小波浪速度");
 gui
   .add(waterMaterial.uniforms.uSmallIterations, "value")
   .min(0)
   .max(5)
   .step(1)
-  .name("uSmallIterations");
+  .name("小波浪迭代次数");
 
-gui
-  .add(waterMaterial.uniforms.uColorOffset, "value")
-  .min(0)
-  .max(1)
-  .step(0.001)
-  .name("uColorOffset");
+gui.add(waterMaterial.uniforms.uColorOffset, "value").min(0).max(1).step(0.001).name("颜色偏移");
 gui
   .add(waterMaterial.uniforms.uColorMultiplier, "value")
   .min(0)
   .max(10)
   .step(0.001)
-  .name("uColorMultiplier");
+  .name("颜色倍增");
 
-// Mesh
+// 网格
 const water = new THREE.Mesh(waterGeometry, waterMaterial);
 water.rotation.x = -Math.PI * 0.5;
 scene.add(water);
 
 /**
- * Sizes
+ * 尺寸
  */
 const sizes = {
   width: window.innerWidth,
@@ -134,33 +135,33 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // Update sizes
+  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // Update camera
+  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // Update renderer
+  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
 /**
- * Camera
+ * 相机
  */
-// Base camera
+// 基础相机
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
 camera.position.set(1, 1, 1);
 scene.add(camera);
 
-// Controls
+// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
 /**
- * Renderer
+ * 渲染器
  */
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
@@ -169,23 +170,23 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 /**
- * Animate
+ * 动画循环
  */
 const clock = new THREE.Clock();
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
 
-  // Water
+  // 水面
   waterMaterial.uniforms.uTime.value = elapsedTime;
 
-  // Update controls
+  // 更新控制器
   controls.update();
 
-  // Render
+  // 渲染
   renderer.render(scene, camera);
 
-  // Call tick again on the next frame
+  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 
