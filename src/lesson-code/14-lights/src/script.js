@@ -8,6 +8,20 @@ import { RectAreaLightHelper } from "three/examples/jsm/helpers/RectAreaLightHel
  */
 // 调试
 const gui = new GUI();
+/**
+ * 光源动画参数
+ */
+const lightAnimParams = {
+  orbit: false,
+  pulse: false,
+  colorCycle: false,
+};
+
+const lightAnimFolder = gui.addFolder("光源动画");
+lightAnimFolder.add(lightAnimParams, "orbit").name("环绕旋转");
+lightAnimFolder.add(lightAnimParams, "pulse").name("脉冲强度");
+lightAnimFolder.add(lightAnimParams, "colorCycle").name("颜色循环");
+lightAnimFolder.open();
 
 // 画布
 const canvas = document.querySelector("canvas.webgl");
@@ -151,6 +165,24 @@ const tick = () => {
   sphere.rotation.x = 0.15 * elapsedTime;
   cube.rotation.x = 0.15 * elapsedTime;
   torus.rotation.x = 0.15 * elapsedTime;
+
+  // 光源动画
+  if (lightAnimParams.orbit) {
+    pointLight.position.x = Math.cos(elapsedTime) * 3;
+    pointLight.position.z = Math.sin(elapsedTime) * 3;
+    pointLightHelper.update();
+  }
+
+  if (lightAnimParams.pulse) {
+    pointLight.intensity = 1.5 + Math.sin(elapsedTime * 2) * 1.0;
+  }
+
+  if (lightAnimParams.colorCycle) {
+    pointLight.color.setHSL((elapsedTime * 0.1) % 1, 1, 0.5);
+    pointLightHelper.update();
+  }
+
+  spotLightHelper.update();
 
   // 更新控制器
   controls.update();

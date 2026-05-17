@@ -35,7 +35,7 @@ fontLoader.load("/assets/12-3d-text-final/fonts/helvetiker_regular.typeface.json
   const textGeometry = new TextGeometry("Hello Three.js", {
     font: font,
     size: 0.5,
-    height: 0.2,
+    depth: 0.2,
     curveSegments: 6,
     bevelEnabled: true,
     bevelThickness: 0.03,

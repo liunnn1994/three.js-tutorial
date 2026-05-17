@@ -62,6 +62,56 @@ const material = new THREE.ShaderMaterial({
 
 Vite 原生支持导入 `.glsl` 文件作为字符串。
 
+## RawShaderMaterial
+
+到目前为止，我们一直在用 `ShaderMaterial`。你可能注意到了一个奇怪的现象 —— 我们在 GLSL 代码中使用了 `position`、`uv`、`projectionMatrix` 等变量，但从来没有声明过它们。这些是 Three.js **自动注入**到着色器中的内置变量。
+
+但有时你需要**完全控制**着色器代码 —— 比如你从 Shadertoy 复制了一段着色器代码，或者你想精确知道着色器的每一行在做什么。这就是 `RawShaderMaterial` 的用途。
+
+`RawShaderMaterial` **不会**自动注入任何变量。你必须手动声明所有 uniform 和 attribute，包括 GLSL 的 `precision` 语句（指定浮点数精度）：
+
+```js
+const material = new THREE.RawShaderMaterial({
+  vertexShader: `
+    precision highp float; // 必须手动声明精度
+
+    // 必须手动声明所有 attribute
+    attribute vec3 position;
+
+    // 必须手动声明所有 uniform
+    uniform mat4 projectionMatrix;
+    uniform mat4 modelViewMatrix;
+
+    void main() {
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    precision highp float;
+
+    void main() {
+      gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    }
+  `,
+});
+```
+
+### ShaderMaterial vs RawShaderMaterial
+
+| 特性                   | ShaderMaterial | RawShaderMaterial |
+| ---------------------- | -------------- | ----------------- |
+| 自动提供 position/uv/normal | 是         | 否                |
+| 自动提供矩阵 uniform    | 是             | 否                |
+| 自动添加 precision     | 是             | 否                |
+| 适合场景               | 大多数情况      | 移植非 Three.js 着色器、需要完全控制 |
+
+:::tip[何时使用 RawShaderMaterial？]
+大多数情况下使用 `ShaderMaterial` 即可。`RawShaderMaterial` 主要用于：
+- 从 Shadertoy 等平台移植着色器（这些着色器不依赖 Three.js 的变量命名）
+- 需要精确控制着色器的每一行代码
+- 性能优化（避免不必要的内置变量）
+  :::
+
 ## Uniforms（统一变量）
 
 Uniform 是从 JavaScript 传递到着色器的**全局变量**，所有顶点和片元共享同一个值。
@@ -247,6 +297,57 @@ vec3 scaled = a * 2.0;      // 逐分量缩放
 GLSL 中 `1` 是整数，`1.0` 是浮点数。大部分 GLSL 函数要求浮点参数。写 `1` 而不是 `1.0` 会导致编译错误。
 :::
 
+## GLSL 内置函数参考
+
+GLSL 提供了丰富的内置函数。以下是着色器编程中最常用的函数，按类别整理。
+
+### 数学函数
+
+| 函数                                  | 说明                                       |
+| ------------------------------------- | ------------------------------------------ |
+| `abs(x)`                              | 绝对值                                     |
+| `sign(x)`                             | 符号（-1、0、1）                           |
+| `floor(x)` / `ceil(x)`               | 向下/向上取整                              |
+| `fract(x)`                            | 取小数部分（`x - floor(x)`）              |
+| `mod(x, y)`                           | 取模                                       |
+| `min(x, y)` / `max(x, y)`            | 最小值/最大值                              |
+| `clamp(x, min, max)`                  | 将值限制在范围内                           |
+| `mix(a, b, t)`                        | 线性插值：`a * (1-t) + b * t`             |
+| `step(edge, x)`                       | 阶梯函数：`x < edge ? 0.0 : 1.0`         |
+| `smoothstep(edge0, edge1, x)`         | 平滑阶梯函数（Hermite 插值）              |
+| `sin(x)` / `cos(x)` / `tan(x)`       | 三角函数                                   |
+| `pow(x, y)`                           | 幂运算（x 的 y 次方）                     |
+| `exp(x)` / `log(x)`                  | 指数/对数                                  |
+| `sqrt(x)`                             | 平方根                                     |
+
+### 向量函数
+
+| 函数                        | 说明                                     |
+| --------------------------- | ---------------------------------------- |
+| `length(v)`                 | 向量长度                                 |
+| `distance(p0, p1)`          | 两点间距离                               |
+| `dot(x, y)`                 | 点积（判断两个方向的重合程度）           |
+| `cross(x, y)`               | 叉积（得到垂直于两向量的向量）           |
+| `normalize(v)`              | 归一化为单位向量（长度为 1）             |
+| `reflect(I, N)`             | 反射向量（I 为入射方向，N 为法线）       |
+| `refract(I, N, eta)`        | 折射向量（eta 为折射率比值）             |
+
+### 纹理函数
+
+| 函数                          | 说明                           |
+| ----------------------------- | ------------------------------ |
+| `texture2D(sampler, coord)`   | 采样 2D 纹理                   |
+| `textureCube(sampler, coord)` | 采样立方体纹理（环境贴图）     |
+
+:::tip[常用函数组合技巧]
+
+- **平滑过渡**：`smoothstep(0.0, 1.0, value)` — 比 `step` 更柔和的开关
+- **限定范围**：`clamp(value, 0.0, 1.0)` — 确保值不会超出 0~1
+- **混合两种颜色**：`mix(colorA, colorB, factor)` — factor=0 为 A，factor=1 为 B
+- **判断朝向**：`dot(normal, lightDir)` — 正值=面向光，负值=背向光
+- **避免 if/else**：用 `step` 和 `mix` 替代条件判断（GPU 对分支语句效率较低）
+  :::
+
 ## 调试着色器
 
 着色器在 GPU 上运行，无法用 `console.log` 调试。常用技巧：
@@ -262,6 +363,103 @@ GLSL 中 `1` 是整数，`1.0` 是浮点数。大部分 GLSL 函数要求浮点�
 3. **从简单开始** — 先确保能渲染纯色，再逐步添加效果
 
 4. **使用 ShaderMaterial 的 `wireframe: true`** — 查看顶点布局
+
+## 扩展内置材质（onBeforeCompile）
+
+### 为什么需要这个？
+
+学了 ShaderMaterial 之后，你可能会想："如果我只想在 MeshStandardMaterial 的基础上做一个小改动（比如让顶点轻微抖动），难道要重写整个着色器吗？" 答案是：不需要。`onBeforeCompile` 允许你**在内置材质的着色器被编译之前修改它的源代码**。
+
+**生活中的类比：** 就像你买了一个装修好的房子（内置材质），不需要推倒重建 —— 你只需要在某个房间里换一面墙的颜色（注入自定义代码）。
+
+```js
+const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+
+material.onBeforeCompile = (shader) => {
+  // 添加自定义 uniform
+  shader.uniforms.time = { value: 0 };
+
+  // 保存引用，以便在动画循环中更新
+  material.userData.shader = shader;
+
+  // 在顶点着色器的 "begin_vertex" 位置注入代码
+  shader.vertexShader = shader.vertexShader.replace(
+    "#include <begin_vertex>",
+    `
+    #include <begin_vertex>
+    transformed.y += sin(position.x * 10.0 + time) * 0.1;
+    `,
+  );
+
+  // 在顶部添加 uniform 声明
+  shader.vertexShader = "uniform float time;\n" + shader.vertexShader;
+};
+
+// 在动画循环中更新 uniform
+const tick = () => {
+  if (material.userData.shader) {
+    material.userData.shader.uniforms.time.value = clock.getElapsedTime();
+  }
+};
+```
+
+### 常用注入点
+
+Three.js 的着色器由可复用的代码片段（chunk）组成。你可以用 `replace` 替换这些 chunk 来注入自定义代码：
+
+**顶点着色器：**
+
+| Chunk                    | 位置                       |
+| ------------------------ | -------------------------- |
+| `#include <begin_vertex>` | 顶点位置计算完成后         |
+| `#include <project_vertex>` | `gl_Position` 计算完成后   |
+| `#include <beginnormal_vertex>` | 法线计算开始处             |
+
+**片元着色器：**
+
+| Chunk                    | 位置                       |
+| ------------------------ | -------------------------- |
+| `#include <color_fragment>` | 漫反射颜色计算完成后       |
+| `#include <output_fragment>` | 最终输出前                 |
+| `#include <fog_fragment>` | 雾效应用后                 |
+
+:::tip
+`onBeforeCompile` 是在不重写整个着色器的情况下自定义内置材质的强大方式。它保留了 PBR 光照、阴影等所有内置功能，同时允许你添加自定义的顶点变形或颜色效果。后续课程（Lesson 31 - 修改材质）会更深入地使用这个技术。
+:::
+
+:::caution
+使用 `onBeforeCompile` 时，材质不能直接 `clone()`。如果需要克隆，需要重新设置 `onBeforeCompile` 回调。
+:::
+
+## ShaderChunk（着色器代码片段）
+
+Three.js 内部的着色器由许多可复用的代码片段（chunk）组成。你可以在自己的着色器中使用这些 chunk：
+
+```js
+import { ShaderChunk } from "three";
+
+const fragmentShader = `
+  ${ShaderChunk.common}
+  ${ShaderChunk.packing}
+
+  // 现在可以使用 common 和 packing 中定义的函数
+  uniform sampler2D depthTexture;
+  varying vec2 vUv;
+
+  void main() {
+    float depth = texture2D(depthTexture, vUv).r;
+    // perspectiveDepthToViewZ 来自 packing chunk
+    float linearDepth = perspectiveDepthToViewZ(depth, 0.1, 1000.0);
+    gl_FragColor = vec4(vec3(linearDepth), 1.0);
+  }
+`;
+```
+
+常用的 chunk 包括：`common`（常用常量和函数）、`packing`（深度编解码）、`fog_pars_fragment`（雾效参数）、`lights_pars_begin`（光照参数）等。
+
+:::note
+ShaderChunk 是 Three.js 的内部机制，API 可能会随版本变化。在大多数情况下，你不需要直接使用它，除非你在编写需要与 Three.js 内部系统深度集成的自定义着色器。
+:::
 
 ## 参考链接
 

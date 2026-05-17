@@ -257,6 +257,29 @@ const texture = textureLoader.load(
 你不需要为每个纹理都创建一个 TextureLoader。创建一个实例，重复使用它来加载所有纹理即可。这个类是可以复用的。
 :::
 
+### Promise 异步加载
+
+如果你使用 `async/await` 语法，可以将 `load` 方法包装成 Promise：
+
+```js
+function loadTexture(url) {
+  return new Promise((resolve, reject) => {
+    new THREE.TextureLoader().load(url, resolve, undefined, reject);
+  });
+}
+
+// 配合 Promise.all 并行加载多个纹理
+const [colorMap, normalMap, roughnessMap] = await Promise.all([
+  loadTexture("/textures/door/color.jpg"),
+  loadTexture("/textures/door/normal.jpg"),
+  loadTexture("/textures/door/roughness.jpg"),
+]);
+```
+
+:::tip
+`Promise.all` 会并行加载所有纹理，比逐个加载更快。当所有纹理都加载完成后才继续执行后续代码，非常适合初始化阶段使用。
+:::
+
 ### LoadingManager -- 统一管理加载状态
 
 当你需要加载多个纹理（以及后续课程中的模型、字体等资源）时，使用 `LoadingManager` 来统一监控所有资源的加载状态。
@@ -577,6 +600,175 @@ heightTexture;
 
 :::tip
 ambientCG 和 Poly Haven 提供的纹理都遵循 PBR 标准，自带颜色、法线、粗糙度、金属度、AO、高度等全套贴图，非常适合配合本课程学习。
+:::
+
+## 程序化纹理类型
+
+到目前为止，我们所有纹理都是从图片文件（JPG、PNG）加载的。但纹理不一定非要是图片 —— Three.js 支持多种**从代码直接生成**的纹理类型。
+
+**为什么需要程序化纹理？** 有些效果用图片很难实现（比如实时变化的文字、精确的数学渐变），或者你根本不想引入额外的图片文件。这时候就可以用代码生成纹理。
+
+### DataTexture — 从原始数据创建
+
+**生活中的类比：** 想象一个 Excel 表格，每个格子填一个颜色值（R, G, B, A），然后把这个表格"贴"到物体表面。`DataTexture` 就是让你用代码填写这个"颜色表格"。
+
+`DataTexture` 允许你从一个 `Uint8Array` 数组直接创建纹理。每个像素占 4 个字节（R、G、B、A），值范围是 0-255：
+
+```js
+// 创建一个 256x256 的渐变纹理
+const size = 256;
+const data = new Uint8Array(size * size * 4); // RGBA，每像素 4 个字节
+
+for (let i = 0; i < size; i++) {
+  for (let j = 0; j < size; j++) {
+    const index = (i * size + j) * 4;
+    data[index] = i; // R（红色从左到右渐变）
+    data[index + 1] = j; // G（绿色从上到下渐变）
+    data[index + 2] = 128; // B（蓝色固定）
+    data[index + 3] = 255; // A（完全不透明）
+  }
+}
+
+const texture = new THREE.DataTexture(data, size, size);
+texture.needsUpdate = true; // 必须设为 true！
+```
+
+`Uint8Array` 中的值范围是 0-255（每个颜色分量一个字节）。四个分量依次是 R、G、B、A。
+
+**适用场景：**
+
+- 程序化生成的纹理（噪声、渐变、棋盘格）
+- 卡通材质的渐变贴图（`gradientMap`）
+- 调试用的纯色或图案纹理
+
+参考文档：[Three.js - DataTexture](https://threejs.org/docs/#api/en/textures/DataTexture)
+
+### CanvasTexture — 从 Canvas 创建
+
+**生活中的类比：** 就像你用画笔在白纸上画了一幅画，然后把这张纸贴到盒子上。只不过这里的"画笔"是 Canvas 2D API，"纸"是 `<canvas>` 元素。
+
+如果你有前端经验，`CanvasTexture` 是最容易理解的 —— 你用熟悉的 Canvas 2D API 画图，Three.js 把它变成 3D 纹理：
+
+```js
+// 创建 Canvas 并绘制内容
+const canvas = document.createElement("canvas");
+canvas.width = 256;
+canvas.height = 256;
+const ctx = canvas.getContext("2d");
+
+// 红色背景
+ctx.fillStyle = "red";
+ctx.fillRect(0, 0, 256, 256);
+
+// 白色文字
+ctx.fillStyle = "white";
+ctx.font = "48px Arial";
+ctx.fillText("Hello", 50, 150);
+
+// 将 Canvas 作为纹理
+const texture = new THREE.CanvasTexture(canvas);
+material.map = texture;
+```
+
+Canvas 纹理最大的优势是**可以动态更新** —— 每当你重新绘制 Canvas 内容后，设置 `texture.needsUpdate = true` 即可刷新纹理：
+
+```js
+// 在动画循环中更新 Canvas 内容
+function animate() {
+  ctx.clearRect(0, 0, 256, 256);
+  ctx.fillText(`Time: ${Date.now()}`, 50, 150);
+  texture.needsUpdate = true; // 通知 GPU 更新纹理
+}
+```
+
+**适用场景：**
+
+- 动态文字纹理（玩家名字、分数、提示信息）
+- HUD 元素贴在 3D 物体上
+- 从 2D 图表生成纹理
+
+参考文档：[Three.js - CanvasTexture](https://threejs.org/docs/#api/en/textures/CanvasTexture)
+
+### VideoTexture — 从视频创建
+
+**生活中的类比：** 想象一个电视机的屏幕被拆下来，贴到了 3D 场景中的一面墙上。视频每一帧都在变化，墙上的画面也跟着变。
+
+`VideoTexture` 将 HTML `<video>` 元素的当前帧作为纹理。和 `CanvasTexture` 不同的是，你**不需要手动更新** —— Three.js 会在每一帧自动读取视频的最新画面：
+
+```js
+// 创建视频元素
+const video = document.createElement("video");
+video.src = "/videos/movie.mp4";
+video.loop = true; // 循环播放
+video.muted = true; // 静音（自动播放需要静音）
+video.play();
+
+// 将视频作为纹理
+const texture = new THREE.VideoTexture(video);
+texture.colorSpace = THREE.SRGBColorSpace;
+
+material.map = texture;
+```
+
+:::caution[自动播放限制]
+现代浏览器会阻止带声音的视频自动播放。使用 `video.muted = true` 或等待用户交互后再调用 `video.play()`。
+:::
+
+**适用场景：**
+
+- 电视/屏幕效果（3D 场景中的播放器）
+- 视频映射（将视频贴到建筑、地面等表面）
+
+参考文档：[Three.js - VideoTexture](https://threejs.org/docs/#api/en/textures/VideoTexture)
+
+## 纹理内存管理
+
+### 为什么前端开发者需要关心这个？
+
+在前端开发中，如果你不再需要一个 DOM 元素，移除它后浏览器会自动回收内存。但 GPU 纹理不一样 —— **GPU 有自己独立的显存**，JavaScript 的垃圾回收器管不到它。如果你不断加载新纹理却从不释放旧的，GPU 显存会逐渐被耗尽，最终导致页面崩溃或渲染异常。
+
+纹理占用的显存大小取决于分辨率：一张 1024x1024 的 RGBA 纹理大约占 **4MB 显存**。如果你的场景有 50 张这样的纹理，就是 200MB —— 在手机上可能就撑不住了。
+
+### dispose() — 释放纹理内存
+
+当你不再需要一个纹理时，调用 `dispose()` 来释放 GPU 资源：
+
+```js
+// 释放单个纹理
+texture.dispose();
+
+// 释放材质上所有纹理的辅助函数
+function disposeMaterial(material) {
+  const maps = [
+    "map",
+    "normalMap",
+    "roughnessMap",
+    "metalnessMap",
+    "aoMap",
+    "emissiveMap",
+    "displacementMap",
+    "alphaMap",
+    "envMap",
+  ];
+
+  maps.forEach((mapName) => {
+    if (material[mapName]) {
+      material[mapName].dispose();
+    }
+  });
+
+  material.dispose();
+}
+```
+
+:::danger 内存泄漏
+如果你在代码中不断加载新纹理（比如滚动列表中动态加载图片），但从不调用 `dispose()`，GPU 显存会被逐渐耗尽，最终导致页面崩溃或渲染错误。这是一个难以调试的问题 —— 浏览器的开发者工具不会直接显示 GPU 显存使用量。
+
+你可以通过 `renderer.info.memory.textures` 查看当前加载的纹理数量，帮助排查内存泄漏。
+:::
+
+:::note[WebGLRenderTarget]
+纹理的另一个高级用途是**渲染到纹理**——将 3D 场景渲染到一个看不见的"画布"上，然后把这张画布当作纹理使用。这就是后处理效果（Lesson 45）的底层原理，也用于动态反射等效果。具体实现在后续课程中会涉及。
 :::
 
 ## 完整代码示例

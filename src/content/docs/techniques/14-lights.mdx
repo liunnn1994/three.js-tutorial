@@ -460,6 +460,136 @@ scene.add(rectAreaLightHelper);
 
 ---
 
+## 常用光照方案
+
+学完了所有光源类型后，你可能会问："那我到底该怎么组合这些光源来照亮一个场景？"以下三种经典方案覆盖了最常见的场景需求。
+
+### 三点布光（Three-Point Lighting）
+
+这是摄影和影视制作中最经典的布光方案，也适用于 3D 产品展示。使用三盏灯从不同角度照亮主体：
+
+```js
+// 主光（Key Light）— 最亮的光源，定义主要的明暗关系
+const keyLight = new THREE.DirectionalLight(0xffffff, 1);
+keyLight.position.set(5, 5, 5);
+scene.add(keyLight);
+
+// 补光（Fill Light）— 较弱，放在主光对面，填充阴影区域
+const fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
+fillLight.position.set(-5, 3, 5);
+scene.add(fillLight);
+
+// 背光（Back Light / Rim Light）— 从背后打光，勾勒物体轮廓
+const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+backLight.position.set(0, 5, -5);
+scene.add(backLight);
+
+// 环境补光 — 防止完全黑暗的区域
+const ambient = new THREE.AmbientLight(0x404040, 0.3);
+scene.add(ambient);
+```
+
+**三点布光的效果：**
+
+- 主光创造立体感和主要阴影
+- 补光柔化主光产生的阴影，避免一侧过暗
+- 背光将物体从背景中"分离"出来，增加层次感
+
+### 户外日光
+
+模拟白天的户外场景，只需要两盏灯：
+
+```js
+// 太阳 — 平行光模拟远处的太阳
+const sun = new THREE.DirectionalLight(0xffffcc, 1.5);
+sun.position.set(50, 100, 50);
+sun.castShadow = true; // 太阳是户外场景中唯一需要投射阴影的光源
+scene.add(sun);
+
+// 天空 + 地面 — 半球光模拟蓝天和地面的间接光照
+const hemi = new THREE.HemisphereLight(0x87ceeb, 0x8b4513, 0.6);
+scene.add(hemi);
+```
+
+这个方案非常轻量：一盏平行光 + 一盏半球光，性能开销极低但效果自然。蓝天色 `0x87ceeb` 和泥土色 `0x8b4513` 是经典的户外配色。
+
+:::tip
+户外场景中，太阳光的颜色可以根据时间段调整：
+- **正午**：偏白 `0xffffff` 或微黄 `0xfffff0`
+- **黄昏/黎明**：暖橙色 `0xffaa44`
+- **阴天**：冷灰色 `0xccccdd`
+:::
+
+### 室内影棚
+
+使用矩形面光模拟摄影棚中的柔光箱，获得极其柔和、专业的光照效果：
+
+```js
+// 主柔光箱 — 放在物体一侧
+const mainSoftbox = new THREE.RectAreaLight(0xffffff, 5, 2, 2);
+mainSoftbox.position.set(3, 3, 3);
+mainSoftbox.lookAt(0, 0, 0);
+scene.add(mainSoftbox);
+
+// 副柔光箱 — 放在另一侧，较弱
+const fillSoftbox = new THREE.RectAreaLight(0xffffff, 3, 2, 2);
+fillSoftbox.position.set(-3, 3, 3);
+fillSoftbox.lookAt(0, 0, 0);
+scene.add(fillSoftbox);
+
+// 环境补光
+const ambient = new THREE.AmbientLight(0x404040, 0.2);
+scene.add(ambient);
+```
+
+:::caution
+矩形面光只对 `MeshStandardMaterial` 和 `MeshPhysicalMaterial` 有效。且性能开销较高，移动端慎用。
+:::
+
+---
+
+## 光源动画
+
+光源的属性（位置、强度、颜色）可以在动画循环中动态修改，创造各种动态光照效果。
+
+### 环绕光源
+
+让光源绕着场景旋转，模拟太阳移动或舞台追光灯：
+
+```js
+const tick = () => {
+  const elapsedTime = clock.getElapsedTime();
+
+  // 光源在 XZ 平面上绕圆旋转
+  pointLight.position.x = Math.cos(elapsedTime) * 5;
+  pointLight.position.z = Math.sin(elapsedTime) * 5;
+};
+```
+
+### 脉冲强度
+
+让光源的强度有节奏地明暗变化，模拟火焰闪烁或警示灯：
+
+```js
+// 在 0.5 ~ 1.5 之间脉冲
+pointLight.intensity = 1 + Math.sin(elapsedTime * 2) * 0.5;
+```
+
+### 颜色循环
+
+让光源颜色随时间变化，创造霓虹灯或派对灯光效果：
+
+```js
+// HSL 色相随时间旋转，饱和度 1，亮度 0.5
+pointLight.color.setHSL((elapsedTime * 0.1) % 1, 1, 0.5);
+```
+
+:::tip
+如果使用了光源辅助工具（Helper），记得在修改光源属性后调用 `helper.update()` 来同步辅助工具的显示。
+:::
+
+---
+
 ## 光照强度与物理模式
 
 从 Three.js r155 开始，引擎默认使用**物理正确的光照强度**（单位为坎德拉 candela 和勒克斯 lux）。这意味着：

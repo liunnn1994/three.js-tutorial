@@ -551,6 +551,75 @@ const material = new THREE.PointsMaterial({
 
 ---
 
+### 11. LineBasicMaterial — 线条材质
+
+:::note[官方文档]
+[LineBasicMaterial](https://threejs.org/docs/#api/en/materials/LineBasicMaterial)
+:::
+
+前面所有材质都是给 `Mesh`（三角面）或 `Points`（点）用的。但 Three.js 还有第三种渲染类型 —— **线条**（`THREE.Line`、`THREE.LineLoop`、`THREE.LineSegments`），它们需要用 `LineBasicMaterial` 来控制外观。
+
+**生活中的类比：** 就像 Canvas 2D 中的 `ctx.strokeStyle` 决定了你画线时用的颜色，`LineBasicMaterial` 就是 3D 世界中的"线条画笔"。
+
+```js
+// 第一步：定义线条经过的点
+const points = [new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 1, 0), new THREE.Vector3(1, 0, 0)];
+
+// 第二步：用 setFromPoints 快速创建几何体（不需要手动操作 Float32Array）
+const geometry = new THREE.BufferGeometry().setFromPoints(points);
+
+// 第三步：创建线条材质
+const material = new THREE.LineBasicMaterial({
+  color: 0x00ff00,
+  linewidth: 1, // 线条宽度（注意：>1 的值在大多数系统上不生效）
+});
+
+// 第四步：创建线条对象（不是 Mesh！）
+const line = new THREE.Line(geometry, material);
+scene.add(line);
+```
+
+:::caution[线条粗细限制]
+由于 WebGL 的底层限制，`linewidth` 大于 1 的值在大多数现代浏览器和操作系统上**不生效**（始终显示为 1 像素）。这不是 Three.js 的 bug，而是浏览器/GPU 驱动的限制。如果需要更粗的线条，可以使用 `Line2` 和 `LineMaterial`（来自 `three/examples/jsm/lines/`），它们用三角形来模拟粗线条。
+:::
+
+**适用场景：**
+
+- 路径可视化（导航路线、运动轨迹）
+- 调试辅助线（碰撞边界、射线方向）
+- 网格线、坐标系等线框图形
+
+参考文档：[Three.js - Line](https://threejs.org/docs/#api/en/objects/Line)
+
+---
+
+### 12. LineDashedMaterial — 虚线材质
+
+:::note[官方文档]
+[LineDashedMaterial](https://threejs.org/docs/#api/en/materials/LineDashedMaterial)
+:::
+
+和 `LineBasicMaterial` 一样是线条材质，但渲染出来的是虚线而不是实线。使用时有一个**非常容易踩的坑**。
+
+```js
+const material = new THREE.LineDashedMaterial({
+  color: 0xff0000,
+  dashSize: 0.3, // 每段虚线的长度
+  gapSize: 0.15, // 虚线之间的间隔长度
+  scale: 1, // 虚线的缩放因子（值越大，虚线越密）
+});
+
+const line = new THREE.Line(geometry, material);
+line.computeLineDistances(); // ← 这一行是关键！不加就不会显示虚线
+scene.add(line);
+```
+
+:::danger 常见错误
+忘记调用 `computeLineDistances()` 是使用虚线材质时**最常见的错误**。为什么需要它？因为 GPU 需要知道线条上每个点距离起点有多远，才能决定哪里画线段、哪里留空白。`computeLineDistances()` 就是帮 GPU 算好这些距离信息。如果你发现虚线显示为实线，99% 的可能是漏掉了这一行。
+:::
+
+---
+
 ## FlatShading vs SmoothShading（平面着色 vs 平滑着色）
 
 大多数材质都支持 `flatShading` 属性，这是一个非常重要的视觉概念：
@@ -576,20 +645,112 @@ material.flatShading = true; // 启用平面着色
 
 ---
 
+## 多材质组合（一个 Mesh 使用多种材质）
+
+到目前为止，我们创建的每个 Mesh 都只用了一个材质。但在某些场景下，你可能需要同一个物体的不同部分显示不同的外观 —— 比如一个立方体，每个面都是不同的颜色。
+
+**生活中的类比：** 想象一个骰子，六个面分别有不同的点数图案。在 Three.js 中，你不需要创建 6 个独立的平面，只需要给一个 `BoxGeometry` 传入一个**材质数组**。
+
+以 `BoxGeometry` 为例，它内部自动将 6 个面分成了 6 个**组（Group）**。你可以为每个面指定不同的材质：
+
+```js
+const geometry = new THREE.BoxGeometry(1, 1, 1);
+
+// 6 个材质，分别对应立方体的 6 个面
+const materials = [
+  new THREE.MeshStandardMaterial({ color: 0xff0000 }), // 右面（+X）
+  new THREE.MeshStandardMaterial({ color: 0x00ff00 }), // 左面（-X）
+  new THREE.MeshStandardMaterial({ color: 0x0000ff }), // 顶面（+Y）
+  new THREE.MeshStandardMaterial({ color: 0xffff00 }), // 底面（-Y）
+  new THREE.MeshStandardMaterial({ color: 0xff00ff }), // 前面（+Z）
+  new THREE.MeshStandardMaterial({ color: 0x00ffff }), // 后面（-Z）
+];
+
+// 传入材质数组（而不是单个材质）
+const mesh = new THREE.Mesh(geometry, materials);
+scene.add(mesh);
+```
+
+### 材质顺序与面的对应关系
+
+Three.js 内置几何体已经预设了组（Group）的划分。对于 `BoxGeometry`，材质数组的索引与面的对应关系为：
+
+| 索引 | 面    | 方向 |
+| ---- | ----- | ---- |
+| 0    | 右面  | +X   |
+| 1    | 左面  | -X   |
+| 2    | 顶面  | +Y   |
+| 3    | 底面  | -Y   |
+| 4    | 前面  | +Z   |
+| 5    | 后面  | -Z   |
+
+### 自定义组
+
+对于自定义的 `BufferGeometry`，你可以使用 `addGroup()` 来定义哪些三角形使用哪个材质：
+
+```js
+const geometry = new THREE.BufferGeometry();
+// ... 设置顶点数据 ...
+
+// 定义组：前 6 个顶点（2 个三角形）使用材质 0，后 6 个顶点使用材质 1
+geometry.addGroup(0, 6, 0); // start, count, materialIndex
+geometry.addGroup(6, 6, 1);
+```
+
+:::tip[性能注意]
+每增加一个材质就增加一个 draw call。在性能敏感的项目中，尽量减少同一 Mesh 使用的材质数量。如果只是需要不同颜色，可以考虑使用顶点颜色（`vertexColors: true`）来替代多材质方案。
+:::
+
+---
+
+## 材质克隆与修改
+
+当需要多个相似但略有不同的材质时，可以使用 `clone()` 来创建变体，而不是从头创建：
+
+```js
+const baseMaterial = new THREE.MeshStandardMaterial({
+  color: 0xffffff,
+  roughness: 0.5,
+  metalness: 0.5,
+});
+
+// 克隆并修改
+const redMaterial = baseMaterial.clone();
+redMaterial.color.set(0xff0000);
+
+const blueMaterial = baseMaterial.clone();
+blueMaterial.color.set(0x0000ff);
+```
+
+:::caution[needsUpdate 标志]
+大部分属性（如 `color`、`roughness`、`metalness`）可以在运行时直接修改，Three.js 会自动应用。但以下属性修改后需要设置 `material.needsUpdate = true`：
+
+- `flatShading`（平面着色开关）
+- `transparent`（透明开关）
+- 更换纹理（`material.map = newTexture`）
+- 自定义着色器代码变更
+
+忘记设置 `needsUpdate` 会导致修改不生效，这是初学者常犯的错误。
+:::
+
+---
+
 ## 材质选择速查表
 
-| 材质                     | 需要灯光 | 性能   | 视觉质量 | 适用场景                     |
-| ------------------------ | -------- | ------ | -------- | ---------------------------- |
-| **MeshBasicMaterial**    | 否       | 最好   | 基础     | UI、调试、线框               |
-| **MeshNormalMaterial**   | 否       | 好     | 特殊     | 调试法线、彩虹风格           |
-| **MeshMatcapMaterial**   | 否       | 好     | 优秀     | 快速原型、艺术作品           |
-| **MeshDepthMaterial**    | 否       | 好     | 特殊     | 后期处理、深度效果           |
-| **MeshLambertMaterial**  | 是       | 好     | 一般     | 低端设备、简单场景           |
-| **MeshPhongMaterial**    | 是       | 中等   | 中等     | 带高光的中等质量             |
-| **MeshToonMaterial**     | 是       | 中等   | 卡通     | 卡通风格、NPR                |
-| **MeshStandardMaterial** | 是       | 中等   | 优秀     | **通用首选**                 |
-| **MeshPhysicalMaterial** | 是       | 较低   | 极致     | 玻璃、布料、汽车漆等特殊效果 |
-| **PointsMaterial**       | 否       | 视情况 | 视情况   | 粒子系统                     |
+| 材质                      | 需要灯光 | 性能   | 视觉质量 | 适用场景                     |
+| ------------------------- | -------- | ------ | -------- | ---------------------------- |
+| **MeshBasicMaterial**     | 否       | 最好   | 基础     | UI、调试、线框               |
+| **MeshNormalMaterial**    | 否       | 好     | 特殊     | 调试法线、彩虹风格           |
+| **MeshMatcapMaterial**    | 否       | 好     | 优秀     | 快速原型、艺术作品           |
+| **MeshDepthMaterial**     | 否       | 好     | 特殊     | 后期处理、深度效果           |
+| **MeshLambertMaterial**   | 是       | 好     | 一般     | 低端设备、简单场景           |
+| **MeshPhongMaterial**     | 是       | 中等   | 中等     | 带高光的中等质量             |
+| **MeshToonMaterial**      | 是       | 中等   | 卡通     | 卡通风格、NPR                |
+| **MeshStandardMaterial**  | 是       | 中等   | 优秀     | **通用首选**                 |
+| **MeshPhysicalMaterial**  | 是       | 较低   | 极致     | 玻璃、布料、汽车漆等特殊效果 |
+| **PointsMaterial**        | 否       | 视情况 | 视情况   | 粒子系统                     |
+| **LineBasicMaterial**     | 否       | 好     | 基础     | 线条绘制                     |
+| **LineDashedMaterial**    | 否       | 好     | 基础     | 虚线效果                     |
 
 :::tip[实用建议]
 

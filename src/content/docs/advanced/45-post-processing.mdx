@@ -241,6 +241,167 @@ Three.js addons 中还提供了许多内置 Pass：
 - **RGBShiftPass** — 色差分离效果
 - **SMAAPass / FXAASubpixelPass** — 后处理抗锯齿
 
+## 抗锯齿（Anti-Aliasing）
+
+### 为什么后处理需要单独的抗锯齿？
+
+如果你有前端经验，可能知道 CSS 的 `image-rendering: pixelated` 或者 Canvas 的锯齿问题。在 3D 中，物体边缘出现的"阶梯状"锯齿也是类似的。
+
+通常，我们创建 WebGLRenderer 时设置 `antialias: true` 来消除锯齿。但当你使用 `EffectComposer` 后，场景先被渲染到一个**离屏的渲染目标**上，而不是直接输出到屏幕 —— 渲染器的 MSAA 抗锯齿对这个离屏目标不生效。所以你需要在后处理管线中**单独添加**一个抗锯齿 Pass。
+
+### SMAA（推荐）
+
+SMAA（Enhanced Subpixel Morphological Antialiasing）是后处理抗锯齿中质量最好的选择：
+
+```js
+import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
+
+const smaaPass = new SMAAPass(
+  sizes.width * renderer.getPixelRatio(),
+  sizes.height * renderer.getPixelRatio(),
+);
+composer.addPass(smaaPass);
+```
+
+### FXAA
+
+FXAA（Fast Approximate Anti-Aliasing）速度比 SMAA 快，但质量略低。适合性能受限的场景：
+
+```js
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+import { FXAAShader } from "three/addons/shaders/FXAAShader.js";
+
+const fxaaPass = new ShaderPass(FXAAShader);
+fxaaPass.material.uniforms["resolution"].value.set(
+  1 / sizes.width,
+  1 / sizes.height,
+);
+composer.addPass(fxaaPass);
+```
+
+:::tip
+通常推荐使用 SMAA。如果帧率不够，可以切换到 FXAA。抗锯齿 Pass 应该放在 OutputPass 之前的最后一步（紧挨着 OutputPass）。
+:::
+
+## SSAO（屏幕空间环境光遮蔽）
+
+### 这是什么效果？
+
+**生活中的类比：** 看看你的手 — 手指之间的缝隙是暗的，手背是亮的。这种"缝隙处变暗"的效果就是**环境光遮蔽（Ambient Occlusion）**。
+
+在之前的学习中，我们用过 **AO 贴图**（`material.aoMap`）来模拟这种效果 —— 但 AO 贴图是静态的，需要在 3D 建模软件中预先烘焙好。**SSAO** 则是**实时计算**的环境光遮蔽，不需要任何贴图。
+
+SSAO 通过分析屏幕上每个像素周围的几何深度信息，自动在物体交叠处、角落和缝隙处添加柔和的暗影。效果类似于动态的、更精确的 AO 贴图。
+
+```js
+import { SSAOPass } from "three/addons/postprocessing/SSAOPass.js";
+
+const ssaoPass = new SSAOPass(scene, camera, sizes.width, sizes.height);
+ssaoPass.kernelRadius = 16; // 采样半径（值越大遮蔽范围越大）
+ssaoPass.minDistance = 0.005; // 最小检测距离
+ssaoPass.maxDistance = 0.1; // 最大检测距离
+composer.addPass(ssaoPass);
+```
+
+### 调试模式
+
+SSAOPass 提供了几种输出模式，方便调试效果：
+
+```js
+ssaoPass.output = SSAOPass.OUTPUT.Default; // 正常输出（AO 叠加在场景上）
+ssaoPass.output = SSAOPass.OUTPUT.SSAO; // 只显示 AO 通道（黑白图）
+ssaoPass.output = SSAOPass.OUTPUT.Blur; // 模糊后的 AO
+ssaoPass.output = SSAOPass.OUTPUT.Depth; // 深度缓冲
+ssaoPass.output = SSAOPass.OUTPUT.Normal; // 法线缓冲
+```
+
+:::caution
+SSAO 是**性能开销最高的**后处理效果之一（每个像素需要多次深度采样）。在移动端或低端设备上应谨慎使用，或大幅降低分辨率。
+:::
+
+## 效果排序最佳实践
+
+### 为什么顺序很重要？
+
+后处理管线就像**Photoshop 的图层** —— 每个 Pass 是一个图层，从下往上依次叠加。最下面的图层是原始渲染结果，最上面是最终输出。每个 Pass 接收前一个 Pass 的输出作为输入，所以 Pass 的添加顺序直接决定了最终效果。
+
+把 Pass 放错位置不会报错，但效果会"不对" —— 比如暗角被泛光吞掉、抗锯齿在错误的色彩空间中计算等。
+
+**推荐顺序：**
+
+```
+1. RenderPass        — 渲染场景到纹理
+2. 空间效果           — 泛光(Bloom)、景深(DOF)、SSAO
+3. 色彩效果           — 暗角(Vignette)、色彩校正、自定义着色器
+4. 抗锯齿             — SMAA / FXAA
+5. OutputPass        — 色彩空间转换，输出到屏幕
+```
+
+**为什么这个顺序？**
+
+- 泛光和景深需要基于原始渲染的亮度/深度信息，所以放在前面
+- 色彩效果（如暗角）不应被后续效果改变，所以放在中间
+- 抗锯齿应该处理最终的像素，所以放在色彩效果之后
+- `OutputPass` 必须**始终是最后一个**，它负责将线性色彩空间转换为 sRGB 输出
+
+:::tip
+一个常见的错误是在 `OutputPass` 之后添加 FXAA/SMAA。这会导致抗锯齿效果在错误的色彩空间中计算，可能出现轻微的颜色偏差。正确做法是将抗锯齿 Pass 放在 `OutputPass` 之前。
+:::
+
+## 选择性泛光（Selective Bloom）
+
+`UnrealBloomPass` 默认会让场景中所有超过亮度阈值的区域都发光。但有时你只想让**特定的物体**发光（比如发光的霓虹灯管，但不想让旁边的白色墙壁也泛光）。
+
+这可以通过 Three.js 的 **Layers（图层）** 系统实现。核心思路是：
+
+1. 将需要泛光的物体放在一个单独的图层上
+2. 渲染泛光 Pass 时，将不需要泛光的物体替换为黑色材质（这样它们不会产生亮度）
+3. 泛光渲染完成后，恢复原始材质
+4. 将最终场景叠加在泛光结果上
+
+```js
+// 定义泛光图层
+const BLOOM_LAYER = 1;
+const bloomLayer = new THREE.Layers();
+bloomLayer.set(BLOOM_LAYER);
+
+// 标记需要泛光的物体
+glowingMesh.layers.enable(BLOOM_LAYER);
+
+// 黑色材质（用于替换不需要泛光的物体）
+const darkMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+const materials = {};
+
+function darkenNonBloomed(obj) {
+  if (obj.isMesh && !bloomLayer.test(obj.layers)) {
+    materials[obj.uuid] = obj.material;
+    obj.material = darkMaterial;
+  }
+}
+
+function restoreMaterial(obj) {
+  if (materials[obj.uuid]) {
+    obj.material = materials[obj.uuid];
+    delete materials[obj.uuid];
+  }
+}
+
+// 在渲染循环中
+function animate() {
+  // 第一步：将非泛光物体变黑，渲染泛光
+  scene.traverse(darkenNonBloomed);
+  bloomComposer.render();
+
+  // 第二步：恢复材质，渲染最终场景
+  scene.traverse(restoreMaterial);
+  renderer.render(scene, camera);
+}
+```
+
+:::note
+选择性泛光是一种**高级技术**，需要使用两个渲染器（或两个 Composer）。它通过 `scene.traverse()` 遍历场景中的所有物体，性能有一定开销。在大多数项目中，通过调高 `threshold` 值（只让非常亮的材质泛光）通常就足够了，不需要完整的选择性泛光方案。
+:::
+
 ## 响应式处理
 
 当窗口大小改变时，`EffectComposer` 也需要更新尺寸和像素比：

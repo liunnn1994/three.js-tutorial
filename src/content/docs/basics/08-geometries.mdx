@@ -248,6 +248,21 @@ new THREE.TorusKnotGeometry(
 
 参考文档：[Three.js - TorusKnotGeometry](https://threejs.org/docs/#api/en/geometries/TorusKnotGeometry)
 
+#### CapsuleGeometry（胶囊体）
+
+形状像一个药丸或胶囊 —— 两端是半球形，中间是圆柱形。它在角色控制（Character Controller）和物理碰撞检测中非常常用。
+
+```js
+new THREE.CapsuleGeometry(
+  0.5, // radius  — 胶囊半径
+  1, // length  — 中间圆柱部分的长度（不含两端半球）
+  4, // capSegments    — 半球帽的细分段数
+  8, // radialSegments — 圆周方向细分段数
+);
+```
+
+参考文档：[Three.js - CapsuleGeometry](https://threejs.org/docs/#api/en/geometries/CapsuleGeometry)
+
 #### 多面体家族
 
 这些几何体基于正多面体（Platonic Solids），每一面都是相同大小的正多边形：
@@ -398,6 +413,112 @@ const material = new THREE.MeshBasicMaterial({
 :::caution[线框粗细]
 线框的线条粗细通常是 1 像素，大多数浏览器/操作系统无法渲染更粗的线框。如果你需要更粗的线条效果，可能需要使用 `Line` 对象或其他方案。
 :::
+
+## EdgesGeometry 和 WireframeGeometry
+
+你可能会注意到，材质的 `wireframe: true` 会显示**所有**三角形的边 —— 对于立方体来说，每个面上还会出现一条对角线，看起来有点乱。如果你只想显示物体的**轮廓线**（干净利落的边缘），Three.js 提供了两种专门的几何体。
+
+### EdgesGeometry — 只显示硬边
+
+**生活中的类比：** 想象你用笔描一个纸盒的轮廓 —— 你只会画出盒子的棱角线，不会画出纸面上任何内部的线。`EdgesGeometry` 就是帮你做这件事的。
+
+它从一个现有几何体中提取**硬边** —— 也就是两个相邻面之间角度足够大的边（比如立方体的棱），生成一个可以用线条渲染的新几何体。
+
+```js
+// 第一步：创建原始几何体（会被提取边缘的对象）
+const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
+
+// 第二步：提取硬边
+// 第二个参数是阈值角度（度），只有大于这个角度的边才会被提取
+// 比如 15 度意味着：两个面夹角 > 15° 的边才会显示
+const edges = new THREE.EdgesGeometry(boxGeometry, 15);
+
+// 第三步：用线条渲染
+// 注意这里不是 Mesh，而是 LineSegments + LineBasicMaterial
+const edgeMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+const edgeMesh = new THREE.LineSegments(edges, edgeMaterial);
+scene.add(edgeMesh);
+```
+
+**EdgesGeometry vs 材质 wireframe：**
+
+| 特性     | 材质 `wireframe: true` | `EdgesGeometry`              |
+| -------- | ---------------------- | ---------------------------- |
+| 显示内容 | 所有三角形的边         | 只有硬边（可控制阈值角度）   |
+| 适用场景 | 调试、查看三角形结构   | 产品展示、建筑线条、科技风格 |
+| 视觉效果 | 密集的三角形网格       | 干净利落的轮廓线             |
+
+对于立方体来说，`wireframe: true` 会在每个面上画出一条对角线（因为每个面由 2 个三角形组成），而 `EdgesGeometry` 只会显示立方体的 12 条边 —— 看起来更干净。
+
+### WireframeGeometry — 显示所有边
+
+`WireframeGeometry` 提取几何体中所有三角形的边，生成线条几何体。它和材质 `wireframe: true` 效果相同，但使用独立的线条对象，可以设置不同的颜色和样式：
+
+```js
+const wireframe = new THREE.WireframeGeometry(boxGeometry);
+const wireMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+const wireMesh = new THREE.LineSegments(wireframe, wireMaterial);
+scene.add(wireMesh);
+```
+
+:::tip[什么时候用哪个？]
+- 想调试几何体内部结构 → 材质 `wireframe: true` 或 `WireframeGeometry`
+- 想显示干净的轮廓线 → `EdgesGeometry`（最常见的用途）
+- 想在实体模型上叠加线框效果 → 同时添加 Mesh + `EdgesGeometry` 的 `LineSegments`，它们共享同一个几何体
+:::
+
+## 线条几何体（Line / LineLoop / LineSegments）
+
+到目前为止，我们用的一直是 `Mesh`（三角面渲染）和 `Points`（点渲染）。Three.js 还支持第三种渲染方式 —— **线条渲染**。线条几何体不会渲染任何面，只会把顶点按特定规则用线段连起来。
+
+**生活中的类比：** 如果 Mesh 是用填充颜料画画，Points 是用点点画画，那线条就像是用笔连线画 —— 一笔从一个点连到下一个点。
+
+### Line — 连续折线
+
+将顶点按顺序用线段连接起来（不闭合）：
+
+```js
+const points = [
+  new THREE.Vector3(-1, 0, 0),
+  new THREE.Vector3(0, 1, 0),
+  new THREE.Vector3(1, 0, 0),
+];
+const geometry = new THREE.BufferGeometry().setFromPoints(points);
+const material = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+const line = new THREE.Line(geometry, material);
+scene.add(line);
+```
+
+### LineLoop — 闭合折线
+
+和 `Line` 类似，但最后一个顶点会自动连接回第一个顶点，形成一个闭合的图形：
+
+```js
+const loop = new THREE.LineLoop(geometry, material);
+scene.add(loop);
+```
+
+### LineSegments — 独立线段
+
+每两个顶点构成一条独立的线段。适合绘制大量不相连的线段（如辅助网格、坐标轴等）：
+
+```js
+// 两段独立的线段
+const segmentPositions = new Float32Array([
+  -1, 0, 0,  0, 1, 0,  // 线段 1
+   1, 0, 0,  0, -1, 0, // 线段 2
+]);
+const geometry = new THREE.BufferGeometry();
+geometry.setAttribute("position", new THREE.BufferAttribute(segmentPositions, 3));
+const segments = new THREE.LineSegments(geometry, material);
+scene.add(segments);
+```
+
+:::tip[快捷方法：setFromPoints]
+`BufferGeometry.setFromPoints(points)` 是一个便捷方法，它会自动将一个 `Vector3` 数组转换为 `Float32Array` 并设置为 `position` 属性。适合快速创建线条和点云，而不需要手动操作类型化数组。
+:::
+
+参考文档：[Three.js - Line](https://threejs.org/docs/#api/en/objects/Line)
 
 ## BufferGeometry（缓冲几何体）
 
@@ -610,6 +731,103 @@ scene.add(mesh);
 Three.js 的内置几何体（如 `BoxGeometry`）默认使用索引来优化性能。
 
 本课中我们不会手动创建索引几何体（代码组织起来比较复杂），但你可以在 [Three.js BufferGeometry 文档](https://threejs.org/docs/#api/en/core/BufferGeometry)中找到相关示例。
+
+## InstancedMesh（实例化网格）
+
+### 为什么要学这个？
+
+在前端开发中，如果你要渲染一个包含 1000 个列表项的页面，React/Vue 会用虚拟 DOM 来优化。在 3D 世界中，如果你需要渲染**大量相同的物体**（比如一片森林中的 1000 棵树、一片草地上万根草、一堆碎石），也需要一种优化手段。
+
+如果你为每个物体创建一个独立的 `Mesh`，每次渲染时 GPU 需要分别处理每个 Mesh —— 这叫做 **draw call**。1000 个 Mesh = 1000 次 draw call，会导致帧率急剧下降。
+
+`InstancedMesh` 的解决方案是：**用一个 draw call 渲染成千上万个相同几何体的副本**。你可以把它理解为 GPU 层面的"批量复制粘贴" —— 你定义好一个模板（几何体 + 材质），然后告诉 GPU "请渲染 1000 份，每份放在不同的位置"。
+
+### 什么时候该用？
+
+- 需要渲染**大量**相同的几何体（比如 > 100 个）
+- 每个副本可以有不同的**位置、旋转、缩放**（甚至不同的颜色）
+- 但所有副本的**几何体形状和材质类型**必须相同
+
+### 基本用法
+
+```js
+// 第一步：定义模板（所有实例共享的几何体和材质）
+const geometry = new THREE.BoxGeometry(1, 1, 1);
+const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+const count = 1000; // 你想渲染多少个副本
+
+// 第二步：创建 InstancedMesh
+const instancedMesh = new THREE.InstancedMesh(geometry, material, count);
+
+// 第三步：为每个实例设置变换（位置、旋转、缩放）
+// 使用一个 "dummy"（占位）对象来临时存储变换，再写入 InstancedMesh
+const dummy = new THREE.Object3D();
+
+for (let i = 0; i < count; i++) {
+  // 像操作普通 Object3D 一样设置变换
+  dummy.position.set(
+    (Math.random() - 0.5) * 20, // 随机 x 位置
+    (Math.random() - 0.5) * 20, // 随机 y 位置
+    (Math.random() - 0.5) * 20, // 随机 z 位置
+  );
+  dummy.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+  dummy.scale.setScalar(0.5 + Math.random());
+
+  dummy.updateMatrix(); // 重要！将 position/rotation/scale 合并为矩阵
+
+  // 将矩阵应用到第 i 个实例
+  instancedMesh.setMatrixAt(i, dummy.matrix);
+}
+
+// 第四步：通知 GPU 数据已更新
+instancedMesh.instanceMatrix.needsUpdate = true;
+
+scene.add(instancedMesh);
+```
+
+:::note[什么是矩阵（Matrix）？]
+你可能注意到上面的代码在设置好位置/旋转/缩放后，调用了 `dummy.updateMatrix()`。在 3D 编程中，**矩阵**是一种数学工具，它能把位置、旋转、缩放三种变换压缩成一个统一的数据结构（一个 4x4 的数字表格）。GPU 处理矩阵的效率远高于分别处理三个属性。你不需要理解矩阵的数学细节 —— 只需要记住：设置好 `position/rotation/scale` 后调用 `updateMatrix()` 即可。
+:::
+
+### 每个实例使用不同颜色
+
+`InstancedMesh` 还支持为每个实例设置不同的颜色：
+
+```js
+for (let i = 0; i < count; i++) {
+  instancedMesh.setColorAt(
+    i,
+    new THREE.Color(Math.random(), Math.random(), Math.random()),
+  );
+}
+instancedMesh.instanceColor.needsUpdate = true;
+```
+
+:::tip[InstancedMesh vs 普通 Mesh]
+- **普通 Mesh**：每个 Mesh 是一个 draw call。1000 个 Mesh = 1000 次 draw call。
+- **InstancedMesh**：所有实例共享一个 draw call。1000 个实例 = 1 次 draw call。
+- InstancedMesh 适合**几何体相同但变换不同**的场景。如果需要不同的几何体形状，还是需要分别创建 Mesh，或使用 `BufferGeometryUtils.mergeGeometries()` 合并。
+:::
+
+参考文档：[Three.js - InstancedMesh](https://threejs.org/docs/#api/en/objects/InstancedMesh)
+
+## 几何体工具
+
+Three.js 提供了一些工具函数来处理几何体，位于 `three/examples/jsm/utils/BufferGeometryUtils.js`：
+
+```js
+import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
+
+// 合并多个几何体为一个（减少 draw call）
+const merged = BufferGeometryUtils.mergeGeometries([geo1, geo2, geo3]);
+
+// 计算切线（法线贴图需要）
+BufferGeometryUtils.computeTangents(geometry);
+```
+
+:::tip
+`mergeGeometries` 可以将多个静态的、不需要独立移动的几何体合并为一个，从而减少 draw call。这是性能优化中非常常用的技巧。但注意，合并后的几何体无法单独移动其中的某个部分。
+:::
 
 ## 完整代码
 

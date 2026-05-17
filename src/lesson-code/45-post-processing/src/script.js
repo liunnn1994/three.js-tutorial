@@ -11,6 +11,8 @@ import { RGBShiftShader } from "three/examples/jsm/shaders/RGBShiftShader.js";
 import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass.js";
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
+import { SSAOPass } from "three/examples/jsm/postprocessing/SSAOPass.js";
 
 /**
  * 基础
@@ -170,9 +172,26 @@ const rgbShiftPass = new ShaderPass(RGBShiftShader);
 rgbShiftPass.enabled = false;
 effectComposer.addPass(rgbShiftPass);
 
-// 伽马校正通道
-const gammaCorrectionPass = new ShaderPass(GammaCorrectionShader);
-effectComposer.addPass(gammaCorrectionPass);
+// 伽马校正通道（旧方式，已替换为 OutputPass）
+// const gammaCorrectionPass = new ShaderPass(GammaCorrectionShader);
+// effectComposer.addPass(gammaCorrectionPass);
+
+// OutputPass — 色彩空间转换（替代 GammaCorrectionShader，必须放在管线末尾）
+const outputPass = new OutputPass();
+effectComposer.addPass(outputPass);
+
+// SSAO — 屏幕空间环境光遮蔽（在角落和缝隙处添加柔和阴影）
+const ssaoPass = new SSAOPass(scene, camera, sizes.width, sizes.height);
+ssaoPass.kernelRadius = 16;
+ssaoPass.minDistance = 0.005;
+ssaoPass.maxDistance = 0.1;
+ssaoPass.enabled = false;
+effectComposer.addPass(ssaoPass);
+
+gui.add(ssaoPass, "enabled").name("SSAO 启用");
+gui.add(ssaoPass, "kernelRadius").min(1).max(32).step(0.1).name("SSAO 半径");
+gui.add(ssaoPass, "minDistance").min(0).max(0.05).step(0.001).name("SSAO 最小距离");
+gui.add(ssaoPass, "maxDistance").min(0).max(1).step(0.01).name("SSAO 最大距离");
 
 // 抗锯齿通道
 if (renderer.getPixelRatio() === 1 && !renderer.capabilities.isWebGL2) {

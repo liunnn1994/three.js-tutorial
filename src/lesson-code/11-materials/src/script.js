@@ -42,18 +42,6 @@ doorColorTexture.colorSpace = THREE.SRGBColorSpace;
 matcapTexture.colorSpace = THREE.SRGBColorSpace;
 
 /**
- * 灯光
- */
-// const ambientLight = new THREE.AmbientLight(0xffffff, 1)
-// scene.add(ambientLight)
-
-// const pointLight = new THREE.PointLight(0xffffff, 30)
-// pointLight.position.x = 2
-// pointLight.position.y = 3
-// pointLight.position.z = 4
-// scene.add(pointLight)
-
-/**
  * 环境贴图
  */
 const hdrLoader = new HDRLoader();
@@ -65,121 +53,33 @@ hdrLoader.load("/assets/11-materials-final/textures/environmentMap/2k.hdr", (env
 });
 
 /**
- * 对象
+ * 额外演示参数
  */
-// MeshBasicMaterial
-// const material = new THREE.MeshBasicMaterial()
-// material.map = doorColorTexture
-// material.color = new THREE.Color('#ff0000')
-// material.wireframe = true
-// material.transparent = true
-// material.opacity = 0.5
-// material.alphaMap = doorAlphaTexture
-// material.side = THREE.DoubleSide
-
-// MeshNormalMaterial
-// const material = new THREE.MeshNormalMaterial()
-// material.flatShading = true
-
-// MeshMatcapMaterial
-// const material = new THREE.MeshMatcapMaterial()
-// material.matcap = matcapTexture
-
-// MeshDepthMaterial
-// const material = new THREE.MeshDepthMaterial()
-
-// MeshLambertMaterial
-// const material = new THREE.MeshLambertMaterial()
-
-// MeshPhongMaterial
-// const material = new THREE.MeshPhongMaterial()
-// material.shininess = 100
-// material.specular = new THREE.Color(0x1188ff)
-
-// MeshToonMaterial
-// const material = new THREE.MeshToonMaterial()
-// gradientTexture.minFilter = THREE.NearestFilter
-// gradientTexture.magFilter = THREE.NearestFilter
-// gradientTexture.generateMipmaps = false
-// material.gradientMap = gradientTexture
-
-// // MeshStandardMaterial
-// const material = new THREE.MeshStandardMaterial()
-// material.metalness = 1
-// material.roughness = 1
-// material.map = doorColorTexture
-// material.aoMap = doorAmbientOcclusionTexture
-// material.aoMapIntensity = 1
-// material.displacementMap = doorHeightTexture
-// material.displacementScale = 0.1
-// material.metalnessMap = doorMetalnessTexture
-// material.roughnessMap = doorRoughnessTexture
-// material.normalMap = doorNormalTexture
-// material.normalScale.set(0.5, 0.5)
-// material.transparent = true
-// material.alphaMap = doorAlphaTexture
-
-// gui.add(material, 'metalness').min(0).max(1).step(0.0001)
-// gui.add(material, 'roughness').min(0).max(1).step(0.0001)
+const extraParams = {
+  showMultiMaterial: false,
+  showLineDemo: false,
+  showDashedLine: false,
+};
 
 /**
- * MeshPhysicalMaterial
+ * MeshPhysicalMaterial（主材质）
  */
-// 基础材质
 const material = new THREE.MeshPhysicalMaterial();
 material.metalness = 0;
 material.roughness = 0.15;
-// material.map = doorColorTexture
-// material.aoMap = doorAmbientOcclusionTexture
-// material.aoMapIntensity = 1
-// material.displacementMap = doorHeightTexture
-// material.displacementScale = 0.1
-// material.metalnessMap = doorMetalnessTexture
-// material.roughnessMap = doorRoughnessTexture
-// material.normalMap = doorNormalTexture
-// material.normalScale.set(0.5, 0.5)
-// material.transparent = true
-// material.alphaMap = doorAlphaTexture
-
-gui.add(material, "metalness").min(0).max(1).step(0.0001).name("金属度(metalness)");
-gui.add(material, "roughness").min(0).max(1).step(0.0001).name("粗糙度(roughness)");
-
-// // Clearcoat
-// material.clearcoat = 1
-// material.clearcoatRoughness = 0
-
-// gui.add(material, 'clearcoat').min(0).max(1).step(0.0001)
-// gui.add(material, 'clearcoatRoughness').min(0).max(1).step(0.0001)
-
-// // Sheen
-// material.sheen = 1
-// material.sheenRoughness = 0.25
-// material.sheenColor.set(1, 1, 1)
-
-// gui.add(material, 'sheen').min(0).max(1).step(0.0001)
-// gui.add(material, 'sheenRoughness').min(0).max(1).step(0.0001)
-// gui.addColor(material, 'sheenColor')
-
-// // Iridescence
-// material.iridescence = 1
-// material.iridescenceIOR = 1
-// material.iridescenceThicknessRange = [ 100, 800 ]
-
-// gui.add(material, 'iridescence').min(0).max(1).step(0.0001)
-// gui.add(material, 'iridescenceIOR').min(1).max(2.333).step(0.0001)
-// gui.add(material.iridescenceThicknessRange, '0').min(1).max(1000).step(1)
-// gui.add(material.iridescenceThicknessRange, '1').min(1).max(1000).step(1)
-
-// 透射
 material.transmission = 1;
 material.ior = 1.5;
 material.thickness = 0.5;
 
+gui.add(material, "metalness").min(0).max(1).step(0.0001).name("金属度(metalness)");
+gui.add(material, "roughness").min(0).max(1).step(0.0001).name("粗糙度(roughness)");
 gui.add(material, "transmission").min(0).max(1).step(0.0001).name("透射(transmission)");
 gui.add(material, "ior").min(1).max(10).step(0.0001).name("折射率(IOR)");
 gui.add(material, "thickness").min(0).max(1).step(0.0001).name("厚度(thickness)");
 
-// 对象
+/**
+ * 主场景对象
+ */
 const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 64, 64), material);
 sphere.position.x = -1.5;
 
@@ -191,6 +91,114 @@ torus.position.x = 1.5;
 scene.add(sphere, plane, torus);
 
 /**
+ * 多材质组合演示
+ * BoxGeometry 有 6 个面（组），每个面可以使用不同的材质
+ */
+const multiMaterials = [
+  new THREE.MeshStandardMaterial({ color: 0xff0000 }), // 右面 (+X)
+  new THREE.MeshStandardMaterial({ color: 0x00ff00 }), // 左面 (-X)
+  new THREE.MeshStandardMaterial({ color: 0x0000ff }), // 顶面 (+Y)
+  new THREE.MeshStandardMaterial({ color: 0xffff00 }), // 底面 (-Y)
+  new THREE.MeshStandardMaterial({ color: 0xff00ff }), // 前面 (+Z)
+  new THREE.MeshStandardMaterial({ color: 0x00ffff }), // 后面 (-Z)
+];
+const multiMesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), multiMaterials);
+multiMesh.position.set(0, 2.5, 0);
+multiMesh.visible = false;
+scene.add(multiMesh);
+
+/**
+ * 线条材质演示
+ * Line（实线折线）+ LineDashedMaterial（虚线）
+ */
+// 实线五角星
+const starPoints = [];
+for (let i = 0; i < 5; i++) {
+  const outerAngle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+  const innerAngle = ((i * 4 + 2) * Math.PI) / 5 - Math.PI / 2;
+  starPoints.push(new THREE.Vector3(Math.cos(outerAngle) * 1.2, Math.sin(outerAngle) * 1.2, 0));
+  starPoints.push(new THREE.Vector3(Math.cos(innerAngle) * 0.5, Math.sin(innerAngle) * 0.5, 0));
+}
+const starGeo = new THREE.BufferGeometry().setFromPoints(starPoints);
+const solidLineMat = new THREE.LineBasicMaterial({ color: 0x00ffcc });
+const solidLine = new THREE.LineLoop(starGeo, solidLineMat);
+solidLine.position.set(-2.5, -2.5, 0);
+solidLine.visible = false;
+scene.add(solidLine);
+
+// 虚线矩形
+const rectPoints = [
+  new THREE.Vector3(-1.2, -0.8, 0),
+  new THREE.Vector3(1.2, -0.8, 0),
+  new THREE.Vector3(1.2, 0.8, 0),
+  new THREE.Vector3(-1.2, 0.8, 0),
+];
+const rectGeo = new THREE.BufferGeometry().setFromPoints(rectPoints);
+const dashedMat = new THREE.LineDashedMaterial({
+  color: 0xff8800,
+  dashSize: 0.2,
+  gapSize: 0.1,
+  scale: 1,
+});
+const dashedLine = new THREE.LineLoop(rectGeo, dashedMat);
+dashedLine.computeLineDistances(); // 虚线必须调用！
+dashedLine.position.set(2.5, -2.5, 0);
+dashedLine.visible = false;
+scene.add(dashedLine);
+
+// 线条标签
+function createLabel(text) {
+  const canvas2d = document.createElement("canvas");
+  const fontSize = 36;
+  canvas2d.width = 1024;
+  canvas2d.height = 80;
+  const ctx = canvas2d.getContext("2d");
+  ctx.clearRect(0, 0, canvas2d.width, canvas2d.height);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `bold ${fontSize}px sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, canvas2d.width / 2, canvas2d.height / 2);
+
+  const texture = new THREE.CanvasTexture(canvas2d);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const labelGeo = new THREE.PlaneGeometry(3, 0.25);
+  const labelMat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthTest: false });
+  return new THREE.Mesh(labelGeo, labelMat);
+}
+
+const solidLabel = createLabel("LineBasicMaterial（实线）");
+solidLabel.position.set(-2.5, -3.8, 0);
+solidLabel.visible = false;
+scene.add(solidLabel);
+
+const dashedLabel = createLabel("LineDashedMaterial（虚线）");
+dashedLabel.position.set(2.5, -3.8, 0);
+dashedLabel.visible = false;
+scene.add(dashedLabel);
+
+const multiLabel = createLabel("多材质组合（6 面 6 色）");
+multiLabel.position.set(0, 3.6, 0);
+multiLabel.visible = false;
+scene.add(multiLabel);
+
+/**
+ * 额外演示切换
+ */
+const extraFolder = gui.addFolder("额外演示");
+extraFolder.add(extraParams, "showMultiMaterial").name("多材质组合").onChange((val) => {
+  multiMesh.visible = val;
+  multiLabel.visible = val;
+});
+extraFolder.add(extraParams, "showLineDemo").name("线条材质").onChange((val) => {
+  solidLine.visible = val;
+  dashedLine.visible = val;
+  solidLabel.visible = val;
+  dashedLabel.visible = val;
+});
+extraFolder.open();
+
+/**
  * 尺寸
  */
 const sizes = {
@@ -199,15 +207,12 @@ const sizes = {
 };
 
 window.addEventListener("resize", () => {
-  // 更新尺寸
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
 
-  // 更新相机
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
 
-  // 更新渲染器
   renderer.setSize(sizes.width, sizes.height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
@@ -215,14 +220,10 @@ window.addEventListener("resize", () => {
 /**
  * 相机
  */
-// 基础相机
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
-camera.position.x = 1;
-camera.position.y = 1;
-camera.position.z = 2;
+camera.position.set(1, 1, 5);
 scene.add(camera);
 
-// 控制器
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 
@@ -244,22 +245,24 @@ const tick = () => {
   timer.update();
   const elapsedTime = timer.getElapsed();
 
-  // 更新对象
+  // 旋转主对象
   sphere.rotation.y = 0.1 * elapsedTime;
   plane.rotation.y = 0.1 * elapsedTime;
   torus.rotation.y = 0.1 * elapsedTime;
-
   sphere.rotation.x = -0.15 * elapsedTime;
   plane.rotation.x = -0.15 * elapsedTime;
   torus.rotation.x = -0.15 * elapsedTime;
 
-  // 更新控制器
+  // 旋转多材质立方体
+  multiMesh.rotation.y = 0.5 * elapsedTime;
+  multiMesh.rotation.x = 0.3 * elapsedTime;
+
+  // 旋转线条
+  solidLine.rotation.z = 0.2 * elapsedTime;
+  dashedLine.rotation.z = -0.2 * elapsedTime;
+
   controls.update();
-
-  // 渲染
   renderer.render(scene, camera);
-
-  // 在下一帧再次调用 tick
   window.requestAnimationFrame(tick);
 };
 
