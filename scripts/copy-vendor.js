@@ -8,6 +8,54 @@ const projectRoot = path.resolve(__dirname, "..");
 const nm = path.join(projectRoot, "node_modules");
 const vendorDir = path.join(projectRoot, "public", "vendor");
 
+// VENDOR_MODE: 'local' (default/dev/tauri) | 'cdn' (web build)
+const VENDOR_MODE = process.env.VENDOR_MODE || "local";
+
+if (VENDOR_MODE === "cdn") {
+  // CDN mode: only copy non-CDN vendor files (stats, cannon-es, etc.)
+  // Three.js, lil-gui, gsap are loaded from jsdelivr
+  console.log("VENDOR_MODE=cdn: skipping Three.js/lil-gui/gsap vendor copy (using CDN)");
+
+  const scriptsDir = __dirname;
+
+  fs.rmSync(vendorDir, { recursive: true, force: true });
+  fs.mkdirSync(vendorDir, { recursive: true });
+
+  // Always copy custom CSS files from scripts/
+  fs.copyFileSync(path.join(scriptsDir, "normalize.css"), path.join(vendorDir, "normalize.css"));
+  fs.copyFileSync(path.join(scriptsDir, "webgl-base.css"), path.join(vendorDir, "webgl-base.css"));
+
+  // Stats.js
+  fs.copyFileSync(
+    path.join(nm, "three/examples/jsm/libs/stats.module.js"),
+    path.join(vendorDir, "stats.esm.js"),
+  );
+
+  // cannon-es
+  fs.copyFileSync(
+    path.join(nm, "cannon-es/dist/cannon-es.js"),
+    path.join(vendorDir, "cannon-es.esm.js"),
+  );
+
+  // three-custom-shader-material
+  execSync(
+    `npx esbuild three-custom-shader-material/vanilla/three-custom-shader-material.es.js --bundle --format=esm --external:three --outfile=${JSON.stringify(path.join(vendorDir, "three-custom-shader-material-vanilla.esm.js"))}`,
+    { cwd: nm, stdio: "inherit" },
+  );
+  rewriteThreeImportsInFile(path.join(vendorDir, "three-custom-shader-material-vanilla.esm.js"), true);
+  execSync(
+    `npx esbuild three-bvh-csg/build/index.module.js --bundle --format=esm --external:three --outfile=${JSON.stringify(path.join(vendorDir, "three-bvh-csg.esm.js"))}`,
+    { cwd: nm, stdio: "inherit" },
+  );
+  rewriteThreeImportsInFile(path.join(vendorDir, "three-bvh-csg.esm.js"), true);
+
+  console.log("Vendor files (CDN mode) copied to public/vendor/");
+  process.exit(0);
+}
+
+// === LOCAL MODE (default): copy everything ===
+console.log("VENDOR_MODE=local: copying all vendor files locally");
+
 const preservedFiles = ["normalize.css", "webgl-base.css"];
 const tmpDir = path.join(projectRoot, "public", ".vendor-tmp");
 if (fs.existsSync(vendorDir)) {
@@ -90,12 +138,18 @@ function copyDir(src, dest) {
 }
 
 // Rewrite bare 'three' imports inside jsm addon files to the vendored path
-function rewriteThreeImportsInFile(filePath) {
+function rewriteThreeImportsInFile(filePath, useCdn = false) {
   const original = fs.readFileSync(filePath, "utf-8");
+  const threeCore = useCdn
+    ? `https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js`
+    : "/vendor/three.module.js";
+  const threeAddons = useCdn
+    ? `https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm`
+    : "/vendor/three/examples/jsm";
   const rewritten = original
-    .replace(/from\s+['"]three['"]/g, "from '/vendor/three.module.js'")
-    .replace(/from\s+['"]three\/addons\/(.+?)['"]/g, "from '/vendor/three/examples/jsm/$1'")
-    .replace(/from\s+['"]three\/examples\/jsm\/(.+?)['"]/g, "from '/vendor/three/examples/jsm/$1'");
+    .replace(/from\s+['"]three['"]/g, `from '${threeCore}'`)
+    .replace(/from\s+['"]three\/addons\/(.+?)['"]/g, `from '${threeAddons}/$1'`)
+    .replace(/from\s+['"]three\/examples\/jsm\/(.+?)['"]/g, `from '${threeAddons}/$1'`);
   if (rewritten !== original) fs.writeFileSync(filePath, rewritten, "utf-8");
 }
 

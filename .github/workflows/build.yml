@@ -85,10 +85,13 @@ jobs:
       matrix:
         include:
           - platform: macos-latest
+            target: aarch64-apple-darwin
             args: "--target aarch64-apple-darwin --bundles app"
           - platform: windows-latest
+            target: ""
             args: "--target x86_64-pc-windows-msvc --no-bundle"
           - platform: ubuntu-22.04
+            target: ""
             args: "--bundles appimage"
 
     runs-on: ${{ matrix.platform }}
@@ -107,12 +110,14 @@ jobs:
           node-version: lts/*
 
       - name: Install pnpm
-        run: corepack enable && corepack prepare pnpm@latest --activate
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin' || '' }}
+          targets: ${{ matrix.target }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -220,7 +225,9 @@ jobs:
           node-version: lts/*
 
       - name: Install pnpm
-        run: corepack enable && corepack prepare pnpm@latest --activate
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable

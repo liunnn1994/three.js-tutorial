@@ -7,6 +7,49 @@ const projectRoot = path.resolve(__dirname, "..");
 const codeRoot = path.join(projectRoot, "src/lesson-code");
 const outputRoot = path.join(projectRoot, "public/previews");
 
+// VENDOR_MODE: 'local' (default/dev/tauri) | 'cdn' (web build)
+const VENDOR_MODE = process.env.VENDOR_MODE || "local";
+
+const THREE_VERSION = "0.184.0";
+const LIL_GUI_VERSION = "0.21.0";
+const GSAP_VERSION = "3.15.0";
+
+const CDN_BASE = {
+  three: `https://cdn.jsdelivr.net/npm/three@${THREE_VERSION}`,
+  lilGui: `https://cdn.jsdelivr.net/npm/lil-gui@${LIL_GUI_VERSION}/dist/lil-gui.esm.js`,
+  gsap: `https://cdn.jsdelivr.net/npm/gsap@${GSAP_VERSION}/index.js`,
+};
+
+const CDN_IMPORT_MAP = JSON.stringify({
+  imports: {
+    three: `${CDN_BASE.three}/build/three.module.js`,
+    "three/addons/": `${CDN_BASE.three}/examples/jsm/`,
+    "three/examples/jsm/": `${CDN_BASE.three}/examples/jsm/`,
+  },
+});
+
+function getVendorPath(pkg, subPath = "") {
+  if (VENDOR_MODE === "cdn") {
+    if (pkg === "three") return `${CDN_BASE.three}${subPath}`;
+    if (pkg === "lil-gui") return CDN_BASE.lilGui;
+    if (pkg === "gsap") return CDN_BASE.gsap;
+  }
+  // Local mode layout:
+  //   /vendor/three.module.js   (core, NOT under /vendor/three/)
+  //   /vendor/three/examples/jsm/...  (addons)
+  if (pkg === "three") {
+    if (subPath.startsWith("/build/")) {
+      // /build/three.module.js → /vendor/three.module.js
+      return `/vendor${subPath.replace("/build/", "/")}`;
+    }
+    // /examples/jsm/... → /vendor/three/examples/jsm/...
+    return `/vendor/three${subPath}`;
+  }
+  if (pkg === "lil-gui") return "/vendor/lil-gui.esm.js";
+  if (pkg === "gsap") return "/vendor/gsap.esm.js";
+  return `/vendor/${pkg}`;
+}
+
 const lessons = [
   "03-first-threejs-project",
   "04-transform-objects",
@@ -18,7 +61,6 @@ const lessons = [
   "10-textures",
   "11-materials",
   "12-3d-text",
-  "13-go-live",
   "14-lights",
   "15-shadows",
   "16-haunted-house",
@@ -184,12 +226,20 @@ function resolveAndInlineJs(entryPath, jsFiles, glslFiles) {
 }
 
 function rewriteModuleSpecifiers(content) {
-  return content
-    .replace(/from\s+['"]three\/addons\/(.+?)['"]/g, "from '/vendor/three/examples/jsm/$1'")
-    .replace(/from\s+['"]three\/examples\/jsm\/(.+?)['"]/g, "from '/vendor/three/examples/jsm/$1'")
-    .replace(/from\s+['"]three['"]/g, "from '/vendor/three.module.js'")
-    .replace(/from\s+['"]lil-gui['"]/g, "from '/vendor/lil-gui.esm.js'")
-    .replace(/from\s+['"]gsap['"]/g, "from '/vendor/gsap.esm.js'")
+  const threeCore = getVendorPath("three", "/build/three.module.js");
+  const threeAddons = getVendorPath("three", "/examples/jsm");
+  const lilGui = getVendorPath("lil-gui");
+  const gsap = getVendorPath("gsap");
+
+  let result = content
+    .replace(/from\s+['"]three\/addons\/(.+?)['"]/g, `from '${threeAddons}/$1'`)
+    .replace(/from\s+['"]three\/examples\/jsm\/(.+?)['"]/g, `from '${threeAddons}/$1'`)
+    .replace(/from\s+['"]three['"]/g, `from '${threeCore}'`)
+    .replace(/from\s+['"]lil-gui['"]/g, `from '${lilGui}'`)
+    .replace(/from\s+['"]gsap['"]/g, `from '${gsap}'`);
+
+  // These don't have reliable CDN equivalents, always use local
+  result = result
     .replace(/from\s+['"]stats\.js['"]/g, "from '/vendor/stats.esm.js'")
     .replace(/from\s+['"]cannon-es['"]/g, "from '/vendor/cannon-es.esm.js'")
     .replace(
@@ -197,6 +247,25 @@ function rewriteModuleSpecifiers(content) {
       "from '/vendor/three-custom-shader-material-vanilla.esm.js'",
     )
     .replace(/from\s+['"]three-bvh-csg['"]/g, "from '/vendor/three-bvh-csg.esm.js'");
+
+  return result;
+}
+
+function injectImportMap(html) {
+  if (VENDOR_MODE !== "cdn" || html.includes('type="importmap"')) {
+    return html;
+  }
+
+  const importMapTag = `<script type="importmap">${CDN_IMPORT_MAP}</script>`;
+  if (html.includes("</head>")) {
+    return html.replace("</head>", `${importMapTag}</head>`);
+  }
+
+  if (html.includes("<body>")) {
+    return html.replace("<body>", `${importMapTag}<body>`);
+  }
+
+  return `${importMapTag}${html}`;
 }
 
 function collectFiles(dir) {
@@ -224,14 +293,8 @@ function collectFiles(dir) {
   return { glslFiles, jsFiles, otherFiles };
 }
 
-const normalizeCss = fs.readFileSync(
-  path.join(projectRoot, "public/vendor/normalize.css"),
-  "utf-8",
-);
-const webglBaseCss = fs.readFileSync(
-  path.join(projectRoot, "public/vendor/webgl-base.css"),
-  "utf-8",
-);
+const normalizeCss = fs.readFileSync(path.join(__dirname, "normalize.css"), "utf-8");
+const webglBaseCss = fs.readFileSync(path.join(__dirname, "webgl-base.css"), "utf-8");
 
 fs.rmSync(outputRoot, { recursive: true, force: true });
 fs.mkdirSync(outputRoot, { recursive: true });
@@ -302,6 +365,8 @@ for (const lesson of lessons) {
       finalHtml = finalHtml.replace("<body>", `<head><style>${allCss}</style></head><body>`);
     }
   }
+
+  finalHtml = injectImportMap(finalHtml);
 
   fs.writeFileSync(path.join(outputRoot, `${lesson}.html`), finalHtml, "utf-8");
   generated++;

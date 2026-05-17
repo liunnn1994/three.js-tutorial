@@ -40,7 +40,9 @@
       "Bash(gh run *)",
       "Bash(cat)",
       "Read(//tmp/**)",
-      "Bash(npx astro *)"
+      "Bash(npx astro *)",
+      "Bash(VENDOR_MODE=cdn node scripts/copy-vendor.js)",
+      "Bash(VENDOR_MODE=cdn node scripts/generate-previews.js)"
     ]
   }
 }
