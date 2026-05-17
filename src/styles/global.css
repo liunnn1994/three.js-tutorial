@@ -74,6 +74,7 @@
 .lesson-code-tabs {
   max-height: 400px;
   overflow-y: auto;
+  padding-bottom: 0.5rem;
 }
 
 .lesson-code-file {

@@ -29,7 +29,10 @@ function collectFiles(dir: string, basePath: string = '/') {
     } else if (entry.name.match(/\.(glsl|vert|frag)$/)) {
       sourceFiles.push({ name: relPath.replace(/^\//, ''), content: fs.readFileSync(fullPath, 'utf-8'), lang: 'glsl' });
     } else if (entry.name.match(/\.css$/)) {
-      sourceFiles.push({ name: relPath.replace(/^\//, ''), content: fs.readFileSync(fullPath, 'utf-8'), lang: 'css' });
+      const content = fs.readFileSync(fullPath, 'utf-8');
+      if (content.trim()) {
+        sourceFiles.push({ name: relPath.replace(/^\//, ''), content, lang: 'css' });
+      }
     }
   }
 }
