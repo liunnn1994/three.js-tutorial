@@ -375,11 +375,11 @@ directionalLight.shadow.radius = 4;
 
 ### 算法对比总结
 
-| 算法               | 性能 | 阴影质量 | 支持 shadow.radius |
-| ------------------ | ---- | -------- | ------------------ |
-| `BasicShadowMap`   | 最快 | 锯齿明显 | 否                 |
-| `PCFShadowMap`     | 中等 | 柔和自然 | 是                 |
-| `VSMShadowMap`     | 最慢 | 不稳定   | 否                 |
+| 算法             | 性能 | 阴影质量 | 支持 shadow.radius |
+| ---------------- | ---- | -------- | ------------------ |
+| `BasicShadowMap` | 最快 | 锯齿明显 | 否                 |
+| `PCFShadowMap`   | 中等 | 柔和自然 | 是                 |
+| `VSMShadowMap`   | 最慢 | 不稳定   | 否                 |
 
 :::tip[推荐]
 大多数情况下，使用 `THREE.PCFShadowMap` 就好了。通过 `shadow.radius` 可以控制阴影的模糊程度。

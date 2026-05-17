@@ -47,9 +47,12 @@ cubeTweaks.add(mesh, "visible").name("可见性");
 
 cubeTweaks.add(material, "wireframe").name("线框模式");
 
-cubeTweaks.addColor(debugObject, "color").name("颜色").onChange(() => {
-  material.color.set(debugObject.color);
-});
+cubeTweaks
+  .addColor(debugObject, "color")
+  .name("颜色")
+  .onChange(() => {
+    material.color.set(debugObject.color);
+  });
 
 debugObject.spin = () => {
   gsap.to(mesh.rotation, { duration: 1, y: mesh.rotation.y + Math.PI * 2 });
