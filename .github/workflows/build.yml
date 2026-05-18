@@ -247,11 +247,15 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Generate icons
-        run: node scripts/generate-icons.mjs
+      - name: Reset generated Android project
+        shell: bash
+        run: rm -rf src-tauri/gen/android
 
       - name: Initialize Android
         run: pnpm tauri android init
+
+      - name: Generate icons
+        run: node scripts/generate-icons.mjs
 
       - name: Configure Android signing
         shell: bash
