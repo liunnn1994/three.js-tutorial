@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.7.0...v1.8.0) (2026-05-18)
+
+
+### Features
+
+* 🎸 修改安卓 ci ([3385e41](https://github.com/liunnn1994/three.js-tutorial/commit/3385e41cb2378fb985c246067a2b1e935a6cdafb))
+
 # [1.7.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.6.1...v1.7.0) (2026-05-17)
 
 
