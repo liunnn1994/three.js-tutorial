@@ -1,0 +1,125 @@
+---
+title: "55 调试工具"
+description: "为你的 TresJS 场景添加实时调试面板，动态调整参数"
+---
+
+import TresJSPreview from "../../../components/TresJSPreview.astro";
+import Debug from "../../../components/tresjs/Debug.vue";
+
+<TresJSPreview sourceFile="Debug.vue">
+  <Debug client:only="vue" />
+</TresJSPreview>
+
+## @tresjs/leches
+
+`@tresjs/leches` 是 TresJS 官方调试 GUI，提供响应式控制面板，可以在运行时实时调整 3D 场景参数。
+
+```bash
+npm install @tresjs/leches
+```
+
+### 基础用法
+
+```vue
+<script setup>
+import { TresLeches } from '@tresjs/leches'
+import { useControls } from '@tresjs/leches'
+
+const { color, position, visible } = useControls('Mesh', {
+  color: '#ff0000',
+  position: { value: { x: 0, y: 0 }, step: 0.1 },
+  visible: true,
+})
+</script>
+
+<template>
+  <TresLeches />
+  <TresCanvas>
+    <TresMesh :position="[position.x, position.y, 0]" :visible="visible">
+      <TresSphereGeometry />
+      <TresMeshStandardMaterial :color="color" />
+    </TresMesh>
+  </TresCanvas>
+</template>
+```
+
+:::tip
+`<TresLeches>` 组件需要放在 `<TresCanvas>` 外部（同级），它是 GUI 面板的容器。
+:::
+
+### 控制类型
+
+`useControls` 会根据值的类型自动推断控制组件：
+
+| 值类型 | 推断结果 | 示例 |
+|--------|---------|------|
+| `boolean` | 开关 | `visible: true` |
+| `number` | 数字输入 | `speed: 5` |
+| `number` + `min`/`max` | 滑块 | `size: { value: 1, min: 0.1, max: 5, step: 0.1 }` |
+| `string`（hex 颜色） | 颜色选择器 | `color: '#ff0000'` |
+| `{ options: [...] }` | 下拉选择 | `preset: { options: ['a', 'b', 'c'] }` |
+| `Vector3` / 数组 | 向量输入 | `position: { value: [0, 1, 0] }` |
+
+### 文件夹分组
+
+使用第一个参数作为文件夹名称，将相关控制归组：
+
+```vue
+<script setup>
+import { useControls } from '@tresjs/leches'
+
+const { intensity, color } = useControls('光照', {
+  intensity: { value: 1, min: 0, max: 10, step: 0.1 },
+  color: '#ffffff',
+})
+
+const { speed, amplitude } = useControls('动画', {
+  speed: { value: 1, min: 0.1, max: 5 },
+  amplitude: { value: 0.5, min: 0, max: 2 },
+})
+</script>
+```
+
+### FPS 监控
+
+Leches 内置了 FPS 图表控制：
+
+```vue
+<script setup>
+import { useControls } from '@tresjs/leches'
+
+const fps = useControls('性能', {
+  fpsgraph: true,
+})
+</script>
+```
+
+## 其他调试方式
+
+### Vue Devtools
+
+TresJS 支持 Vue Devtools，你可以在 Devtools 中查看 Three.js 对象树和响应式状态。
+
+### 内置指令
+
+TresJS 核心包提供了几个调试指令：
+
+```vue
+<!-- 在控制台打印对象的属性 -->
+<TresMesh v-log />
+
+<!-- 显示光源辅助线 -->
+<TresDirectionalLight v-light-helper />
+
+<!-- 显示两个对象之间的距离 -->
+<TresMesh v-distance-to="targetRef" />
+```
+
+### 对比
+
+| 工具 | 适用场景 |
+|------|---------|
+| `@tresjs/leches` | 3D 场景参数实时调试，支持滑块、颜色、向量等 |
+| Vue Devtools | 组件树和响应式状态 |
+| `v-log` / `v-light-helper` | 快速打印和可视化调试 |
+| `lil-gui` | 原生 Three.js 项目 |

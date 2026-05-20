@@ -10,10 +10,6 @@
       "Bash(openspec new *)",
       "Bash(openspec status *)",
       "Bash(openspec instructions *)",
-      "Bash(grep -E '^\\([0-9]+ - .*\\\\.html$\\)')",
-      "Bash(grep -E '^[0-9]+\\(-[a-z]|-[a-z-]+\\)$')",
-      "Bash(grep -v 'final$')",
-      "Bash(grep -E '^[0-9]+ - .*\\\\.html$')",
       "Bash(git checkout *)",
       "Bash(npm run *)",
       "Bash(npm install *)",
@@ -24,11 +20,8 @@
       "Bash(pnpm dev *)",
       "Bash(kill %1)",
       "Bash(wait)",
-      "Bash([ ! -f \"/Users/nord/work/three.js-tutorial/src/content/docs/basics/$dir.mdx\" ])",
       "Bash(echo \"EXIT: $?\")",
       "Bash(npm ls *)",
-      "Bash(curl -s \"https://cdn.jsdelivr.net/npm/stats.js@0.17/+esm\" -o /Users/nord/work/three.js-tutorial/public/vendor/stats.esm.js)",
-      "Bash(grep -E 'final$')",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:4321/assets/12-3d-text-final/fonts/helvetiker_regular.typeface.json)",
       "Bash(curl *)",
       "Bash(pkill -f \"astro dev\")",
@@ -41,8 +34,10 @@
       "Bash(cat)",
       "Read(//tmp/**)",
       "Bash(npx astro *)",
-      "Bash(VENDOR_MODE=cdn node scripts/copy-vendor.js)",
-      "Bash(VENDOR_MODE=cdn node scripts/generate-previews.js)"
+      "Bash(grep *)",
+      "Bash(npm view *)",
+      "Bash(pnpm remove *)",
+      "Bash(pnpm view *)"
     ]
   }
 }

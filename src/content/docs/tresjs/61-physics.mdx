@@ -1,0 +1,197 @@
+---
+title: "61 物理引擎"
+description: "在 TresJS 中集成 Rapier 物理引擎，实现碰撞检测和物理模拟"
+---
+
+import TresJSPreview from "../../../components/TresJSPreview.astro";
+import Physics from "../../../components/tresjs/Physics.vue";
+
+<TresJSPreview sourceFile="Physics.vue">
+  <Physics client:only="vue" />
+</TresJSPreview>
+
+## 物理引擎
+
+### @tresjs/rapier
+
+```bash
+npm install @tresjs/rapier
+```
+
+TresJS 的物理引擎基于 Rapier —— 用 Rust 编写的高性能物理引擎，通过 WASM 在浏览器中运行，性能远优于 JavaScript 实现的物理库。
+
+:::caution
+`@tresjs/rapier` 目前仍在早期开发阶段（版本 0.x），API 可能会发生变化。建议锁定版本号使用。
+:::
+
+## 基础用法
+
+```vue
+<script setup>
+import { Physics, RigidBody } from '@tresjs/rapier'
+</script>
+
+<template>
+  <TresCanvas>
+    <Physics :gravity="[0, -9.81, 0]">
+      <!-- 动态物体：受重力影响 -->
+      <RigidBody>
+        <TresMesh :position-y="2">
+          <TresBoxGeometry />
+          <TresMeshStandardMaterial color="mediumpurple" />
+        </TresMesh>
+      </RigidBody>
+
+      <!-- 静态物体：地面 -->
+      <RigidBody type="fixed">
+        <TresMesh :position-y="-1">
+          <TresBoxGeometry :args="[10, 0.5, 10]" />
+          <TresMeshStandardMaterial color="greenyellow" />
+        </TresMesh>
+      </RigidBody>
+    </Physics>
+  </TresCanvas>
+</template>
+```
+
+## Physics 组件
+
+`Physics` 是物理世界的容器组件，所有参与物理模拟的物体都必须放在 `Physics` 内部：
+
+| 属性 | 说明 | 默认值 |
+|------|------|--------|
+| `gravity` | 重力向量 `[x, y, z]` | `[0, -9.81, 0]` |
+| `debug` | 显示调试可视化 | `false` |
+
+## RigidBody 类型
+
+`RigidBody` 定义物体的物理行为，通过 `type` 属性控制：
+
+| 类型 | 说明 |
+|------|------|
+| `dynamic`（默认） | 受物理力影响，可以移动和旋转 |
+| `fixed` | 固定不动，适合地面和墙壁 |
+| `kinematic` | 由代码控制位置，物理引擎只负责碰撞检测 |
+| `kinematicVelocity` | 由代码控制速度，物理引擎计算位移 |
+
+RigidBody 常用属性：
+
+| 属性 | 说明 |
+|------|------|
+| `gravity-scale` | 重力缩放（负数可让物体上浮） |
+| `additional-mass` | 额外质量 |
+| `linear-damping` | 线性阻尼（减速） |
+| `angular-damping` | 旋转阻尼 |
+| `lock-translations` | 锁定位移 |
+| `lock-rotations` | 锁定旋转 |
+| `enable-ccd` | 启用连续碰撞检测（防止高速物体穿透） |
+
+## Collider 碰撞器
+
+碰撞器定义了物体的物理边界。RigidBody 可以自动生成碰撞器，也可以手动指定：
+
+### 自动生成碰撞器
+
+```vue
+<!-- 根据几何体自动生成球体碰撞器 -->
+<RigidBody colliders="ball">
+  <TresMesh><TresSphereGeometry /></TresMesh>
+</RigidBody>
+
+<!-- 根据几何体自动生成长方体碰撞器 -->
+<RigidBody colliders="cuboid">
+  <TresMesh><TresBoxGeometry /></TresMesh>
+</RigidBody>
+```
+
+### 手动指定碰撞器
+
+使用 `Collider` 组件手动控制碰撞形状：
+
+```vue
+<script setup>
+import { Physics, RigidBody, Collider } from '@tresjs/rapier'
+</script>
+
+<template>
+  <RigidBody :colliders="false">
+    <Collider shape="cuboid" :args="[0.5, 0.5, 0.5]" />
+    <TresMesh><TresBoxGeometry /></TresMesh>
+  </RigidBody>
+</template>
+```
+
+可用碰撞器形状：
+
+| 形状 | 说明 |
+|------|------|
+| `ball` | 球形 |
+| `cuboid` | 长方体 |
+| `capsule` | 胶囊体 |
+| `cone` | 圆锥 |
+| `cylinder` | 圆柱 |
+| `convexHull` | 凸包 |
+| `trimesh` | 三角网格（仅适用于 `fixed` 物体） |
+| `roundCuboid` | 圆角长方体 |
+| `roundCylinder` | 圆角圆柱 |
+
+碰撞器属性：
+
+| 属性 | 说明 |
+|------|------|
+| `friction` | 摩擦系数 |
+| `restitution` | 弹性系数（0 = 不弹，1 = 完全弹性） |
+| `density` | 密度 |
+| `sensor` | 设为 `true` 时为传感器模式（检测碰撞但不产生物理响应） |
+
+:::tip
+`sensor` 模式适合做触发区域（如进入某个区域触发事件），物体可以穿过但能检测到碰撞。
+:::
+
+## 施加力
+
+```vue
+<script setup>
+const bodyRef = ref()
+
+// 施加瞬时力（如跳跃）
+const jump = () => {
+  bodyRef.value.applyImpulse({ x: 0, y: 5, z: 0 })
+  bodyRef.value.applyTorqueImpulse({
+    x: Math.random() - 0.5,
+    y: Math.random() - 0.5,
+    z: Math.random() - 0.5,
+  })
+}
+</script>
+
+<template>
+  <RigidBody ref="bodyRef">
+    <TresMesh @click="jump">
+      <TresBoxGeometry />
+    </TresMesh>
+  </RigidBody>
+</template>
+```
+
+| 方法 | 说明 |
+|------|------|
+| `applyImpulse` | 施加瞬时力（如跳跃、爆炸） |
+| `applyTorqueImpulse` | 施加瞬时扭矩 |
+| `applyForce` | 施加持续力（如风、重力） |
+| `setNextKinematicTranslation` | 设置运动学物体下一帧位置 |
+
+## 关节（Joint）
+
+关节用于连接两个刚体，模拟铰链、弹簧等物理约束：
+
+| 组件 | 说明 |
+|------|------|
+| `SphericalJoint` | 球形关节（万向节） |
+| `RevoluteJoint` | 旋转关节（单轴铰链） |
+| `PrismaticJoint` | 棱柱关节（单轴滑动） |
+| `SpringJoint` | 弹簧关节 |
+
+:::tip
+Rapier 物理引擎使用 WASM 实现，性能远优于 JavaScript 实现的物理库（如 Cannon.js），特别适合大量物体的模拟场景。
+:::

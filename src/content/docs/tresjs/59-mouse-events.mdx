@@ -1,0 +1,107 @@
+---
+title: "59 鼠标事件"
+description: "学习在 TresJS 中处理鼠标交互事件，实现点击、悬停和事件冒泡控制"
+---
+
+import TresJSPreview from "../../../components/TresJSPreview.astro";
+import MouseEvents from "../../../components/tresjs/MouseEvents.vue";
+
+<TresJSPreview sourceFile="MouseEvents.vue">
+  <MouseEvents client:only="vue" />
+</TresJSPreview>
+
+## TresJS 事件系统
+
+TresJS 基于 Three.js 的射线检测（Raycasting）实现了一套事件系统，使用 Vue 风格的 `@` 语法绑定事件：
+
+```vue
+<TresMesh @click="handleClick" @pointer-enter="onHover">
+  <TresBoxGeometry />
+</TresMesh>
+```
+
+## 事件名称
+
+TresJS 的事件名称遵循 Vue 的命名规范（kebab-case），使用 `@` 语法绑定：
+
+| 事件 | 说明 |
+|------|------|
+| `@click` | 鼠标点击 |
+| `@pointer-enter` | 鼠标进入 |
+| `@pointer-leave` | 鼠标离开 |
+| `@pointer-down` | 鼠标按下 |
+| `@pointer-up` | 鼠标释放 |
+| `@pointer-move` | 鼠标移动 |
+| `@pointer-missed` | 点击空白处 |
+
+## 实战示例
+
+### 点击变色
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+
+const cubeRef = ref()
+
+const onClickCube = () => {
+  cubeRef.value.material.color.set(
+    `hsl(${Math.random() * 360}, 100%, 75%)`
+  )
+}
+</script>
+
+<template>
+  <TresMesh ref="cubeRef" @click="onClickCube">
+    <TresBoxGeometry />
+    <TresMeshStandardMaterial color="mediumpurple" />
+  </TresMesh>
+</template>
+```
+
+### 悬停光标
+
+```vue
+<script setup>
+const onPointerEnter = () => {
+  document.body.style.cursor = 'pointer'
+}
+
+const onPointerLeave = () => {
+  document.body.style.cursor = 'default'
+}
+</script>
+
+<template>
+  <TresMesh
+    @pointer-enter="onPointerEnter"
+    @pointer-leave="onPointerLeave"
+  >
+    <TresBoxGeometry />
+  </TresMesh>
+</template>
+```
+
+## 事件冒泡
+
+TresJS 的事件系统支持事件冒泡。如果一个 mesh 被点击，事件会向上传递到父级对象。使用 `stopPropagation()` 可以阻止事件继续冒泡：
+
+```vue
+<script setup>
+const onClickSphere = (event) => {
+  event.stopPropagation()
+  console.log('只处理球体点击')
+}
+</script>
+
+<template>
+  <!-- 点击球体不会触发地面平面的点击事件 -->
+  <TresMesh @click="onClickSphere">
+    <TresSphereGeometry />
+  </TresMesh>
+</template>
+```
+
+:::tip
+场景中 mesh 越多，射线检测的计算开销越大。如果只需要对少量物体做交互，考虑使用 `raycast` 属性优化检测范围。
+:::

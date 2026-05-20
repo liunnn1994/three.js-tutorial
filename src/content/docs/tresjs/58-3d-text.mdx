@@ -1,0 +1,93 @@
+---
+title: "58 3D 文字"
+description: "在 TresJS 中创建 3D 文字效果，使用共享几何体优化性能"
+---
+
+import TresJSPreview from "../../../components/TresJSPreview.astro";
+import ThreeDText from "../../../components/tresjs/ThreeDText.vue";
+
+<TresJSPreview sourceFile="ThreeDText.vue">
+  <ThreeDText client:only="vue" />
+</TresJSPreview>
+
+## 3D 文字渲染
+
+### Text3D 组件
+
+`@tresjs/cientos` 提供的 `Text3D` 基于 Three.js 的 `TextGeometry`，可以创建真正的 3D 立体文字：
+
+```vue
+<script setup>
+import { Text3D, Center } from '@tresjs/cientos'
+</script>
+
+<template>
+  <Center>
+    <Text3D
+      font="/fonts/helvetiker_regular.typeface.json"
+      :size="0.75"
+      :height="0.2"
+      :curve-segments="12"
+      :bevel-enabled="true"
+      :bevel-thickness="0.02"
+      :bevel-size="0.02"
+      :bevel-segments="5"
+    >
+      Hello TresJS
+    </Text3D>
+  </Center>
+</template>
+```
+
+:::caution
+`Text3D` 需要一个 typeface.json 格式的字体文件。你可以使用 [facetype.js](https://gero3.github.io/facetype.js/) 将字体转换为该格式。
+:::
+
+### Center 组件
+
+`Center` 自动将子元素居中到原点：
+
+```vue
+<Center>
+  <Text3D font="/fonts/helvetiker_bold.typeface.json">
+    居中文字
+  </Text3D>
+</Center>
+```
+
+## 性能优化：共享几何体与材质
+
+当你需要创建大量相同的几何体时，应该共享 `Geometry` 和 `Material` 实例，而不是在每个 mesh 中重复创建：
+
+```vue
+<script setup lang="ts">
+import * as THREE from 'three'
+
+// 在组件外部创建，所有实例共享
+const torusGeometry = new THREE.TorusGeometry(1, 0.6, 16, 32)
+const material = new THREE.MeshNormalMaterial()
+</script>
+
+<template>
+  <TresMesh
+    v-for="(_, i) in 50"
+    :key="i"
+    :geometry="torusGeometry"
+    :material="material"
+    :position="[Math.random() * 10, Math.random() * 10, Math.random() * 10]"
+  />
+</template>
+```
+
+:::tip
+共享几何体和材质可以显著减少 GPU 内存使用和 Draw Call 数量。50 个使用共享材质的 mesh 通常只有 1 个 Draw Call。
+:::
+
+### MeshNormalMaterial vs MeshMatcapMaterial
+
+| 材质 | 特点 |
+|------|------|
+| `MeshNormalMaterial` | 基于法线方向着色，无需光源，调试和艺术效果都好用 |
+| `MeshMatcapMaterial` | 使用 Matcap 纹理，不接收光照但视觉效果丰富 |
+
+示例中使用 `MeshNormalMaterial` 是因为它不需要额外的纹理文件。
