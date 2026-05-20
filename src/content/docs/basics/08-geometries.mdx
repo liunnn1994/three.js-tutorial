@@ -462,10 +462,11 @@ scene.add(wireMesh);
 ```
 
 :::tip[什么时候用哪个？]
+
 - 想调试几何体内部结构 → 材质 `wireframe: true` 或 `WireframeGeometry`
 - 想显示干净的轮廓线 → `EdgesGeometry`（最常见的用途）
 - 想在实体模型上叠加线框效果 → 同时添加 Mesh + `EdgesGeometry` 的 `LineSegments`，它们共享同一个几何体
-:::
+  :::
 
 ## 线条几何体（Line / LineLoop / LineSegments）
 
@@ -505,8 +506,18 @@ scene.add(loop);
 ```js
 // 两段独立的线段
 const segmentPositions = new Float32Array([
-  -1, 0, 0,  0, 1, 0,  // 线段 1
-   1, 0, 0,  0, -1, 0, // 线段 2
+  -1,
+  0,
+  0,
+  0,
+  1,
+  0, // 线段 1
+  1,
+  0,
+  0,
+  0,
+  -1,
+  0, // 线段 2
 ]);
 const geometry = new THREE.BufferGeometry();
 geometry.setAttribute("position", new THREE.BufferAttribute(segmentPositions, 3));
@@ -795,19 +806,17 @@ scene.add(instancedMesh);
 
 ```js
 for (let i = 0; i < count; i++) {
-  instancedMesh.setColorAt(
-    i,
-    new THREE.Color(Math.random(), Math.random(), Math.random()),
-  );
+  instancedMesh.setColorAt(i, new THREE.Color(Math.random(), Math.random(), Math.random()));
 }
 instancedMesh.instanceColor.needsUpdate = true;
 ```
 
 :::tip[InstancedMesh vs 普通 Mesh]
+
 - **普通 Mesh**：每个 Mesh 是一个 draw call。1000 个 Mesh = 1000 次 draw call。
 - **InstancedMesh**：所有实例共享一个 draw call。1000 个实例 = 1 次 draw call。
 - InstancedMesh 适合**几何体相同但变换不同**的场景。如果需要不同的几何体形状，还是需要分别创建 Mesh，或使用 `BufferGeometryUtils.mergeGeometries()` 合并。
-:::
+  :::
 
 参考文档：[Three.js - InstancedMesh](https://threejs.org/docs/#api/en/objects/InstancedMesh)
 

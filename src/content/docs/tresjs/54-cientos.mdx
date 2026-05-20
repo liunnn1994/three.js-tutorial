@@ -26,7 +26,7 @@ npm install @tresjs/cientos
 
 ```vue
 <script setup>
-import { OrbitControls } from '@tresjs/cientos'
+import { OrbitControls } from "@tresjs/cientos";
 </script>
 
 <template>
@@ -41,24 +41,24 @@ import { OrbitControls } from '@tresjs/cientos'
 </template>
 ```
 
-| 属性 | 说明 | 默认值 |
-|------|------|--------|
-| `enable-damping` | 启用阻尼惯性 | `true` |
-| `damping-factor` | 阻尼系数 | `0.05` |
-| `auto-rotate` | 自动旋转 | `false` |
-| `auto-rotate-speed` | 自动旋转速度 | `2` |
-| `min-distance` / `max-distance` | 缩放距离限制 | — |
-| `enable-pan` / `enable-rotate` / `enable-zoom` | 启用/禁用操作 | `true` |
-| `target` | 观察目标点 `[x, y, z]` | `[0, 0, 0]` |
+| 属性                                           | 说明                   | 默认值      |
+| ---------------------------------------------- | ---------------------- | ----------- |
+| `enable-damping`                               | 启用阻尼惯性           | `true`      |
+| `damping-factor`                               | 阻尼系数               | `0.05`      |
+| `auto-rotate`                                  | 自动旋转               | `false`     |
+| `auto-rotate-speed`                            | 自动旋转速度           | `2`         |
+| `min-distance` / `max-distance`                | 缩放距离限制           | —           |
+| `enable-pan` / `enable-rotate` / `enable-zoom` | 启用/禁用操作          | `true`      |
+| `target`                                       | 观察目标点 `[x, y, z]` | `[0, 0, 0]` |
 
 ### 其他控制器
 
-| 组件 | 说明 |
-|------|------|
-| `MapControls` | 地图风格控制器（类似 OrbitControls 但中键平移更直觉） |
-| `TransformControls` | 在场景中拖拽移动/旋转/缩放物体 |
-| `PointerLockControls` | 第一人称视角锁定鼠标控制 |
-| `KeyboardControls` | 键盘输入控制 |
+| 组件                  | 说明                                                  |
+| --------------------- | ----------------------------------------------------- |
+| `MapControls`         | 地图风格控制器（类似 OrbitControls 但中键平移更直觉） |
+| `TransformControls`   | 在场景中拖拽移动/旋转/缩放物体                        |
+| `PointerLockControls` | 第一人称视角锁定鼠标控制                              |
+| `KeyboardControls`    | 键盘输入控制                                          |
 
 ## HTML 叠加
 
@@ -68,27 +68,25 @@ import { OrbitControls } from '@tresjs/cientos'
 
 ```vue
 <script setup>
-import { Html } from '@tresjs/cientos'
+import { Html } from "@tresjs/cientos";
 </script>
 
 <template>
   <TresMesh>
     <TresSphereGeometry />
     <Html :position="[1, 1, 0]" center distance-factor="10">
-      <div style="background: rgba(0,0,0,0.7); color: white; padding: 8px;">
-        这是一个标签
-      </div>
+      <div style="background: rgba(0,0,0,0.7); color: white; padding: 8px;">这是一个标签</div>
     </Html>
   </TresMesh>
 </template>
 ```
 
-| 属性 | 说明 |
-|------|------|
-| `center` | 居中 HTML 内容 |
+| 属性              | 说明                                         |
+| ----------------- | -------------------------------------------- |
+| `center`          | 居中 HTML 内容                               |
 | `distance-factor` | 根据距离自动缩放，让标签像"固定"在 3D 空间中 |
-| `occlude` | 遮挡设置，HTML 可被 3D 物体遮挡 |
-| `transform` | 启用 3D 变换模式 |
+| `occlude`         | 遮挡设置，HTML 可被 3D 物体遮挡              |
+| `transform`       | 启用 3D 变换模式                             |
 
 ## 文字
 
@@ -98,7 +96,7 @@ import { Html } from '@tresjs/cientos'
 
 ```vue
 <script setup>
-import { Text } from '@tresjs/cientos'
+import { Text } from "@tresjs/cientos";
 </script>
 
 <template>
@@ -112,7 +110,7 @@ import { Text } from '@tresjs/cientos'
 
 ```vue
 <script setup>
-import { Text3D, Center } from '@tresjs/cientos'
+import { Text3D, Center } from "@tresjs/cientos";
 </script>
 
 <template>
@@ -136,7 +134,7 @@ import { Text3D, Center } from '@tresjs/cientos'
 
 ```vue
 <script setup>
-import { Levioso } from '@tresjs/cientos'
+import { Levioso } from "@tresjs/cientos";
 </script>
 
 <template>
@@ -149,12 +147,12 @@ import { Levioso } from '@tresjs/cientos'
 </template>
 ```
 
-| 属性 | 说明 | 默认值 |
-|------|------|--------|
-| `speed` | 浮动速度 | `1` |
-| `float-factor` | 浮动幅度 | `1` |
-| `rotation-factor` | 旋转幅度 | `0` |
-| `range` | Y 轴浮动范围 `[min, max]` | — |
+| 属性              | 说明                      | 默认值 |
+| ----------------- | ------------------------- | ------ |
+| `speed`           | 浮动速度                  | `1`    |
+| `float-factor`    | 浮动幅度                  | `1`    |
+| `rotation-factor` | 旋转幅度                  | `0`    |
+| `range`           | Y 轴浮动范围 `[min, max]` | —      |
 
 ### Billboard
 
@@ -162,7 +160,7 @@ import { Levioso } from '@tresjs/cientos'
 
 ```vue
 <script setup>
-import { Billboard } from '@tresjs/cientos'
+import { Billboard } from "@tresjs/cientos";
 </script>
 
 <template>
@@ -181,7 +179,7 @@ Cientos 为常用几何体提供了简写组件，省去手动添加 `TresMesh` 
 
 ```vue
 <script setup>
-import { Box, Sphere, Torus, TorusKnot } from '@tresjs/cientos'
+import { Box, Sphere, Torus, TorusKnot } from "@tresjs/cientos";
 </script>
 
 <template>
@@ -199,36 +197,36 @@ import { Box, Sphere, Torus, TorusKnot } from '@tresjs/cientos'
 
 Cientos 提供了几种开箱即用的特色材质：
 
-| 组件 | 说明 |
-|------|------|
-| `HolographicMaterial` | 全息投影效果材质 |
-| `MeshGlassMaterial` | 玻璃效果材质 |
-| `MeshWobbleMaterial` | 弹性变形效果材质 |
-| `MeshReflectionMaterial` | 反射效果材质 |
-| `CustomShaderMaterial` | 自定义着色器材质 |
+| 组件                     | 说明             |
+| ------------------------ | ---------------- |
+| `HolographicMaterial`    | 全息投影效果材质 |
+| `MeshGlassMaterial`      | 玻璃效果材质     |
+| `MeshWobbleMaterial`     | 弹性变形效果材质 |
+| `MeshReflectionMaterial` | 反射效果材质     |
+| `CustomShaderMaterial`   | 自定义着色器材质 |
 
 ## 加载器
 
-| 工具 | 说明 |
-|------|------|
-| `useGLTF` | 加载 GLTF/GLB 模型 |
-| `useFBX` | 加载 FBX 模型 |
-| `useTexture` / `useTextures` | 加载单个/多个纹理 |
-| `useVideoTexture` | 加载视频纹理 |
-| `useSVG` | 加载 SVG |
-| `useProgress` | 跟踪加载进度 |
+| 工具                         | 说明               |
+| ---------------------------- | ------------------ |
+| `useGLTF`                    | 加载 GLTF/GLB 模型 |
+| `useFBX`                     | 加载 FBX 模型      |
+| `useTexture` / `useTextures` | 加载单个/多个纹理  |
+| `useVideoTexture`            | 加载视频纹理       |
+| `useSVG`                     | 加载 SVG           |
+| `useProgress`                | 跟踪加载进度       |
 
 ## 环境与布景
 
-| 组件 | 说明 |
-|------|------|
-| `Environment` | 环境光照，快速添加 HDR 环境贴图 |
-| `ContactShadows` | 接触阴影，物体底部柔和阴影 |
-| `Sky` | 天空盒 |
-| `Stars` | 星空粒子 |
-| `Sparkles` | 闪烁粒子效果 |
-| `Stage` | 一键场景布景（光照 + 地面 + 环境） |
-| `AccumulativeShadows` | 累积阴影，质量高 |
-| `Ocean` | 海洋水面效果 |
+| 组件                  | 说明                               |
+| --------------------- | ---------------------------------- |
+| `Environment`         | 环境光照，快速添加 HDR 环境贴图    |
+| `ContactShadows`      | 接触阴影，物体底部柔和阴影         |
+| `Sky`                 | 天空盒                             |
+| `Stars`               | 星空粒子                           |
+| `Sparkles`            | 闪烁粒子效果                       |
+| `Stage`               | 一键场景布景（光照 + 地面 + 环境） |
+| `AccumulativeShadows` | 累积阴影，质量高                   |
+| `Ocean`               | 海洋水面效果                       |
 
 完整组件列表请参考 [Cientos 文档](https://cientos.tresjs.org/)。

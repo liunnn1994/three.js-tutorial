@@ -28,7 +28,7 @@ TresJS 的后处理库基于 pmndrs/postprocessing 构建，提供了 30+ 种后
 
 ```vue
 <script setup lang="ts">
-import { EffectComposerPmndrs, BloomPmndrs, VignettePmndrs } from '@tresjs/post-processing'
+import { EffectComposerPmndrs, BloomPmndrs, VignettePmndrs } from "@tresjs/post-processing";
 </script>
 
 <template>
@@ -45,13 +45,13 @@ import { EffectComposerPmndrs, BloomPmndrs, VignettePmndrs } from '@tresjs/post-
 
 `EffectComposerPmndrs` 属性：
 
-| 属性 | 说明 | 默认值 |
-|------|------|--------|
-| `enabled` | 启用/禁用后处理 | `true` |
-| `resolution-scale` | 渲染分辨率缩放 | — |
-| `multisampling` | 多重采样抗锯齿 | — |
-| `depth-buffer` | 启用深度缓冲 | `false` |
-| `disable-normal-pass` | 禁用法线通道 | `false` |
+| 属性                  | 说明            | 默认值  |
+| --------------------- | --------------- | ------- |
+| `enabled`             | 启用/禁用后处理 | `true`  |
+| `resolution-scale`    | 渲染分辨率缩放  | —       |
+| `multisampling`       | 多重采样抗锯齿  | —       |
+| `depth-buffer`        | 启用深度缓冲    | `false` |
+| `disable-normal-pass` | 禁用法线通道    | `false` |
 
 :::tip
 效果组件的排列顺序决定了渲染顺序——先列出的效果先生效。
@@ -71,11 +71,11 @@ import { EffectComposerPmndrs, BloomPmndrs, VignettePmndrs } from '@tresjs/post-
 <BloomPmndrs :intensity="1.5" :luminance-threshold="0.9" />
 ```
 
-| 属性 | 说明 | 默认值 |
-|------|------|--------|
-| `intensity` | 辉光强度 | `1` |
-| `luminance-threshold` | 亮度阈值，超过才产生辉光 | `0.9` |
-| `kernel-size` | 模糊核大小 | — |
+| 属性                  | 说明                     | 默认值 |
+| --------------------- | ------------------------ | ------ |
+| `intensity`           | 辉光强度                 | `1`    |
+| `luminance-threshold` | 亮度阈值，超过才产生辉光 | `0.9`  |
+| `kernel-size`         | 模糊核大小               | —      |
 
 ### 暗角 VignettePmndrs
 
@@ -85,10 +85,10 @@ import { EffectComposerPmndrs, BloomPmndrs, VignettePmndrs } from '@tresjs/post-
 <VignettePmndrs :offset="0.3" :darkness="0.8" />
 ```
 
-| 属性 | 说明 | 默认值 |
-|------|------|--------|
-| `offset` | 暗角起始偏移 | `0.5` |
-| `darkness` | 暗角黑暗程度 | `0.5` |
+| 属性       | 说明         | 默认值 |
+| ---------- | ------------ | ------ |
+| `offset`   | 暗角起始偏移 | `0.5`  |
+| `darkness` | 暗角黑暗程度 | `0.5`  |
 
 ### 景深 DepthOfFieldPmndrs
 
@@ -108,41 +108,41 @@ import { EffectComposerPmndrs, BloomPmndrs, VignettePmndrs } from '@tresjs/post-
 
 ## 色彩效果
 
-| 组件 | 说明 |
-|------|------|
-| `BrightnessContrastPmndrs` | 亮度/对比度调节 |
-| `HueSaturationPmndrs` | 色相/饱和度调节 |
-| `SepiaPmndrs` | 怀旧棕褐色调 |
-| `ToneMappingPmndrs` | 色调映射 |
-| `ColorDepthPmndrs` | 色彩深度（像素化色彩） |
+| 组件                       | 说明                   |
+| -------------------------- | ---------------------- |
+| `BrightnessContrastPmndrs` | 亮度/对比度调节        |
+| `HueSaturationPmndrs`      | 色相/饱和度调节        |
+| `SepiaPmndrs`              | 怀旧棕褐色调           |
+| `ToneMappingPmndrs`        | 色调映射               |
+| `ColorDepthPmndrs`         | 色彩深度（像素化色彩） |
 
 ## 视觉风格效果
 
-| 组件 | 说明 |
-|------|------|
-| `PixelationPmndrs` | 像素化 |
-| `DotScreenPmndrs` | 半色调网点效果 |
-| `ScanlinePmndrs` | 扫描线效果 |
-| `GridPmndrs` | 网格效果 |
-| `ASCIIPmndrs` | ASCII 字符画效果 |
-| `NoisePmndrs` | 噪点效果 |
+| 组件               | 说明             |
+| ------------------ | ---------------- |
+| `PixelationPmndrs` | 像素化           |
+| `DotScreenPmndrs`  | 半色调网点效果   |
+| `ScanlinePmndrs`   | 扫描线效果       |
+| `GridPmndrs`       | 网格效果         |
+| `ASCIIPmndrs`      | ASCII 字符画效果 |
+| `NoisePmndrs`      | 噪点效果         |
 
 ## 扭曲与特殊效果
 
-| 组件 | 说明 |
-|------|------|
+| 组件                        | 说明                 |
+| --------------------------- | -------------------- |
 | `ChromaticAberrationPmndrs` | 色差（边缘色彩分离） |
-| `FishEyePmndrs` | 鱼眼镜头效果 |
-| `LensDistortionPmndrs` | 镜头畸变 |
-| `ShockWavePmndrs` | 冲击波效果 |
-| `TiltShiftPmndrs` | 移轴摄影效果 |
-| `GodRaysPmndrs` | 上帝之光（体积光） |
-| `OutlinePmndrs` | 物体轮廓描边 |
+| `FishEyePmndrs`             | 鱼眼镜头效果         |
+| `LensDistortionPmndrs`      | 镜头畸变             |
+| `ShockWavePmndrs`           | 冲击波效果           |
+| `TiltShiftPmndrs`           | 移轴摄影效果         |
+| `GodRaysPmndrs`             | 上帝之光（体积光）   |
+| `OutlinePmndrs`             | 物体轮廓描边         |
 
 ## 抗锯齿
 
-| 组件 | 说明 |
-|------|------|
+| 组件         | 说明        |
+| ------------ | ----------- |
 | `SMAAPmndrs` | SMAA 抗锯齿 |
 | `FXAAPmndrs` | FXAA 抗锯齿 |
 

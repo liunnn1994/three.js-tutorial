@@ -19,12 +19,12 @@ TresJS 是一个基于 Vue 3 的自定义渲染器（Custom Renderer），它让
 如果你熟悉原生 Three.js，你可能写过这样的命令式代码：
 
 ```ts
-const scene = new THREE.Scene()
+const scene = new THREE.Scene();
 const mesh = new THREE.Mesh(
   new THREE.BoxGeometry(1, 1, 1),
-  new THREE.MeshStandardMaterial({ color: 'mediumpurple' })
-)
-scene.add(mesh)
+  new THREE.MeshStandardMaterial({ color: "mediumpurple" }),
+);
+scene.add(mesh);
 ```
 
 用 TresJS，同样的事情只需在模板中声明：
@@ -55,9 +55,9 @@ TresJS 需要在 Vite 配置中注册模板编译器选项，告诉 Vue 将 `Tre
 
 ```ts
 // vite.config.ts
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import { templateCompilerOptions } from '@tresjs/core'
+import { defineConfig } from "vite";
+import vue from "@vitejs/plugin-vue";
+import { templateCompilerOptions } from "@tresjs/core";
 
 export default defineConfig({
   plugins: [
@@ -65,7 +65,7 @@ export default defineConfig({
       ...templateCompilerOptions,
     }),
   ],
-})
+});
 ```
 
 :::caution
@@ -92,17 +92,17 @@ export default defineConfig({
 
 常用属性：
 
-| 属性 | 说明 |
-|------|------|
-| `clear-color` | 背景颜色 |
-| `camera` | 相机配置对象 |
-| `shadows` | 是否启用阴影 |
-| `window-size` | 让画布充满整个窗口 |
-| `render-mode` | 渲染模式：`always`（每帧渲染）、`on-demand`（按需渲染）、`manual`（手动渲染） |
-| `dpr` | 设备像素比，可传数字或 `[min, max]` 范围 |
-| `tone-mapping` | 色调映射，默认 `ACESFilmicToneMapping` |
-| `tone-mapping-exposure` | 色调映射曝光度 |
-| `fps-limit` | 限制最大帧率 |
+| 属性                    | 说明                                                                          |
+| ----------------------- | ----------------------------------------------------------------------------- |
+| `clear-color`           | 背景颜色                                                                      |
+| `camera`                | 相机配置对象                                                                  |
+| `shadows`               | 是否启用阴影                                                                  |
+| `window-size`           | 让画布充满整个窗口                                                            |
+| `render-mode`           | 渲染模式：`always`（每帧渲染）、`on-demand`（按需渲染）、`manual`（手动渲染） |
+| `dpr`                   | 设备像素比，可传数字或 `[min, max]` 范围                                      |
+| `tone-mapping`          | 色调映射，默认 `ACESFilmicToneMapping`                                        |
+| `tone-mapping-exposure` | 色调映射曝光度                                                                |
+| `fps-limit`             | 限制最大帧率                                                                  |
 
 :::tip
 使用 `render-mode="on-demand"` 可以在场景无变化时停止渲染，节省 GPU 资源。配合 `invalidate()` 方法可在需要时触发渲染。
@@ -112,13 +112,13 @@ export default defineConfig({
 
 Three.js 中的每个类都自动映射为 `Tres` 前缀的 Vue 组件：
 
-| Three.js 类 | TresJS 组件 |
-|-------------|------------|
-| `Mesh` | `TresMesh` |
-| `BoxGeometry` | `TresBoxGeometry` |
+| Three.js 类            | TresJS 组件                |
+| ---------------------- | -------------------------- |
+| `Mesh`                 | `TresMesh`                 |
+| `BoxGeometry`          | `TresBoxGeometry`          |
 | `MeshStandardMaterial` | `TresMeshStandardMaterial` |
-| `DirectionalLight` | `TresDirectionalLight` |
-| `PerspectiveCamera` | `TresPerspectiveCamera` |
+| `DirectionalLight`     | `TresDirectionalLight`     |
+| `PerspectiveCamera`    | `TresPerspectiveCamera`    |
 
 属性使用 kebab-case（如 `position-x`、`rotation-y`），值通过 `:` 绑定传递。
 
@@ -128,11 +128,11 @@ Three.js 中的每个类都自动映射为 `Tres` 前缀的 Vue 组件：
 
 ```vue
 <script setup>
-import * as THREE from 'three'
+import * as THREE from "three";
 
-const geometry = new THREE.TorusGeometry(1, 0.4, 16, 32)
-const material = new THREE.MeshStandardMaterial({ color: 'orange' })
-const mesh = new THREE.Mesh(geometry, material)
+const geometry = new THREE.TorusGeometry(1, 0.4, 16, 32);
+const material = new THREE.MeshStandardMaterial({ color: "orange" });
+const mesh = new THREE.Mesh(geometry, material);
 </script>
 
 <template>
@@ -150,10 +150,10 @@ const mesh = new THREE.Mesh(geometry, material)
 
 ```vue
 <script setup>
-import { extend } from '@tresjs/core'
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
+import { extend } from "@tresjs/core";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
 
-extend({ EffectComposer })
+extend({ EffectComposer });
 </script>
 
 <template>
@@ -167,36 +167,36 @@ extend({ EffectComposer })
 
 ```vue
 <script setup lang="ts">
-import { useLoop } from '@tresjs/core'
+import { useLoop } from "@tresjs/core";
 
-const { onBeforeRender } = useLoop()
+const { onBeforeRender } = useLoop();
 
 onBeforeRender(({ delta, elapsed }) => {
   // 每帧执行的逻辑
-  mesh.value.rotation.y += delta
-})
+  mesh.value.rotation.y += delta;
+});
 </script>
 ```
 
 回调函数接收的上下文参数：
 
-| 参数 | 说明 |
-|------|------|
-| `delta` | 上一帧到当前帧的时间间隔（秒） |
-| `elapsed` | 从启动到现在的总时间（秒） |
-| `scene` | 当前场景引用 |
-| `renderer` | WebGL 渲染器实例 |
-| `camera` | 当前相机引用 |
+| 参数         | 说明                                                |
+| ------------ | --------------------------------------------------- |
+| `delta`      | 上一帧到当前帧的时间间隔（秒）                      |
+| `elapsed`    | 从启动到现在的总时间（秒）                          |
+| `scene`      | 当前场景引用                                        |
+| `renderer`   | WebGL 渲染器实例                                    |
+| `camera`     | 当前相机引用                                        |
 | `invalidate` | 触发按需渲染（配合 `render-mode="on-demand"` 使用） |
 
 `useLoop` 还提供控制方法：
 
 ```ts
-const { onBeforeRender, start, stop, isActive } = useLoop()
+const { onBeforeRender, start, stop, isActive } = useLoop();
 
 // 暂停/恢复动画循环
-stop()
-start()
+stop();
+start();
 ```
 
 ### 优先级
@@ -206,11 +206,11 @@ start()
 ```ts
 onBeforeRender(({ delta }) => {
   // 先更新物理
-}, 0)
+}, 0);
 
 onBeforeRender(({ delta }) => {
   // 后更新动画
-}, 1)
+}, 1);
 ```
 
 ## useTres
@@ -219,19 +219,19 @@ onBeforeRender(({ delta }) => {
 
 ```vue
 <script setup>
-import { useTres } from '@tresjs/core'
+import { useTres } from "@tresjs/core";
 
-const { camera, renderer, scene, sizes } = useTres()
+const { camera, renderer, scene, sizes } = useTres();
 </script>
 ```
 
-| 属性 | 说明 |
-|------|------|
-| `scene` | Three.js 场景对象 |
-| `renderer` | WebGL 渲染器实例 |
-| `camera` | 当前激活的相机 |
-| `sizes` | 画布尺寸信息（width、height、aspectRatio） |
-| `controls` | 当前控制器实例 |
+| 属性       | 说明                                       |
+| ---------- | ------------------------------------------ |
+| `scene`    | Three.js 场景对象                          |
+| `renderer` | WebGL 渲染器实例                           |
+| `camera`   | 当前激活的相机                             |
+| `sizes`    | 画布尺寸信息（width、height、aspectRatio） |
+| `controls` | 当前控制器实例                             |
 
 ## 内置指令
 
@@ -250,13 +250,13 @@ TresJS 提供了几个实用的内置指令：
 
 ## 常用 API 速查
 
-| API | 说明 |
-|-----|------|
-| `<TresCanvas>` | 入口组件，创建 WebGL 渲染器和场景 |
-| `useLoop().onBeforeRender()` | 动画钩子，每帧执行 |
-| `useTres()` | 获取场景上下文（相机、渲染器等） |
-| `<TresMesh>`, `<TresBoxGeometry>` | 组件命名规则：Three.js 类名加 `Tres` 前缀 |
-| `<primitive :object="obj" />` | 插入已有的 Three.js 对象实例 |
-| `extend({ ClassName })` | 注册第三方 Three.js 类 |
-| `ref="name"` + `const name = ref()` | 模板引用，获取 Three.js 对象实例 |
-| `@click="fn"` | 事件绑定，使用 Vue 的 `@` 语法 |
+| API                                 | 说明                                      |
+| ----------------------------------- | ----------------------------------------- |
+| `<TresCanvas>`                      | 入口组件，创建 WebGL 渲染器和场景         |
+| `useLoop().onBeforeRender()`        | 动画钩子，每帧执行                        |
+| `useTres()`                         | 获取场景上下文（相机、渲染器等）          |
+| `<TresMesh>`, `<TresBoxGeometry>`   | 组件命名规则：Three.js 类名加 `Tres` 前缀 |
+| `<primitive :object="obj" />`       | 插入已有的 Three.js 对象实例              |
+| `extend({ ClassName })`             | 注册第三方 Three.js 类                    |
+| `ref="name"` + `const name = ref()` | 模板引用，获取 Three.js 对象实例          |
+| `@click="fn"`                       | 事件绑定，使用 Vue 的 `@` 语法            |

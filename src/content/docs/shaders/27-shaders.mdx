@@ -98,15 +98,16 @@ const material = new THREE.RawShaderMaterial({
 
 ### ShaderMaterial vs RawShaderMaterial
 
-| 特性                   | ShaderMaterial | RawShaderMaterial |
-| ---------------------- | -------------- | ----------------- |
-| 自动提供 position/uv/normal | 是         | 否                |
-| 自动提供矩阵 uniform    | 是             | 否                |
-| 自动添加 precision     | 是             | 否                |
-| 适合场景               | 大多数情况      | 移植非 Three.js 着色器、需要完全控制 |
+| 特性                        | ShaderMaterial | RawShaderMaterial                    |
+| --------------------------- | -------------- | ------------------------------------ |
+| 自动提供 position/uv/normal | 是             | 否                                   |
+| 自动提供矩阵 uniform        | 是             | 否                                   |
+| 自动添加 precision          | 是             | 否                                   |
+| 适合场景                    | 大多数情况     | 移植非 Three.js 着色器、需要完全控制 |
 
 :::tip[何时使用 RawShaderMaterial？]
 大多数情况下使用 `ShaderMaterial` 即可。`RawShaderMaterial` 主要用于：
+
 - 从 Shadertoy 等平台移植着色器（这些着色器不依赖 Three.js 的变量命名）
 - 需要精确控制着色器的每一行代码
 - 性能优化（避免不必要的内置变量）
@@ -303,41 +304,41 @@ GLSL 提供了丰富的内置函数。以下是着色器编程中最常用的函
 
 ### 数学函数
 
-| 函数                                  | 说明                                       |
-| ------------------------------------- | ------------------------------------------ |
-| `abs(x)`                              | 绝对值                                     |
-| `sign(x)`                             | 符号（-1、0、1）                           |
-| `floor(x)` / `ceil(x)`               | 向下/向上取整                              |
-| `fract(x)`                            | 取小数部分（`x - floor(x)`）              |
-| `mod(x, y)`                           | 取模                                       |
-| `min(x, y)` / `max(x, y)`            | 最小值/最大值                              |
-| `clamp(x, min, max)`                  | 将值限制在范围内                           |
-| `mix(a, b, t)`                        | 线性插值：`a * (1-t) + b * t`             |
-| `step(edge, x)`                       | 阶梯函数：`x < edge ? 0.0 : 1.0`         |
-| `smoothstep(edge0, edge1, x)`         | 平滑阶梯函数（Hermite 插值）              |
-| `sin(x)` / `cos(x)` / `tan(x)`       | 三角函数                                   |
-| `pow(x, y)`                           | 幂运算（x 的 y 次方）                     |
-| `exp(x)` / `log(x)`                  | 指数/对数                                  |
-| `sqrt(x)`                             | 平方根                                     |
+| 函数                           | 说明                             |
+| ------------------------------ | -------------------------------- |
+| `abs(x)`                       | 绝对值                           |
+| `sign(x)`                      | 符号（-1、0、1）                 |
+| `floor(x)` / `ceil(x)`         | 向下/向上取整                    |
+| `fract(x)`                     | 取小数部分（`x - floor(x)`）     |
+| `mod(x, y)`                    | 取模                             |
+| `min(x, y)` / `max(x, y)`      | 最小值/最大值                    |
+| `clamp(x, min, max)`           | 将值限制在范围内                 |
+| `mix(a, b, t)`                 | 线性插值：`a * (1-t) + b * t`    |
+| `step(edge, x)`                | 阶梯函数：`x < edge ? 0.0 : 1.0` |
+| `smoothstep(edge0, edge1, x)`  | 平滑阶梯函数（Hermite 插值）     |
+| `sin(x)` / `cos(x)` / `tan(x)` | 三角函数                         |
+| `pow(x, y)`                    | 幂运算（x 的 y 次方）            |
+| `exp(x)` / `log(x)`            | 指数/对数                        |
+| `sqrt(x)`                      | 平方根                           |
 
 ### 向量函数
 
-| 函数                        | 说明                                     |
-| --------------------------- | ---------------------------------------- |
-| `length(v)`                 | 向量长度                                 |
-| `distance(p0, p1)`          | 两点间距离                               |
-| `dot(x, y)`                 | 点积（判断两个方向的重合程度）           |
-| `cross(x, y)`               | 叉积（得到垂直于两向量的向量）           |
-| `normalize(v)`              | 归一化为单位向量（长度为 1）             |
-| `reflect(I, N)`             | 反射向量（I 为入射方向，N 为法线）       |
-| `refract(I, N, eta)`        | 折射向量（eta 为折射率比值）             |
+| 函数                 | 说明                               |
+| -------------------- | ---------------------------------- |
+| `length(v)`          | 向量长度                           |
+| `distance(p0, p1)`   | 两点间距离                         |
+| `dot(x, y)`          | 点积（判断两个方向的重合程度）     |
+| `cross(x, y)`        | 叉积（得到垂直于两向量的向量）     |
+| `normalize(v)`       | 归一化为单位向量（长度为 1）       |
+| `reflect(I, N)`      | 反射向量（I 为入射方向，N 为法线） |
+| `refract(I, N, eta)` | 折射向量（eta 为折射率比值）       |
 
 ### 纹理函数
 
-| 函数                          | 说明                           |
-| ----------------------------- | ------------------------------ |
-| `texture2D(sampler, coord)`   | 采样 2D 纹理                   |
-| `textureCube(sampler, coord)` | 采样立方体纹理（环境贴图）     |
+| 函数                          | 说明                       |
+| ----------------------------- | -------------------------- |
+| `texture2D(sampler, coord)`   | 采样 2D 纹理               |
+| `textureCube(sampler, coord)` | 采样立方体纹理（环境贴图） |
 
 :::tip[常用函数组合技巧]
 
@@ -409,19 +410,19 @@ Three.js 的着色器由可复用的代码片段（chunk）组成。你可以用
 
 **顶点着色器：**
 
-| Chunk                    | 位置                       |
-| ------------------------ | -------------------------- |
-| `#include <begin_vertex>` | 顶点位置计算完成后         |
-| `#include <project_vertex>` | `gl_Position` 计算完成后   |
-| `#include <beginnormal_vertex>` | 法线计算开始处             |
+| Chunk                           | 位置                     |
+| ------------------------------- | ------------------------ |
+| `#include <begin_vertex>`       | 顶点位置计算完成后       |
+| `#include <project_vertex>`     | `gl_Position` 计算完成后 |
+| `#include <beginnormal_vertex>` | 法线计算开始处           |
 
 **片元着色器：**
 
-| Chunk                    | 位置                       |
-| ------------------------ | -------------------------- |
-| `#include <color_fragment>` | 漫反射颜色计算完成后       |
-| `#include <output_fragment>` | 最终输出前                 |
-| `#include <fog_fragment>` | 雾效应用后                 |
+| Chunk                        | 位置                 |
+| ---------------------------- | -------------------- |
+| `#include <color_fragment>`  | 漫反射颜色计算完成后 |
+| `#include <output_fragment>` | 最终输出前           |
+| `#include <fog_fragment>`    | 雾效应用后           |
 
 :::tip
 `onBeforeCompile` 是在不重写整个着色器的情况下自定义内置材质的强大方式。它保留了 PBR 光照、阴影等所有内置功能，同时允许你添加自定义的顶点变形或颜色效果。后续课程（Lesson 31 - 修改材质）会更深入地使用这个技术。

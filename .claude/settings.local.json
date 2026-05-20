@@ -37,7 +37,9 @@
       "Bash(grep *)",
       "Bash(npm view *)",
       "Bash(pnpm remove *)",
-      "Bash(pnpm view *)"
+      "Bash(pnpm view *)",
+      "Bash(xargs ls -lh)",
+      "Bash(xargs ls -lhS)"
     ]
   }
 }

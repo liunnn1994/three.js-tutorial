@@ -1,26 +1,22 @@
 <script setup lang="ts">
-import * as THREE from 'three'
-import { TresCanvas } from '@tresjs/core'
-import { OrbitControls, Text3D } from '@tresjs/cientos'
+import * as THREE from "three";
+import { TresCanvas } from "@tresjs/core";
+import { OrbitControls, Text3D } from "@tresjs/cientos";
 
-const torusGeometry = new THREE.TorusGeometry(1, 0.6, 16, 32)
-const material = new THREE.MeshNormalMaterial()
+const torusGeometry = new THREE.TorusGeometry(1, 0.6, 16, 32);
+const material = new THREE.MeshNormalMaterial();
 
-const donuts: { position: [number, number, number]; scale: number; rotation: [number, number, number] }[] = []
+const donuts: {
+  position: [number, number, number];
+  scale: number;
+  rotation: [number, number, number];
+}[] = [];
 for (let i = 0; i < 50; i++) {
   donuts.push({
-    position: [
-      (Math.random() - 0.5) * 10,
-      (Math.random() - 0.5) * 6,
-      (Math.random() - 0.5) * 10,
-    ],
+    position: [(Math.random() - 0.5) * 10, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 10],
     scale: 0.2 + Math.random() * 0.2,
-    rotation: [
-      Math.random() * Math.PI,
-      Math.random() * Math.PI,
-      Math.random() * Math.PI,
-    ],
-  })
+    rotation: [Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI],
+  });
 }
 </script>
 

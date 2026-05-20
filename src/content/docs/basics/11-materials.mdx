@@ -563,7 +563,11 @@ const material = new THREE.PointsMaterial({
 
 ```js
 // 第一步：定义线条经过的点
-const points = [new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 1, 0), new THREE.Vector3(1, 0, 0)];
+const points = [
+  new THREE.Vector3(-1, 0, 0),
+  new THREE.Vector3(0, 1, 0),
+  new THREE.Vector3(1, 0, 0),
+];
 
 // 第二步：用 setFromPoints 快速创建几何体（不需要手动操作 Float32Array）
 const geometry = new THREE.BufferGeometry().setFromPoints(points);
@@ -675,14 +679,14 @@ scene.add(mesh);
 
 Three.js 内置几何体已经预设了组（Group）的划分。对于 `BoxGeometry`，材质数组的索引与面的对应关系为：
 
-| 索引 | 面    | 方向 |
-| ---- | ----- | ---- |
-| 0    | 右面  | +X   |
-| 1    | 左面  | -X   |
-| 2    | 顶面  | +Y   |
-| 3    | 底面  | -Y   |
-| 4    | 前面  | +Z   |
-| 5    | 后面  | -Z   |
+| 索引 | 面   | 方向 |
+| ---- | ---- | ---- |
+| 0    | 右面 | +X   |
+| 1    | 左面 | -X   |
+| 2    | 顶面 | +Y   |
+| 3    | 底面 | -Y   |
+| 4    | 前面 | +Z   |
+| 5    | 后面 | -Z   |
 
 ### 自定义组
 
@@ -737,20 +741,20 @@ blueMaterial.color.set(0x0000ff);
 
 ## 材质选择速查表
 
-| 材质                      | 需要灯光 | 性能   | 视觉质量 | 适用场景                     |
-| ------------------------- | -------- | ------ | -------- | ---------------------------- |
-| **MeshBasicMaterial**     | 否       | 最好   | 基础     | UI、调试、线框               |
-| **MeshNormalMaterial**    | 否       | 好     | 特殊     | 调试法线、彩虹风格           |
-| **MeshMatcapMaterial**    | 否       | 好     | 优秀     | 快速原型、艺术作品           |
-| **MeshDepthMaterial**     | 否       | 好     | 特殊     | 后期处理、深度效果           |
-| **MeshLambertMaterial**   | 是       | 好     | 一般     | 低端设备、简单场景           |
-| **MeshPhongMaterial**     | 是       | 中等   | 中等     | 带高光的中等质量             |
-| **MeshToonMaterial**      | 是       | 中等   | 卡通     | 卡通风格、NPR                |
-| **MeshStandardMaterial**  | 是       | 中等   | 优秀     | **通用首选**                 |
-| **MeshPhysicalMaterial**  | 是       | 较低   | 极致     | 玻璃、布料、汽车漆等特殊效果 |
-| **PointsMaterial**        | 否       | 视情况 | 视情况   | 粒子系统                     |
-| **LineBasicMaterial**     | 否       | 好     | 基础     | 线条绘制                     |
-| **LineDashedMaterial**    | 否       | 好     | 基础     | 虚线效果                     |
+| 材质                     | 需要灯光 | 性能   | 视觉质量 | 适用场景                     |
+| ------------------------ | -------- | ------ | -------- | ---------------------------- |
+| **MeshBasicMaterial**    | 否       | 最好   | 基础     | UI、调试、线框               |
+| **MeshNormalMaterial**   | 否       | 好     | 特殊     | 调试法线、彩虹风格           |
+| **MeshMatcapMaterial**   | 否       | 好     | 优秀     | 快速原型、艺术作品           |
+| **MeshDepthMaterial**    | 否       | 好     | 特殊     | 后期处理、深度效果           |
+| **MeshLambertMaterial**  | 是       | 好     | 一般     | 低端设备、简单场景           |
+| **MeshPhongMaterial**    | 是       | 中等   | 中等     | 带高光的中等质量             |
+| **MeshToonMaterial**     | 是       | 中等   | 卡通     | 卡通风格、NPR                |
+| **MeshStandardMaterial** | 是       | 中等   | 优秀     | **通用首选**                 |
+| **MeshPhysicalMaterial** | 是       | 较低   | 极致     | 玻璃、布料、汽车漆等特殊效果 |
+| **PointsMaterial**       | 否       | 视情况 | 视情况   | 粒子系统                     |
+| **LineBasicMaterial**    | 否       | 好     | 基础     | 线条绘制                     |
+| **LineDashedMaterial**   | 否       | 好     | 基础     | 虚线效果                     |
 
 :::tip[实用建议]
 

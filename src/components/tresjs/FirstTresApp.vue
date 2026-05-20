@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { TresCanvas } from '@tresjs/core'
-import { OrbitControls } from '@tresjs/cientos'
+import { ref, onMounted, onUnmounted } from "vue";
+import { TresCanvas } from "@tresjs/core";
+import { OrbitControls } from "@tresjs/cientos";
 
-const boxRef = ref()
-let animId = 0
+const boxRef = ref();
+let animId = 0;
 
 onMounted(() => {
   const animate = () => {
-    if (boxRef.value) boxRef.value.rotation.y += 0.01
-    animId = requestAnimationFrame(animate)
-  }
-  animate()
-})
-onUnmounted(() => cancelAnimationFrame(animId))
+    if (boxRef.value) boxRef.value.rotation.y += 0.01;
+    animId = requestAnimationFrame(animate);
+  };
+  animate();
+});
+onUnmounted(() => cancelAnimationFrame(animId));
 </script>
 
 <template>

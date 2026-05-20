@@ -163,7 +163,11 @@ function createLabel(text) {
   const texture = new THREE.CanvasTexture(canvas2d);
   texture.colorSpace = THREE.SRGBColorSpace;
   const labelGeo = new THREE.PlaneGeometry(3, 0.25);
-  const labelMat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthTest: false });
+  const labelMat = new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: false,
+  });
   return new THREE.Mesh(labelGeo, labelMat);
 }
 
@@ -186,16 +190,22 @@ scene.add(multiLabel);
  * 额外演示切换
  */
 const extraFolder = gui.addFolder("额外演示");
-extraFolder.add(extraParams, "showMultiMaterial").name("多材质组合").onChange((val) => {
-  multiMesh.visible = val;
-  multiLabel.visible = val;
-});
-extraFolder.add(extraParams, "showLineDemo").name("线条材质").onChange((val) => {
-  solidLine.visible = val;
-  dashedLine.visible = val;
-  solidLabel.visible = val;
-  dashedLabel.visible = val;
-});
+extraFolder
+  .add(extraParams, "showMultiMaterial")
+  .name("多材质组合")
+  .onChange((val) => {
+    multiMesh.visible = val;
+    multiLabel.visible = val;
+  });
+extraFolder
+  .add(extraParams, "showLineDemo")
+  .name("线条材质")
+  .onChange((val) => {
+    solidLine.visible = val;
+    dashedLine.visible = val;
+    solidLabel.visible = val;
+    dashedLabel.visible = val;
+  });
 extraFolder.open();
 
 /**

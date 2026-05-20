@@ -1,27 +1,31 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { TresCanvas } from '@tresjs/core'
-import { OrbitControls } from '@tresjs/cientos'
+import { ref, onMounted, onUnmounted } from "vue";
+import { TresCanvas } from "@tresjs/core";
+import { OrbitControls } from "@tresjs/cientos";
 
-const cubeRef = ref()
-const cubeColor = ref('mediumpurple')
-let animId = 0
+const cubeRef = ref();
+const cubeColor = ref("mediumpurple");
+let animId = 0;
 
 onMounted(() => {
   const animate = () => {
-    if (cubeRef.value) cubeRef.value.rotation.y += 0.005
-    animId = requestAnimationFrame(animate)
-  }
-  animate()
-})
-onUnmounted(() => cancelAnimationFrame(animId))
+    if (cubeRef.value) cubeRef.value.rotation.y += 0.005;
+    animId = requestAnimationFrame(animate);
+  };
+  animate();
+});
+onUnmounted(() => cancelAnimationFrame(animId));
 
 const onClickCube = () => {
-  const hue = Math.random() * 360
-  cubeColor.value = `hsl(${hue}, 100%, 60%)`
-}
-const onPointerEnter = () => { document.body.style.cursor = 'pointer' }
-const onPointerLeave = () => { document.body.style.cursor = 'default' }
+  const hue = Math.random() * 360;
+  cubeColor.value = `hsl(${hue}, 100%, 60%)`;
+};
+const onPointerEnter = () => {
+  document.body.style.cursor = "pointer";
+};
+const onPointerLeave = () => {
+  document.body.style.cursor = "default";
+};
 </script>
 
 <template>

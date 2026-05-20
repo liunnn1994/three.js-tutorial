@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { PCFShadowMap } from 'three'
-import { TresCanvas } from '@tresjs/core'
-import { OrbitControls, useGLTF } from '@tresjs/cientos'
+import { PCFShadowMap } from "three";
+import { TresCanvas } from "@tresjs/core";
+import { OrbitControls, useGLTF } from "@tresjs/cientos";
 
-const { execute } = useGLTF('/assets/24-environment-map-final/models/hamburger.glb')
-const { scene } = await execute()
-scene.scale.setScalar(0.5)
-scene.position.y = 0.5
+const { execute } = useGLTF("/assets/24-environment-map-final/models/hamburger.glb");
+const { scene } = await execute();
+scene.scale.setScalar(0.5);
+scene.position.y = 0.5;
 </script>
 
 <template>

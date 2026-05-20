@@ -278,33 +278,69 @@ demoFolder.open();
 
 // 演示 1 的参数
 const triangleFolder = gui.addFolder("随机三角形参数");
-triangleFolder.add(params, "count").min(1).max(500).step(1).name("三角形数量").onChange(() => {
-  if (params.demo === "随机三角形") createRandomTriangles();
-});
-triangleFolder.add(params, "size").min(1).max(10).step(0.5).name("分散大小").onChange(() => {
-  if (params.demo === "随机三角形") createRandomTriangles();
-});
-triangleFolder.add(params, "wireframe").name("线框模式").onChange(() => {
-  if (params.demo === "随机三角形") createRandomTriangles();
-});
-triangleFolder.addColor(params, "color").name("颜色").onChange(() => {
-  if (params.demo === "随机三角形") createRandomTriangles();
-});
+triangleFolder
+  .add(params, "count")
+  .min(1)
+  .max(500)
+  .step(1)
+  .name("三角形数量")
+  .onChange(() => {
+    if (params.demo === "随机三角形") createRandomTriangles();
+  });
+triangleFolder
+  .add(params, "size")
+  .min(1)
+  .max(10)
+  .step(0.5)
+  .name("分散大小")
+  .onChange(() => {
+    if (params.demo === "随机三角形") createRandomTriangles();
+  });
+triangleFolder
+  .add(params, "wireframe")
+  .name("线框模式")
+  .onChange(() => {
+    if (params.demo === "随机三角形") createRandomTriangles();
+  });
+triangleFolder
+  .addColor(params, "color")
+  .name("颜色")
+  .onChange(() => {
+    if (params.demo === "随机三角形") createRandomTriangles();
+  });
 
 // 演示 2 的参数
 const edgeFolder = gui.addFolder("边缘线参数");
-edgeFolder.add(params, "edgeThreshold").min(1).max(180).step(1).name("角度阈值").onChange(() => {
-  if (params.demo === "边缘线 EdgesGeometry") createEdgesDemo();
-});
+edgeFolder
+  .add(params, "edgeThreshold")
+  .min(1)
+  .max(180)
+  .step(1)
+  .name("角度阈值")
+  .onChange(() => {
+    if (params.demo === "边缘线 EdgesGeometry") createEdgesDemo();
+  });
 
 // 演示 4 的参数
 const instanceFolder = gui.addFolder("实例化参数");
-instanceFolder.add(params, "instanceCount").min(10).max(5000).step(10).name("实例数量").onChange(() => {
-  if (params.demo === "实例化 InstancedMesh") createInstancedDemo();
-});
-instanceFolder.add(params, "instanceSize").min(1).max(10).step(0.5).name("分散大小").onChange(() => {
-  if (params.demo === "实例化 InstancedMesh") createInstancedDemo();
-});
+instanceFolder
+  .add(params, "instanceCount")
+  .min(10)
+  .max(5000)
+  .step(10)
+  .name("实例数量")
+  .onChange(() => {
+    if (params.demo === "实例化 InstancedMesh") createInstancedDemo();
+  });
+instanceFolder
+  .add(params, "instanceSize")
+  .min(1)
+  .max(10)
+  .step(0.5)
+  .name("分散大小")
+  .onChange(() => {
+    if (params.demo === "实例化 InstancedMesh") createInstancedDemo();
+  });
 
 // 初始化
 createDemo();

@@ -18,9 +18,9 @@ import LoadModels from "../../../components/tresjs/LoadModels.vue";
 
 ```vue
 <script setup lang="ts">
-import { useGLTF } from '@tresjs/cientos'
+import { useGLTF } from "@tresjs/cientos";
 
-const { scene } = await useGLTF('/models/fox.glb')
+const { scene } = await useGLTF("/models/fox.glb");
 </script>
 
 <template>
@@ -31,12 +31,12 @@ const { scene } = await useGLTF('/models/fox.glb')
 `useGLTF` 的完整选项：
 
 ```ts
-const { scene, nodes, materials, animations } = await useGLTF('/model.glb', {
-  draco: true,              // 启用 Draco 解压
-  decoderPath: '/draco/',   // Draco 解码器路径
-  castShadow: true,         // 模型投射阴影
-  receiveShadow: true,      // 模型接收阴影
-})
+const { scene, nodes, materials, animations } = await useGLTF("/model.glb", {
+  draco: true, // 启用 Draco 解压
+  decoderPath: "/draco/", // Draco 解码器路径
+  castShadow: true, // 模型投射阴影
+  receiveShadow: true, // 模型接收阴影
+});
 ```
 
 :::tip
@@ -73,12 +73,12 @@ Draco 是一种 3D 模型压缩格式，可以显著减小文件体积（通常�
 
 ```ts
 // 启用 Draco 并使用默认解码器
-const { scene } = await useGLTF('/model.glb', { draco: true })
+const { scene } = await useGLTF("/model.glb", { draco: true });
 
 // 或指定自定义 Draco 解码器路径
-const { scene } = await useGLTF('/model.glb', {
-  draco: '/draco/'
-})
+const { scene } = await useGLTF("/model.glb", {
+  draco: "/draco/",
+});
 ```
 
 ### 创建可复用的模型组件
@@ -86,15 +86,15 @@ const { scene } = await useGLTF('/model.glb', {
 ```vue
 <!-- LoadModel.vue -->
 <script setup lang="ts">
-import { useGLTF } from '@tresjs/cientos'
+import { useGLTF } from "@tresjs/cientos";
 
 const props = defineProps<{
-  modelPath: string
-  scale?: number
-  position?: [number, number, number]
-}>()
+  modelPath: string;
+  scale?: number;
+  position?: [number, number, number];
+}>();
 
-const { scene } = await useGLTF(props.modelPath, { draco: true })
+const { scene } = await useGLTF(props.modelPath, { draco: true });
 </script>
 
 <template>
@@ -110,9 +110,9 @@ const { scene } = await useGLTF(props.modelPath, { draco: true })
 
 ```vue
 <script setup lang="ts">
-import { useTexture } from '@tresjs/cientos'
+import { useTexture } from "@tresjs/cientos";
 
-const map = await useTexture('/textures/wood.jpg')
+const map = await useTexture("/textures/wood.jpg");
 </script>
 
 <template>
@@ -129,10 +129,10 @@ const map = await useTexture('/textures/wood.jpg')
 
 ```ts
 const [map, normalMap, roughnessMap] = await useTextures([
-  '/textures/wood.jpg',
-  '/textures/wood_normal.jpg',
-  '/textures/wood_roughness.jpg',
-])
+  "/textures/wood.jpg",
+  "/textures/wood_normal.jpg",
+  "/textures/wood_roughness.jpg",
+]);
 ```
 
 ### useVideoTexture
@@ -140,7 +140,7 @@ const [map, normalMap, roughnessMap] = await useTextures([
 将视频作为纹理贴图：
 
 ```ts
-const videoTexture = await useVideoTexture('/videos/background.mp4')
+const videoTexture = await useVideoTexture("/videos/background.mp4");
 ```
 
 ## 加载进度
@@ -151,28 +151,26 @@ const videoTexture = await useVideoTexture('/videos/background.mp4')
 
 ```vue
 <script setup>
-import { useProgress } from '@tresjs/cientos'
+import { useProgress } from "@tresjs/cientos";
 
-const { progress, hasFinishLoading } = useProgress()
+const { progress, hasFinishLoading } = useProgress();
 </script>
 
 <template>
-  <div v-if="!hasFinishLoading" class="loading">
-    加载中... {{ Math.round(progress) }}%
-  </div>
+  <div v-if="!hasFinishLoading" class="loading">加载中... {{ Math.round(progress) }}%</div>
 </template>
 ```
 
-| 属性 | 说明 |
-|------|------|
-| `progress` | 加载进度（0-100） |
-| `hasFinishLoading` | 是否全部加载完成 |
-| `errors` | 加载失败的资源列表 |
+| 属性               | 说明               |
+| ------------------ | ------------------ |
+| `progress`         | 加载进度（0-100）  |
+| `hasFinishLoading` | 是否全部加载完成   |
+| `errors`           | 加载失败的资源列表 |
 
 ## 其他加载器
 
-| 工具 | 说明 |
-|------|------|
-| `useFBX` | 加载 FBX 格式模型 |
-| `useSVG` | 加载 SVG 并转为 3D 形状 |
-| `useGLTFExporter` | 导出场景为 GLTF 格式 |
+| 工具              | 说明                    |
+| ----------------- | ----------------------- |
+| `useFBX`          | 加载 FBX 格式模型       |
+| `useSVG`          | 加载 SVG 并转为 3D 形状 |
+| `useGLTFExporter` | 导出场景为 GLTF 格式    |

@@ -42,7 +42,10 @@ if (VENDOR_MODE === "cdn") {
     `npx esbuild three-custom-shader-material/vanilla/three-custom-shader-material.es.js --bundle --format=esm --external:three --outfile=${JSON.stringify(path.join(vendorDir, "three-custom-shader-material-vanilla.esm.js"))}`,
     { cwd: nm, stdio: "inherit" },
   );
-  rewriteThreeImportsInFile(path.join(vendorDir, "three-custom-shader-material-vanilla.esm.js"), true);
+  rewriteThreeImportsInFile(
+    path.join(vendorDir, "three-custom-shader-material-vanilla.esm.js"),
+    true,
+  );
   execSync(
     `npx esbuild three-bvh-csg/build/index.module.js --bundle --format=esm --external:three --outfile=${JSON.stringify(path.join(vendorDir, "three-bvh-csg.esm.js"))}`,
     { cwd: nm, stdio: "inherit" },

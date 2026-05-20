@@ -24,14 +24,14 @@ TresJS 基于 Three.js 的射线检测（Raycasting）实现了一套事件系�
 
 TresJS 的事件名称遵循 Vue 的命名规范（kebab-case），使用 `@` 语法绑定：
 
-| 事件 | 说明 |
-|------|------|
-| `@click` | 鼠标点击 |
-| `@pointer-enter` | 鼠标进入 |
-| `@pointer-leave` | 鼠标离开 |
-| `@pointer-down` | 鼠标按下 |
-| `@pointer-up` | 鼠标释放 |
-| `@pointer-move` | 鼠标移动 |
+| 事件              | 说明       |
+| ----------------- | ---------- |
+| `@click`          | 鼠标点击   |
+| `@pointer-enter`  | 鼠标进入   |
+| `@pointer-leave`  | 鼠标离开   |
+| `@pointer-down`   | 鼠标按下   |
+| `@pointer-up`     | 鼠标释放   |
+| `@pointer-move`   | 鼠标移动   |
 | `@pointer-missed` | 点击空白处 |
 
 ## 实战示例
@@ -40,15 +40,13 @@ TresJS 的事件名称遵循 Vue 的命名规范（kebab-case），使用 `@` �
 
 ```vue
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref } from "vue";
 
-const cubeRef = ref()
+const cubeRef = ref();
 
 const onClickCube = () => {
-  cubeRef.value.material.color.set(
-    `hsl(${Math.random() * 360}, 100%, 75%)`
-  )
-}
+  cubeRef.value.material.color.set(`hsl(${Math.random() * 360}, 100%, 75%)`);
+};
 </script>
 
 <template>
@@ -64,19 +62,16 @@ const onClickCube = () => {
 ```vue
 <script setup>
 const onPointerEnter = () => {
-  document.body.style.cursor = 'pointer'
-}
+  document.body.style.cursor = "pointer";
+};
 
 const onPointerLeave = () => {
-  document.body.style.cursor = 'default'
-}
+  document.body.style.cursor = "default";
+};
 </script>
 
 <template>
-  <TresMesh
-    @pointer-enter="onPointerEnter"
-    @pointer-leave="onPointerLeave"
-  >
+  <TresMesh @pointer-enter="onPointerEnter" @pointer-leave="onPointerLeave">
     <TresBoxGeometry />
   </TresMesh>
 </template>
@@ -89,9 +84,9 @@ TresJS 的事件系统支持事件冒泡。如果一个 mesh 被点击，事件�
 ```vue
 <script setup>
 const onClickSphere = (event) => {
-  event.stopPropagation()
-  console.log('只处理球体点击')
-}
+  event.stopPropagation();
+  console.log("只处理球体点击");
+};
 </script>
 
 <template>

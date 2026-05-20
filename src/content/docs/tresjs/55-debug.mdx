@@ -22,14 +22,14 @@ npm install @tresjs/leches
 
 ```vue
 <script setup>
-import { TresLeches } from '@tresjs/leches'
-import { useControls } from '@tresjs/leches'
+import { TresLeches } from "@tresjs/leches";
+import { useControls } from "@tresjs/leches";
 
-const { color, position, visible } = useControls('Mesh', {
-  color: '#ff0000',
+const { color, position, visible } = useControls("Mesh", {
+  color: "#ff0000",
   position: { value: { x: 0, y: 0 }, step: 0.1 },
   visible: true,
-})
+});
 </script>
 
 <template>
@@ -51,14 +51,14 @@ const { color, position, visible } = useControls('Mesh', {
 
 `useControls` 会根据值的类型自动推断控制组件：
 
-| 值类型 | 推断结果 | 示例 |
-|--------|---------|------|
-| `boolean` | 开关 | `visible: true` |
-| `number` | 数字输入 | `speed: 5` |
-| `number` + `min`/`max` | 滑块 | `size: { value: 1, min: 0.1, max: 5, step: 0.1 }` |
-| `string`（hex 颜色） | 颜色选择器 | `color: '#ff0000'` |
-| `{ options: [...] }` | 下拉选择 | `preset: { options: ['a', 'b', 'c'] }` |
-| `Vector3` / 数组 | 向量输入 | `position: { value: [0, 1, 0] }` |
+| 值类型                 | 推断结果   | 示例                                              |
+| ---------------------- | ---------- | ------------------------------------------------- |
+| `boolean`              | 开关       | `visible: true`                                   |
+| `number`               | 数字输入   | `speed: 5`                                        |
+| `number` + `min`/`max` | 滑块       | `size: { value: 1, min: 0.1, max: 5, step: 0.1 }` |
+| `string`（hex 颜色）   | 颜色选择器 | `color: '#ff0000'`                                |
+| `{ options: [...] }`   | 下拉选择   | `preset: { options: ['a', 'b', 'c'] }`            |
+| `Vector3` / 数组       | 向量输入   | `position: { value: [0, 1, 0] }`                  |
 
 ### 文件夹分组
 
@@ -66,17 +66,17 @@ const { color, position, visible } = useControls('Mesh', {
 
 ```vue
 <script setup>
-import { useControls } from '@tresjs/leches'
+import { useControls } from "@tresjs/leches";
 
-const { intensity, color } = useControls('光照', {
+const { intensity, color } = useControls("光照", {
   intensity: { value: 1, min: 0, max: 10, step: 0.1 },
-  color: '#ffffff',
-})
+  color: "#ffffff",
+});
 
-const { speed, amplitude } = useControls('动画', {
+const { speed, amplitude } = useControls("动画", {
   speed: { value: 1, min: 0.1, max: 5 },
   amplitude: { value: 0.5, min: 0, max: 2 },
-})
+});
 </script>
 ```
 
@@ -86,11 +86,11 @@ Leches 内置了 FPS 图表控制：
 
 ```vue
 <script setup>
-import { useControls } from '@tresjs/leches'
+import { useControls } from "@tresjs/leches";
 
-const fps = useControls('性能', {
+const fps = useControls("性能", {
   fpsgraph: true,
-})
+});
 </script>
 ```
 
@@ -117,9 +117,9 @@ TresJS 核心包提供了几个调试指令：
 
 ### 对比
 
-| 工具 | 适用场景 |
-|------|---------|
-| `@tresjs/leches` | 3D 场景参数实时调试，支持滑块、颜色、向量等 |
-| Vue Devtools | 组件树和响应式状态 |
-| `v-log` / `v-light-helper` | 快速打印和可视化调试 |
-| `lil-gui` | 原生 Three.js 项目 |
+| 工具                       | 适用场景                                    |
+| -------------------------- | ------------------------------------------- |
+| `@tresjs/leches`           | 3D 场景参数实时调试，支持滑块、颜色、向量等 |
+| Vue Devtools               | 组件树和响应式状态                          |
+| `v-log` / `v-light-helper` | 快速打印和可视化调试                        |
+| `lil-gui`                  | 原生 Three.js 项目                          |

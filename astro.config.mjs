@@ -53,10 +53,16 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
     resolve: {
-      dedupe: ['three'],
+      dedupe: ["three"],
     },
     ssr: {
-      noExternal: ['@tresjs/core', '@tresjs/cientos', '@tresjs/leches', '@tresjs/post-processing', 'three-custom-shader-material'],
+      noExternal: [
+        "@tresjs/core",
+        "@tresjs/cientos",
+        "@tresjs/leches",
+        "@tresjs/post-processing",
+        "three-custom-shader-material",
+      ],
     },
   },
 });

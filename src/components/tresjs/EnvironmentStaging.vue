@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { PCFShadowMap } from 'three'
-import { TresCanvas } from '@tresjs/core'
-import { OrbitControls, Environment, ContactShadows } from '@tresjs/cientos'
+import { ref, onMounted, onUnmounted } from "vue";
+import { PCFShadowMap } from "three";
+import { TresCanvas } from "@tresjs/core";
+import { OrbitControls, Environment, ContactShadows } from "@tresjs/cientos";
 
-const boxRef = ref()
-let animId = 0
+const boxRef = ref();
+let animId = 0;
 
 onMounted(() => {
   const animate = () => {
     if (boxRef.value) {
-      boxRef.value.rotation.y += 0.01
-      boxRef.value.rotation.x += 0.005
+      boxRef.value.rotation.y += 0.01;
+      boxRef.value.rotation.x += 0.005;
     }
-    animId = requestAnimationFrame(animate)
-  }
-  animate()
-})
-onUnmounted(() => cancelAnimationFrame(animId))
+    animId = requestAnimationFrame(animate);
+  };
+  animate();
+});
+onUnmounted(() => cancelAnimationFrame(animId));
 </script>
 
 <template>
@@ -42,7 +42,15 @@ onUnmounted(() => cancelAnimationFrame(animId))
         <TresMeshStandardMaterial color="salmon" :metalness="0.3" :roughness="0.2" />
       </TresMesh>
 
-      <ContactShadows :position="[0, 0, 0]" :scale="10" :resolution="512" :far="5" color="#4b2709" :opacity="0.5" :blur="2.5" />
+      <ContactShadows
+        :position="[0, 0, 0]"
+        :scale="10"
+        :resolution="512"
+        :far="5"
+        color="#4b2709"
+        :opacity="0.5"
+        :blur="2.5"
+      />
       <Suspense>
         <Environment preset="city" :background="false" />
       </Suspense>

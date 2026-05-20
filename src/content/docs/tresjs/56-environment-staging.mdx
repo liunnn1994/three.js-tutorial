@@ -20,7 +20,7 @@ import EnvironmentStaging from "../../../components/tresjs/EnvironmentStaging.vu
 
 ```vue
 <script setup>
-import { Environment } from '@tresjs/cientos'
+import { Environment } from "@tresjs/cientos";
 </script>
 
 <template>
@@ -33,29 +33,29 @@ import { Environment } from '@tresjs/cientos'
 
 常用属性：
 
-| 属性 | 说明 | 默认值 |
-|------|------|--------|
-| `preset` | 预设环境名称 | — |
-| `background` | 设为场景背景 | `false` |
-| `blur` | 背景模糊程度 | `0` |
-| `environment-intensity` | 环境光强度 | — |
-| `background-intensity` | 背景亮度 | — |
-| `resolution` | 立方体贴图分辨率 | — |
+| 属性                    | 说明             | 默认值  |
+| ----------------------- | ---------------- | ------- |
+| `preset`                | 预设环境名称     | —       |
+| `background`            | 设为场景背景     | `false` |
+| `blur`                  | 背景模糊程度     | `0`     |
+| `environment-intensity` | 环境光强度       | —       |
+| `background-intensity`  | 背景亮度         | —       |
+| `resolution`            | 立方体贴图分辨率 | —       |
 
 内置预设：
 
-| 预设名 | 说明 |
-|--------|------|
-| `sunset` | 日落 |
-| `dawn` | 黎明 |
-| `night` | 夜晚 |
-| `warehouse` | 仓库 |
-| `forest` | 森林 |
-| `apartment` | 公寓 |
-| `studio` | 摄影棚 |
-| `city` | 城市 |
-| `park` | 公园 |
-| `lobby` | 大堂 |
+| 预设名      | 说明   |
+| ----------- | ------ |
+| `sunset`    | 日落   |
+| `dawn`      | 黎明   |
+| `night`     | 夜晚   |
+| `warehouse` | 仓库   |
+| `forest`    | 森林   |
+| `apartment` | 公寓   |
+| `studio`    | 摄影棚 |
+| `city`      | 城市   |
+| `park`      | 公园   |
+| `lobby`     | 大堂   |
 
 ### envMapIntensity
 
@@ -85,15 +85,15 @@ import { Environment } from '@tresjs/cientos'
 />
 ```
 
-| 属性 | 说明 | 默认值 |
-|------|------|--------|
-| `opacity` | 阴影透明度 | `1` |
-| `blur` | 模糊程度 | `1` |
-| `color` | 阴影颜色 | `#000000` |
-| `scale` | 阴影平面缩放 | `10` |
-| `resolution` | 渲染分辨率 | `512` |
-| `smooth` | 平滑阴影 | `true` |
-| `far` | 最大检测距离 | — |
+| 属性         | 说明         | 默认值    |
+| ------------ | ------------ | --------- |
+| `opacity`    | 阴影透明度   | `1`       |
+| `blur`       | 模糊程度     | `1`       |
+| `color`      | 阴影颜色     | `#000000` |
+| `scale`      | 阴影平面缩放 | `10`      |
+| `resolution` | 渲染分辨率   | `512`     |
+| `smooth`     | 平滑阴影     | `true`    |
+| `far`        | 最大检测距离 | —         |
 
 ## 天空
 
@@ -103,7 +103,7 @@ import { Environment } from '@tresjs/cientos'
 
 ```vue
 <script setup>
-import { Sky } from '@tresjs/cientos'
+import { Sky } from "@tresjs/cientos";
 </script>
 
 <template>
@@ -111,13 +111,13 @@ import { Sky } from '@tresjs/cientos'
 </template>
 ```
 
-| 属性 | 说明 | 默认值 |
-|------|------|--------|
-| `turbidity` | 大气浑浊度 | `3.4` |
-| `rayleigh` | 瑞利散射系数 | `3` |
-| `elevation` | 太阳仰角（度） | `0.6` |
-| `azimuth` | 太阳方位角（度） | `180` |
-| `distance` | 天空距离 | `450000` |
+| 属性        | 说明             | 默认值   |
+| ----------- | ---------------- | -------- |
+| `turbidity` | 大气浑浊度       | `3.4`    |
+| `rayleigh`  | 瑞利散射系数     | `3`      |
+| `elevation` | 太阳仰角（度）   | `0.6`    |
+| `azimuth`   | 太阳方位角（度） | `180`    |
+| `distance`  | 天空距离         | `450000` |
 
 ## 粒子效果
 
@@ -127,7 +127,7 @@ import { Sky } from '@tresjs/cientos'
 
 ```vue
 <script setup>
-import { Stars } from '@tresjs/cientos'
+import { Stars } from "@tresjs/cientos";
 </script>
 
 <template>
@@ -135,12 +135,12 @@ import { Stars } from '@tresjs/cientos'
 </template>
 ```
 
-| 属性 | 说明 | 默认值 |
-|------|------|--------|
-| `count` | 星星数量 | `5000` |
-| `depth` | 星空深度 | `50` |
-| `radius` | 星空半径 | `100` |
-| `size` | 星星大小 | `0.1` |
+| 属性               | 说明     | 默认值 |
+| ------------------ | -------- | ------ |
+| `count`            | 星星数量 | `5000` |
+| `depth`            | 星空深度 | `50`   |
+| `radius`           | 星空半径 | `100`  |
+| `size`             | 星星大小 | `0.1`  |
 | `size-attenuation` | 近大远小 | `true` |
 
 ### Sparkles
@@ -149,7 +149,7 @@ import { Stars } from '@tresjs/cientos'
 
 ```vue
 <script setup>
-import { Sparkles } from '@tresjs/cientos'
+import { Sparkles } from "@tresjs/cientos";
 </script>
 
 <template>
@@ -169,7 +169,7 @@ import { Sparkles } from '@tresjs/cientos'
 
 ```vue
 <script setup>
-import { Stage } from '@tresjs/cientos'
+import { Stage } from "@tresjs/cientos";
 </script>
 
 <template>

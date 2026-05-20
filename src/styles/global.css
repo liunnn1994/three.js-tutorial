@@ -112,3 +112,27 @@
   font-size: 0.8rem;
   line-height: 1.5;
 }
+
+/* Ensure Expressive Code syntax colors apply reliably on mobile WebViews */
+.expressive-code .ec-line span[style^="--"]:not([class]) {
+  color: var(--0, inherit);
+  background-color: var(--0bg, transparent);
+  font-style: var(--0fs, inherit);
+  font-weight: var(--0fw, inherit);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .expressive-code .ec-line span[style^="--"]:not([class]) {
+    color: var(--1, inherit);
+    background-color: var(--1bg, transparent);
+    font-style: var(--1fs, inherit);
+    font-weight: var(--1fw, inherit);
+  }
+}
+
+[data-theme="light"] .expressive-code .ec-line span[style^="--"]:not([class]) {
+  color: var(--1, inherit);
+  background-color: var(--1bg, transparent);
+  font-style: var(--1fs, inherit);
+  font-weight: var(--1fw, inherit);
+}

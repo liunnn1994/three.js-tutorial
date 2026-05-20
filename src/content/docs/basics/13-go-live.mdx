@@ -566,8 +566,7 @@ const textureLoader = new THREE.TextureLoader(loadingManager);
 ```js
 if (!renderer.capabilities.isWebGL2) {
   // 回退方案或提示信息
-  document.body.innerHTML =
-    "<h1>您的浏览器不支持 WebGL，请使用现代浏览器访问。</h1>";
+  document.body.innerHTML = "<h1>您的浏览器不支持 WebGL，请使用现代浏览器访问。</h1>";
 }
 ```
 
@@ -594,10 +593,7 @@ if (!renderer.capabilities.isWebGL2) {
   />
   <meta property="og:title" content="我的 3D 作品" />
   <meta property="og:description" content="Three.js 交互式 3D 网页体验" />
-  <meta
-    property="og:image"
-    content="https://your-domain.com/preview-image.jpg"
-  />
+  <meta property="og:image" content="https://your-domain.com/preview-image.jpg" />
 </head>
 ```
 
@@ -613,10 +609,7 @@ if (!renderer.capabilities.isWebGL2) {
 <canvas id="webgl-canvas"></canvas>
 <noscript>
   <h1>我的 3D 作品</h1>
-  <p>
-    一个使用 Three.js 创建的交互式 3D 网页体验。请启用 JavaScript
-    以查看完整效果。
-  </p>
+  <p>一个使用 Three.js 创建的交互式 3D 网页体验。请启用 JavaScript 以查看完整效果。</p>
 </noscript>
 ```
 

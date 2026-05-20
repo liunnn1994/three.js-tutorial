@@ -18,7 +18,7 @@ import ThreeDText from "../../../components/tresjs/ThreeDText.vue";
 
 ```vue
 <script setup>
-import { Text3D, Center } from '@tresjs/cientos'
+import { Text3D, Center } from "@tresjs/cientos";
 </script>
 
 <template>
@@ -61,11 +61,11 @@ import { Text3D, Center } from '@tresjs/cientos'
 
 ```vue
 <script setup lang="ts">
-import * as THREE from 'three'
+import * as THREE from "three";
 
 // 在组件外部创建，所有实例共享
-const torusGeometry = new THREE.TorusGeometry(1, 0.6, 16, 32)
-const material = new THREE.MeshNormalMaterial()
+const torusGeometry = new THREE.TorusGeometry(1, 0.6, 16, 32);
+const material = new THREE.MeshNormalMaterial();
 </script>
 
 <template>
@@ -85,9 +85,9 @@ const material = new THREE.MeshNormalMaterial()
 
 ### MeshNormalMaterial vs MeshMatcapMaterial
 
-| 材质 | 特点 |
-|------|------|
+| 材质                 | 特点                                             |
+| -------------------- | ------------------------------------------------ |
 | `MeshNormalMaterial` | 基于法线方向着色，无需光源，调试和艺术效果都好用 |
-| `MeshMatcapMaterial` | 使用 Matcap 纹理，不接收光照但视觉效果丰富 |
+| `MeshMatcapMaterial` | 使用 Matcap 纹理，不接收光照但视觉效果丰富       |
 
 示例中使用 `MeshNormalMaterial` 是因为它不需要额外的纹理文件。
