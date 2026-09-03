@@ -103,6 +103,15 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
 
+      - name: Add Android build-tools to PATH
+        shell: bash
+        run: |
+          set -euo pipefail
+          # cap build android signs via `apksigner` resolved from PATH
+          BUILD_TOOLS_DIR="$ANDROID_HOME/build-tools/$(ls -1 "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+          echo "Using build-tools: $BUILD_TOOLS_DIR"
+          echo "$BUILD_TOOLS_DIR" >> "$GITHUB_PATH"
+
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
