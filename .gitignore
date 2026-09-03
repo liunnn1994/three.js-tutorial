@@ -25,9 +25,20 @@ android/.gradle/
 android/local.properties
 android/app/build/
 android/keystore.properties
+android/**/*.jks
+android/**/*.keystore
+android/key.properties
+android/.idea/
 ios/App/Pods/
 ios/App/build/
 ios/App/DerivedData/
+ios/App/xcuserdata/
+ios/App/*.xcworkspace/xcuserdata/
+ios/**/*.mobileprovision
+ios/**/*.p12
+
+# Locally retained installable packages (not source-controlled)
+/artifacts/*.apk
 
 # Generated vendor files (offline mobile builds)
 /vendor/
@@ -39,4 +50,4 @@ public/vendor/*
 public/previews/
 
 # @see https://github.com/Graphify-Labs/graphify#team-setup
-graphify-out/cost.json 
+graphify-out/cost.json

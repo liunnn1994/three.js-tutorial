@@ -1,4 +1,12 @@
 # .graphifyignore
 node_modules/
 dist/
+android/
+ios/
+public/assets/
+public/previews/
+public/vendor/
+static/
+vendor/
+graphify-out/
 *.generated.py

@@ -7,7 +7,7 @@ const projectRoot = path.resolve(__dirname, "..");
 const codeRoot = path.join(projectRoot, "src/lesson-code");
 const outputRoot = path.join(projectRoot, "public/previews");
 
-// VENDOR_MODE: 'local' (default/dev/tauri) | 'cdn' (web build)
+// VENDOR_MODE: 'local' (default/dev/mobile) | 'cdn' (web build)
 const VENDOR_MODE = process.env.VENDOR_MODE || "local";
 
 const THREE_VERSION = "0.184.0";

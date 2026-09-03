@@ -1,5 +1,16 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist"]
+  "exclude": [
+    "android",
+    "dist",
+    "graphify-out",
+    "ios",
+    "node_modules",
+    "public/assets",
+    "public/downloads",
+    "public/previews",
+    "public/vendor",
+    "vendor"
+  ]
 }

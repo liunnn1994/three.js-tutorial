@@ -1,6 +1,6 @@
 # Three.js 教程
 
-基于 Three.js 的交互式中文教程平台，支持网页文档、桌面端和移动端应用。
+基于 Three.js 的交互式中文教程平台，支持网页文档和 Android/iOS 移动应用。
 
 ## 技术栈
 
@@ -9,7 +9,7 @@
 | 文档框架    | [Astro](https://astro.build) + [Starlight](https://starlight.astro.build) | 静态站点生成、文档主题 |
 | 样式        | [Tailwind CSS](https://tailwindcss.com) v4                                | 自定义样式             |
 | 代码高亮    | [Shiki](https://shiki.style)                                              | 语法高亮               |
-| 桌面/移动端 | [Tauri](https://tauri.app) v2                                             | 跨平台原生应用         |
+| 移动端      | [Capacitor](https://capacitorjs.com/docs) v8                              | Android/iOS 原生容器   |
 | 3D 渲染     | [Three.js](https://threejs.org)                                           | 教程核心内容           |
 | 动画        | [GSAP](https://gsap.com)                                                  | 动画示例               |
 | 物理        | [Cannon-ES](https://github.com/pmndrs/cannon-es)                          | 物理引擎示例           |
@@ -19,7 +19,7 @@
 ```
 .
 ├── .github/workflows/
-│   └── build.yml              # CI/CD 全平台构建流水线
+│   └── build.yml              # Android 移动端构建流水线
 ├── public/
 │   ├── favicon.ico            # 网站图标
 │   ├── logo.png               # 项目 Logo（图标生成源文件）
@@ -35,7 +35,7 @@
 ├── scripts/
 │   ├── generate-previews.js   # 生成课程交互预览
 │   ├── copy-vendor.js         # 从 node_modules 复制离线依赖
-│   └── generate-icons.mjs     # 生成全平台图标
+│   └── generate-icons.mjs     # 生成网页及移动端图标
 ├── src/
 │   ├── components/
 │   │   └── LessonPreview.astro # 课程预览组件
@@ -53,11 +53,9 @@
 │   ├── styles/
 │   │   └── global.css         # 全局样式（Tailwind + 预览样式）
 │   └── assets/                # 静态资源
-├── src-tauri/                 # Tauri 原生应用
-│   ├── src/                   # Rust 后端代码
-│   ├── icons/                 # 全平台应用图标
-│   ├── Cargo.toml             # Rust 依赖配置
-│   └── tauri.conf.json        # Tauri 应用配置
+├── android/                   # Capacitor Android 原生工程
+├── ios/                       # Capacitor iOS 原生工程
+├── capacitor.config.ts        # Capacitor 应用与 Web 目录配置
 ├── astro.config.mjs           # Astro 配置（Starlight + Tailwind）
 ├── package.json               # Node.js 依赖和脚本
 └── tsconfig.json              # TypeScript 配置
@@ -81,7 +79,8 @@
 
 - [Node.js](https://nodejs.org/) LTS
 - [pnpm](https://pnpm.io/) 12+
-- [Rust](https://www.rust-lang.org/) Stable（构建 Tauri 客户端时需要）
+- Android：[Android Studio](https://developer.android.com/studio)（Android SDK 36）与 Java 21
+- iOS：macOS 与最新版 Xcode
 
 仓库通过 `.mise.toml` 固定以上工具链版本，可运行 `mise install` 一次性安装。
 
@@ -101,7 +100,8 @@ pnpm dev
 | `pnpm dev`     | 启动文档开发服务器                  |
 | `pnpm build`   | 构建文档站点到 `dist/`              |
 | `pnpm preview` | 预览构建产物                        |
-| `pnpm icons`   | 从 `public/logo.png` 生成全平台图标 |
+| `pnpm icons`   | 从 `public/logo.png` 生成网页及移动端图标 |
+| `pnpm mobile:sync` | 构建网页并同步到 Android/iOS 原生工程 |
 
 ## 课程预览系统
 
@@ -136,50 +136,41 @@ src/lesson-code/
 
 在 MDX 中通过 `<LessonPreview lesson="03-first-threejs-project" />` 引用，组件会优先加载 `-final` 版本。
 
-## Tauri 桌面端开发
+## Capacitor 移动端开发
 
-### 环境要求
-
-- Node.js + pnpm
-- [Rust](https://www.rust-lang.org/tools/install)
+`android/` 和 `ios/` 已提交到仓库，首次拉取后不需要再次执行 `cap add`。修改网页内容、Capacitor 配置或插件后，先同步原生工程：
 
 ```bash
-pnpm tauri:dev
+pnpm mobile:sync
 ```
-
-### 平台依赖
-
-**Windows**: Visual Studio Build Tools（C++ 工作负载）
-
-**macOS**: Xcode Command Line Tools — `xcode-select --install`
-
-**Linux**: `sudo apt install libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf`
-
-## Tauri 移动端开发
 
 ### Android
 
-环境要求：Android Studio（SDK + NDK）、Java 17
+环境要求：Android Studio（Android SDK 36）和 Java 21。
 
 ```bash
-pnpm tauri:android:init    # 初始化 Android 项目（仅需一次）
-pnpm tauri:android:dev     # 启动 Android 调试
-pnpm tauri:android:build   # 构建 APK
+pnpm android:open          # 使用 Android Studio 打开原生工程
+pnpm android:run           # 同步后运行到设备或模拟器
+pnpm android:build         # 使用下述签名环境变量构建 release APK
 ```
 
 ### iOS
 
-环境要求：macOS、Xcode（App Store 最新版）
+环境要求：macOS 和最新版 Xcode。发布证书、Provisioning Profile 与开发团队需要在 Xcode 中配置。
 
 ```bash
-pnpm tauri:ios:init        # 初始化 iOS 项目（仅需一次）
-pnpm tauri:ios:dev         # 启动 iOS 调试
-pnpm tauri:ios:build       # 构建 IPA
+pnpm ios:open              # 使用 Xcode 打开原生工程
+pnpm ios:run               # 同步后运行到设备或模拟器
+pnpm ios:build             # 使用当前 Xcode 签名配置构建 IPA
 ```
+
+应用标识为 `com.threejstutorial.app`，Web 构建目录由 `capacitor.config.ts` 固定为 `dist/`。`pnpm sync-version` 会把 `package.json` 版本同步到 Android 和 iOS 工程。
+
+Android release 构建需要设置 `ANDROID_KEYSTORE_PATH`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS` 和 `ANDROID_KEY_PASSWORD`。签名信息只从环境变量读取，不写入仓库。
 
 ## 图标生成
 
-所有平台图标均从 `public/logo.png`（建议 1024x1024 RGBA PNG）自动生成：
+网页图标、移动端 App 图标和启动图均从 `public/logo.png` 生成：
 
 ```bash
 pnpm icons
@@ -188,34 +179,30 @@ pnpm icons
 生成的图标覆盖：
 
 - **文档站**：favicon.ico、多尺寸 PNG、Apple Touch Icon、PWA 图标
-- **桌面端**：Windows (.ico)、macOS (.icns + PNG)、Linux (PNG)
 - **Android**：mdpi / hdpi / xhdpi / xxhdpi / xxxhdpi
-- **iOS**：18 种尺寸，自动去除透明度
+- **iOS**：1024x1024 AppIcon，自动合成不透明背景
+- **启动图**：Android 横竖屏密度资源与 iOS Universal Splash
 
 ## CI/CD
 
-GitHub Actions 自动化构建全平台应用，配置文件：`.github/workflows/build.yml`
+GitHub Actions 仅构建并发布移动端 Android APK，配置文件为 `.github/workflows/build.yml`。桌面端不再构建；iOS 保留原生工程，由 macOS/Xcode 完成签名发布。
 
 ### 触发方式
 
-- **Tag 推送**：`git tag v0.1.0 && git push --tags` 自动触发
-- **手动触发**：GitHub Actions 页面点击 `Run workflow`
+- **自动触发**：`Release` 工作流成功创建 GitHub Release 后触发
+- **手动触发**：在 Actions 页面运行 `Build and Release`，可指定已有 Release tag
 
 ### 构建矩阵
 
-| 平台                  | 运行环境       | 产物              |
-| --------------------- | -------------- | ----------------- |
-| macOS (Apple Silicon) | macos-latest   | .dmg              |
-| Windows               | windows-latest | .msi, .exe (NSIS) |
-| Linux                 | ubuntu-22.04   | .deb, .AppImage   |
-| Android               | ubuntu-22.04   | .apk              |
-| iOS                   | macos-latest   | .ipa              |
+| 平台    | 运行环境     | 产物          |
+| ------- | ------------ | ------------- |
+| Android | ubuntu-22.04 | 签名的 `.apk` |
 
-桌面端构建会自动创建 GitHub Draft Release，移动端产物作为 Workflow Artifact 上传。
+自动签名需要配置 `ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS` 和 `ANDROID_KEY_PASSWORD` 四个 GitHub Actions Secrets。
 
 ### 发布流程
 
-1. 更新 `package.json` 和 `src-tauri/tauri.conf.json` 中的版本号
-2. 提交并打 Tag：`git tag v0.1.0 && git push --tags`
-3. 等待 GitHub Actions 完成所有平台构建
-4. 审核 Draft Release 并手动发布
+1. 按 Conventional Commits 提交到 `main`
+2. `semantic-release` 更新 `package.json`、创建 tag 和 GitHub Release
+3. `Build and Release` 使用 Capacitor 构建签名 APK
+4. 工作流将 APK 上传到对应的 GitHub Release

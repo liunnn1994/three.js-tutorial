@@ -1,20 +1,32 @@
-import { readFileSync, writeFileSync } from "fs";
-import { resolve, dirname } from "path";
-import { fileURLToPath } from "url";
+import { readFileSync, writeFileSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
 
 const { version } = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
+const match = /^(\d+)\.(\d+)\.(\d+)/.exec(version);
 
-const tauriConfPath = resolve(root, "src-tauri/tauri.conf.json");
-const tauriConf = JSON.parse(readFileSync(tauriConfPath, "utf8"));
-tauriConf.version = version;
-writeFileSync(tauriConfPath, JSON.stringify(tauriConf, null, 2) + "\n");
+if (!match) {
+  throw new Error(`Unsupported package version: ${version}`);
+}
 
-const cargoPath = resolve(root, "src-tauri/Cargo.toml");
-let cargo = readFileSync(cargoPath, "utf8");
-cargo = cargo.replace(/^version\s*=\s*".*?"/m, `version = "${version}"`);
-writeFileSync(cargoPath, cargo);
+const [, major, minor, patch] = match.map(Number);
+const buildNumber = major * 10000 + minor * 100 + patch;
 
-console.log(`Version synced to ${version}`);
+const androidPath = resolve(root, "android/app/build.gradle");
+let android = readFileSync(androidPath, "utf8");
+android = android
+  .replace(/^\s*versionCode\s+\d+/m, `        versionCode ${buildNumber}`)
+  .replace(/^\s*versionName\s+"[^"]+"/m, `        versionName "${version}"`);
+writeFileSync(androidPath, android);
+
+const iosPath = resolve(root, "ios/App/App.xcodeproj/project.pbxproj");
+let ios = readFileSync(iosPath, "utf8");
+ios = ios
+  .replace(/CURRENT_PROJECT_VERSION = [^;]+;/g, `CURRENT_PROJECT_VERSION = ${buildNumber};`)
+  .replace(/MARKETING_VERSION = [^;]+;/g, `MARKETING_VERSION = ${version};`);
+writeFileSync(iosPath, ios);
+
+console.log(`Mobile version synced: ${version} (${buildNumber})`);

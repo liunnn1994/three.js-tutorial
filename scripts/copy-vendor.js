@@ -8,7 +8,7 @@ const projectRoot = path.resolve(__dirname, "..");
 const nm = path.join(projectRoot, "node_modules");
 const vendorDir = path.join(projectRoot, "public", "vendor");
 
-// VENDOR_MODE: 'local' (default/dev/tauri) | 'cdn' (web build)
+// VENDOR_MODE: 'local' (default/dev/mobile) | 'cdn' (web build)
 const VENDOR_MODE = process.env.VENDOR_MODE || "local";
 
 if (VENDOR_MODE === "cdn") {

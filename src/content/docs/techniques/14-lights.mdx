@@ -11,7 +11,7 @@ import LessonPreview from "../../../components/LessonPreview.astro";
 
 你可以做个实验：把场景中所有光源移除，你的 PBR 物体会变成一片漆黑。这是因为 PBR 材质会模拟光线与物体表面的真实交互（反射、折射、散射等），没有光就没有任何视觉效果。
 
-> 关于 "标准材质" 的更多知识，请参阅 [Lesson 12 - Materials](/docs/techniques/12-materials)。
+> 关于“标准材质”的更多知识，请参阅 [Lesson 11 - Materials](/basics/11-materials/)。
 
 Three.js 提供了多种内置光源，每种光源模拟不同的真实光照情况。添加光源就像添加 `Mesh` 一样简单——实例化对应的类，然后 `scene.add(...)` 加入场景。
 
@@ -114,7 +114,7 @@ gui.add(directionalLight.position, "z").min(-5).max(5).step(0.001);
 
 - 平行光是户外场景中最常用的光源（模拟太阳）
 - 一盏平行光 + 一盏微弱环境光 = 最基础的户外光照方案
-- 在下一课 [Lesson 15 - Shadows](/docs/techniques/15-shadows) 中，我们会让平行光投射阴影
+- 在下一课 [Lesson 15 - Shadows](/techniques/15-shadows/) 中，我们会让平行光投射阴影
   :::
 
 **参考文档**：[Three.js DirectionalLight](https://threejs.org/docs/#api/en/lights/DirectionalLight)
@@ -663,4 +663,4 @@ scene.add(spotLight);
 scene.add(spotLight.target);
 ```
 
-**下一课预告**：在 [Lesson 15 - Shadows](/docs/techniques/15-shadows) 中，我们将在有光照的基础上学习如何添加阴影，让场景更加真实。
+**下一课预告**：在 [Lesson 15 - Shadows](/techniques/15-shadows/) 中，我们将在有光照的基础上学习如何添加阴影，让场景更加真实。

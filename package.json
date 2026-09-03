@@ -8,15 +8,18 @@
     "start": "run-s copy-vendor generate-previews astro:dev",
     "build": "run-s copy-vendor generate-previews astro:build",
     "build:web": "run-s build:web:copy-vendor build:web:generate-previews astro:build",
-    "build:app": "run-s copy-vendor generate-previews astro:build",
+    "build:app": "run-s copy-vendor generate-previews build:app:astro build:app:routes",
+    "build:app:astro": "cross-env BUILD_TARGET=app astro build",
+    "build:app:routes": "node scripts/prepare-app-routes.js",
+    "mobile:sync": "run-s build:app && cap sync",
+    "android:open": "cap open android",
+    "android:run": "run-s mobile:sync android:prepare && cap run android --no-sync",
+    "android:build": "run-s mobile:sync sync-version android:prepare && cap build android",
+    "android:prepare": "node scripts/prepare-android.js",
+    "ios:open": "cap open ios",
+    "ios:run": "run-s mobile:sync && cap run ios --no-sync",
+    "ios:build": "run-s mobile:sync sync-version && cap build ios",
     "preview": "astro preview",
-    "tauri": "tauri",
-    "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build",
-    "tauri:android:init": "tauri android init",
-    "tauri:ios:init": "tauri ios init",
-    "tauri:android:dev": "tauri android dev",
-    "tauri:android:build": "tauri android build --apk --target aarch64",
     "astro": "astro",
     "astro:build": "astro build",
     "astro:dev": "astro dev",
@@ -26,15 +29,15 @@
     "build:web:copy-vendor": "cross-env VENDOR_MODE=cdn node scripts/copy-vendor.js",
     "build:web:generate-previews": "cross-env VENDOR_MODE=cdn node scripts/generate-previews.js",
     "icons": "node scripts/generate-icons.mjs",
-    "tauri:build:all": "run-s tauri:build:prepare -p tauri:build:desktop tauri:build:mobile",
-    "tauri:build:desktop": "tauri build",
-    "tauri:build:mobile": "run-s build:app tauri:android:build",
-    "tauri:build:prepare": "run-s tauri:android:init tauri:ios:init icons"
+    "sync-version": "node scripts/sync-version.js"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.42.0",
     "@astrojs/starlight-tailwind": "^5.0.0",
     "@astrojs/vue": "^7.0.2",
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/core": "^8.5.1",
+    "@capacitor/ios": "^8.5.1",
     "@tailwindcss/vite": "^4.3.3",
     "@tresjs/cientos": "^5.8.1",
     "@tresjs/core": "^5.8.3",
@@ -52,10 +55,10 @@
     "vue": "^3.5.42"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.1",
     "@semantic-release/changelog": "^7.0.0",
     "@semantic-release/git": "^11.0.1",
     "@semantic-release/github": "^12.0.9",
-    "@tauri-apps/cli": "^2.11.4",
     "@types/three": "^0.185.4",
     "cannon-es": "^0.20.0",
     "cross-env": "^10.1.0",
@@ -65,10 +68,11 @@
     "png-to-ico": "^3.0.2",
     "semantic-release": "^25.0.9",
     "sharp": "^0.35.4",
-    "stats.js": "^0.17.0"
+    "stats.js": "^0.17.0",
+    "typescript": "^7.0.2"
   },
   "engines": {
-    "node": ">=26.8.1",
+    "node": ">=24.0.0",
     "pnpm": ">=12.3.1"
   }
 }

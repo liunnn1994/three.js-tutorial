@@ -7,13 +7,21 @@ import templateCompilerOptions from "@tresjs/core/template-compiler-options";
 
 // https://astro.build/config
 export default defineConfig({
+  // Capacitor serves bundled files without a web-server rewrite layer. Emit
+  // explicit .html routes for the app so every Starlight link can be opened
+  // directly by Android/iOS, while keeping clean directory URLs on the web.
+  build: {
+    format: process.env.BUILD_TARGET === "app" ? "file" : "directory",
+  },
   integrations: [
     vue({
       ...templateCompilerOptions,
     }),
     starlight({
       title: "Three.js 教程",
-      favicon: "./public/favicon.ico",
+      // Capacitor Android intentionally intercepts /favicon.ico with an empty
+      // response, so use the generated PNG on both web and native builds.
+      favicon: "/favicon-48x48.png",
       defaultLocale: "root",
       locales: {
         root: {
