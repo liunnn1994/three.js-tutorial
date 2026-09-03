@@ -1,3 +1,18 @@
+# [1.9.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.8.0...v1.9.0) (2026-09-03)
+
+
+### Bug Fixes
+
+* 🐛 修复样式没有高亮的问题 ([9ff52b4](https://github.com/liunnn1994/three.js-tutorial/commit/9ff52b44d3c97ffac79ded6818860c514c3093ad))
+
+
+### Features
+
+* 🎸 更新架构 ([57bdec2](https://github.com/liunnn1994/three.js-tutorial/commit/57bdec22a713ad89fb160ba802e988ebaff934a4))
+* 🎸 更新首页 ([7f6ad3c](https://github.com/liunnn1994/three.js-tutorial/commit/7f6ad3ccc2903debeaaa2c95684982bb5bd4d882))
+* 🎸 添加 tres 教程 ([b3b615e](https://github.com/liunnn1994/three.js-tutorial/commit/b3b615ed1c57e76be4fb556104acd108ea207f09))
+* 使用 capacitor 替换 tauri ([34c8038](https://github.com/liunnn1994/three.js-tutorial/commit/34c803870f6f66daa2763ab21544965cfca1ef0a))
+
 # [1.8.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.7.0...v1.8.0) (2026-05-18)
 
 ### Features
