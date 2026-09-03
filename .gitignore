@@ -20,12 +20,16 @@ pnpm-debug.log*
 # macOS-specific files
 .DS_Store
 
-# Tauri
-src-tauri/target/
-src-tauri/gen/android/
-src-tauri/gen/apple/
+# Capacitor native build output and machine-local configuration
+android/.gradle/
+android/local.properties
+android/app/build/
+android/keystore.properties
+ios/App/Pods/
+ios/App/build/
+ios/App/DerivedData/
 
-# Generated vendor files (offline Tauri builds)
+# Generated vendor files (offline mobile builds)
 /vendor/
 public/vendor/*
 !public/vendor/normalize.css
@@ -33,3 +37,6 @@ public/vendor/*
 
 # Generated preview files (from lesson-code)
 public/previews/
+
+# @see https://github.com/Graphify-Labs/graphify#team-setup
+graphify-out/cost.json 
