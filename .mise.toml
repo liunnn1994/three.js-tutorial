@@ -1,0 +1,11 @@
+[tools]
+node = "26.7.0"
+# Node 26 不再内置 Corepack，由 mise 直接安装并固定 pnpm。使用 npm 后端安装，规避 Linux 下 aqua 资产匹配失败问题
+pnpm = { version = "11.21.0", backend = "npm" }
+
+[settings]
+node.mirror_url = "https://npmmirror.com/mirrors/node/"
+url_replacements = { "https://github.com/indygreg/python-build-standalone/releases/download" = "https://mirrors.tuna.tsinghua.edu.cn/github-release/indygreg/python-build-standalone", "https://www.python.org/ftp/python" = "https://mirrors.tuna.tsinghua.edu.cn/python" }
+
+[env]
+PIP_INDEX_URL = "https://pypi.tuna.tsinghua.edu.cn/simple"
