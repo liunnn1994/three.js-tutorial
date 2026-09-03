@@ -96,7 +96,7 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install system dependencies (Ubuntu)
         if: matrix.platform == 'ubuntu-22.04'
@@ -105,14 +105,14 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: lts/*
 
       - name: Install pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@latest --activate
+        uses: pnpm/action-setup@v6
+        with:
+          version: 12
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -134,7 +134,7 @@ jobs:
         run: node scripts/sync-version.js
 
       - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@v1
         with:
           args: ${{ matrix.args }}
 
@@ -201,7 +201,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 180
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Free disk space (Ubuntu runner)
         shell: bash
@@ -211,7 +211,7 @@ jobs:
           df -h
 
       - name: Setup Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "17"
@@ -220,14 +220,14 @@ jobs:
         uses: android-actions/setup-android@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: lts/*
 
       - name: Install pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@latest --activate
+        uses: pnpm/action-setup@v6
+        with:
+          version: 12
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable

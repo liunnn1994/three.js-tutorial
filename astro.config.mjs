@@ -24,27 +24,27 @@ export default defineConfig({
       sidebar: [
         {
           label: "基础入门",
-          autogenerate: { directory: "basics" },
+          items: [{ autogenerate: { directory: "basics" } }],
         },
         {
           label: "技术技巧",
-          autogenerate: { directory: "techniques" },
+          items: [{ autogenerate: { directory: "techniques" } }],
         },
         {
           label: "着色器",
-          autogenerate: { directory: "shaders" },
+          items: [{ autogenerate: { directory: "shaders" } }],
         },
         {
           label: "高级主题",
-          autogenerate: { directory: "advanced" },
+          items: [{ autogenerate: { directory: "advanced" } }],
         },
         {
           label: "场景创建",
-          autogenerate: { directory: "scene-creation" },
+          items: [{ autogenerate: { directory: "scene-creation" } }],
         },
         {
           label: "TresJS (Vue)",
-          autogenerate: { directory: "tresjs" },
+          items: [{ autogenerate: { directory: "tresjs" } }],
         },
       ],
       customCss: ["./src/styles/global.css"],

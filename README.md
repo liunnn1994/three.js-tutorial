@@ -80,7 +80,10 @@
 ### 环境要求
 
 - [Node.js](https://nodejs.org/) LTS
-- [pnpm](https://pnpm.io/)
+- [pnpm](https://pnpm.io/) 12+
+- [Rust](https://www.rust-lang.org/) Stable（构建 Tauri 客户端时需要）
+
+仓库通过 `.mise.toml` 固定以上工具链版本，可运行 `mise install` 一次性安装。
 
 ### 安装与启动
 

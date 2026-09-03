@@ -15,16 +15,18 @@ jobs:
     name: Semantic Release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: lts/*
 
-      - run: corepack enable && corepack prepare pnpm@latest --activate
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12
 
       - run: pnpm install --frozen-lockfile
 
@@ -35,4 +37,4 @@ jobs:
           GIT_AUTHOR_EMAIL: github-actions[bot]@users.noreply.github.com
           GIT_COMMITTER_NAME: github-actions[bot]
           GIT_COMMITTER_EMAIL: github-actions[bot]@users.noreply.github.com
-        run: npx semantic-release
+        run: pnpm exec semantic-release
