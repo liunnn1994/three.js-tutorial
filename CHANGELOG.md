@@ -1,3 +1,10 @@
+## [1.9.1](https://github.com/liunnn1994/three.js-tutorial/compare/v1.9.0...v1.9.1) (2026-09-03)
+
+
+### Bug Fixes
+
+* 🐛 将 Android build-tools 加入 PATH 修复 apksigner ENOENT ([1dd3492](https://github.com/liunnn1994/three.js-tutorial/commit/1dd349260dcb8f59f547110afffed4c0f8e6ef2a))
+
 # [1.9.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.8.0...v1.9.0) (2026-09-03)
 
 
