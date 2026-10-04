@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.9.1...v1.10.0) (2026-10-04)
+
+
+### Features
+
+* 新增 WebGPU & TSL 课程 ([2968ae5](https://github.com/liunnn1994/three.js-tutorial/commit/2968ae50e2214bdee5b56c089edfd3cc489d93c5))
+
 ## [1.9.1](https://github.com/liunnn1994/three.js-tutorial/compare/v1.9.0...v1.9.1) (2026-09-03)
 
 
