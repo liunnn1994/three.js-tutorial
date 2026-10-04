@@ -1,16 +1,16 @@
 # Graph Report - three.js-tutorial  (2026-10-04)
 
 ## Corpus Check
-- 258 files · ~864,824 words
+- 260 files · ~865,511 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3925 nodes · 3889 edges · 283 communities (263 shown, 20 thin omitted)
+- 3932 nodes · 3896 edges · 284 communities (264 shown, 20 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 34 edges (avg confidence: 0.69)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2968ae50`
+- Built from commit: `4d82d41d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -255,6 +255,7 @@
 - FirstTresApp.vue
 - LoadModels.vue
 - content.config.ts
+- reading-progress.ts
 - 19-sphere-particles-physics.mdx
 - 20-stylized-nature-scene.mdx
 - 21-snow.mdx
@@ -304,10 +305,10 @@
 
 ## Import Cycles
 - 3-file cycle: `src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/Experience.js -> src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/World/World.js -> src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/World/Environment.js -> src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/Experience.js`
-- 3-file cycle: `src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/Experience.js -> src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/World/World.js -> src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/World/Floor.js -> src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/Experience.js`
 - 3-file cycle: `src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/Experience.js -> src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/World/World.js -> src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/World/Fox.js -> src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/Experience.js`
+- 3-file cycle: `src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/Experience.js -> src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/World/World.js -> src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/World/Floor.js -> src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/Experience.js`
 
-## Communities (283 total, 20 thin omitted)
+## Communities (284 total, 20 thin omitted)
 
 ### Community 0 - "Experience.js"
 Cohesion: 0.05
@@ -595,7 +596,7 @@ Nodes (19): Codebase Analysis, Graceful Exit Handling, Guardrails, Phase 10: Arc
 
 ### Community 71 - "Three.js 教程"
 Cohesion: 0.10
-Nodes (19): Android, Capacitor 移动端开发, CI/CD, iOS, Three.js 教程, 发布流程, 图标生成, 安装与启动 (+11 more)
+Nodes (20): Android, App 阅读进度, Capacitor 移动端开发, CI/CD, iOS, Three.js 教程, 发布流程, 图标生成 (+12 more)
 
 ### Community 72 - "49-creating-scene-blender.mdx"
 Cohesion: 0.10
@@ -1189,6 +1190,10 @@ Nodes (3): 在动画循环中同步所有对象, 批量创建方块, 批量创�
 Cohesion: 0.13
 Nodes (26): main(), main(), main(), main(), main(), main(), main(), main() (+18 more)
 
+### Community 261 - "reading-progress.ts"
+Cohesion: 0.40
+Nodes (3): installReadingProgress(), ReadingProgress, readProgress()
+
 ### Community 276 - "19-sphere-particles-physics.mdx"
 Cohesion: 0.22
 Nodes (8): 先更新速度，再更新位置, 动手检查, 本课要做什么, 每个粒子有两条记录, 碰到球边界怎么办, 绘制读取同一份 GPU 数据, 运行与源码, 这一次要记住上一帧
@@ -1278,7 +1283,7 @@ Cohesion: 0.67
 Nodes (3): [1.9.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.8.0...v1.9.0) (2026-09-03), Bug Fixes, Features
 
 ## Knowledge Gaps
-- **2955 isolated node(s):** `serverConfig`, `config`, `name`, `version`, `type` (+2950 more)
+- **2957 isolated node(s):** `serverConfig`, `config`, `name`, `version`, `type` (+2952 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **20 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -1294,7 +1299,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **Are the 21 inferred relationships involving `showError()` (e.g. with `webgpu-01-introduction/src/script.js` and `webgpu-02-node-materials/src/script.js`) actually correct?**
   _`showError()` has 21 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `serverConfig`, `config`, `name` to the rest of the system?**
-  _2955 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _2957 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Experience.js` be split into smaller, more focused modules?**
   _Cohesion score 0.0504828797190518 - nodes in this community are weakly interconnected._
 - **Should `10-textures.mdx` be split into smaller, more focused modules?**

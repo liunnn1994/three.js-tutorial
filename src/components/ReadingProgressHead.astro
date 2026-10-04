@@ -1,0 +1,19 @@
+---
+import DefaultHead from '@astrojs/starlight/components/Head.astro';
+
+const route = Astro.locals.starlightRoute;
+const isApp = process.env.BUILD_TARGET === 'app';
+const chapterPaths = (entries: typeof route.sidebar): string[] => entries.flatMap((entry) =>
+  entry.type === 'link' ? [entry.href] : chapterPaths(entry.entries)
+);
+const page = route.id === '' ? 'home' : route.id === '404' ? 'other' : 'chapter';
+---
+
+<DefaultHead><slot /></DefaultHead>
+<meta name="tutorial-build-target" content={isApp ? 'app' : 'web'} />
+<meta name="tutorial-reading-page" content={page} />
+{isApp && page === 'home' && <meta name="tutorial-reading-routes" content={JSON.stringify(chapterPaths(route.sidebar))} />}
+<script>
+  import { installReadingProgress } from '../scripts/reading-progress';
+  installReadingProgress();
+</script>

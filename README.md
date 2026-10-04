@@ -138,6 +138,10 @@ src/lesson-code/
 
 在 MDX 中通过 `<LessonPreview lesson="03-first-threejs-project" />` 引用，组件会优先加载 `-final` 版本。
 
+## App 阅读进度
+
+打包后的 App 会在本机自动保存最后阅读的章节、滚动位置与展开的源码面板。重新启动 App 时，从首页自动回到该章节；手动返回首页、打开指定章节或章节锚点时保留用户选择。进度使用本地存储，清除应用数据或卸载后会重置。网页构建不启用自动恢复。
+
 ## Capacitor 移动端开发
 
 `android/` 和 `ios/` 已提交到仓库，首次拉取后不需要再次执行 `cap add`。修改网页内容、Capacitor 配置或插件后，先同步原生工程：

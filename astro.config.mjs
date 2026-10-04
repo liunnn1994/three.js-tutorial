@@ -59,6 +59,7 @@ export default defineConfig({
           items: [{ autogenerate: { directory: "webgpu-tsl" } }],
         },
       ],
+      components: { Head: "./src/components/ReadingProgressHead.astro" },
       customCss: ["./src/styles/global.css"],
     }),
   ],
