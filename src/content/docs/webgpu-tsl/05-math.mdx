@@ -19,7 +19,7 @@ import LessonPreview from "../../../components/LessonPreview.astro";
 
 标量是一个数，比如浓度 `0.7`。`vec2` 是两个数，比如 UV；`vec3` 是三个数，比如位置或 RGB。向量的 `.x/.y/.z` 与 `.r/.g/.b` 分量可以对应同一组数据。加一个标量会给所有分量加上这个数，乘一个标量会同时缩放所有分量。
 
-示例左侧平面输出波形灰度，角色则输出基于波形的彩色带。先把“频率”从 1 拖到 24：频率越高，同一张表面上重复次数越多。
+示例左侧平面输出波形灰度，扭结环则输出基于波形的彩色带。先把“频率”从 1 拖到 24：频率越高，同一张表面上重复次数越多。
 
 ## 把 sin 的结果变成颜色
 
@@ -34,7 +34,7 @@ app.gui.add(frequency, 'value', 1, 24, 1).name('频率');
 app.animate((seconds) => { clock.value = seconds; });
 ```
 
-`clock` 是本课自己命名的 uniform，不是 Three.js 的 Clock 类。上面的回调是最小解释；完整源码同一个回调还会旋转角色，每课只有一个 `app.animate()` 更新回调，练习时保留其中其他更新。
+`clock` 是本课自己命名的 uniform，不是 Three.js 的 Clock 类。上面的回调是最小解释；完整源码同一个回调还会旋转扭结环，每课只有一个 `app.animate()` 更新回调，练习时保留其中其他更新。
 
 `sin()` 输出 `[-1, 1]`。乘 `0.5` 后得到 `[-0.5, 0.5]`，再加 `0.5` 得到 `[0, 1]`。因此 `vec3(wave)` 能画出一条连续变化的灰度波。`clock` 改变输入的相位，视觉上就形成流动。
 
@@ -68,7 +68,7 @@ material.colorNode = mix(color('#172889'), color('#fa785a'), bands);
 
 以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
 
-1. 暂停动画。在本课 `script.js` 中将 `material.colorNode = mix(...)` 这一整行替换为 `material.colorNode = vec3(wave);`。源码已导入 `vec3`，角色应显示连续灰度波形；随后替换为 `vec3(bands)`，应出现带软边的黑白条带。
+1. 暂停动画。在本课 `script.js` 中将 `material.colorNode = mix(...)` 这一整行替换为 `material.colorNode = vec3(wave);`。源码已导入 `vec3`，扭结环应显示连续灰度波形；随后替换为 `vec3(bands)`，应出现带软边的黑白条带。
 2. 把 `const bands = smoothstep(0.35, 0.65, ...)` 的两个边界改成 `0.49, 0.51`，条带过渡应变窄。
 3. 恢复彩色 `mix(...)` 表达式与原始边界。每次替换后重新生成预览，再通过面板暂停比较。
 

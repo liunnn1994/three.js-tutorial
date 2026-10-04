@@ -1,6 +1,6 @@
 ---
 title: "07 Uniforms 与 Attributes"
-description: 让 UI 控制所有顶点共享的参数，并用每顶点数据为角色增加不同的色调
+description: 让 UI 控制所有顶点共享的参数，并用每顶点数据为扭结环增加不同的色调
 sidebar:
   order: 7
 ---
@@ -9,7 +9,7 @@ import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 本课要做什么
 
-让 UI 控制所有顶点共享的参数，并用每顶点数据为角色增加不同的色调。对应目录中的 **Uniforms & Attributes**。先观察结果，再读代码，最后修改参数验证理解。
+让 UI 控制所有顶点共享的参数，并用每顶点数据为扭结环增加不同的色调。对应目录中的 **Uniforms & Attributes**。先观察结果，再读代码，最后修改参数验证理解。
 
 [查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/07@2x.webp)
 
@@ -17,7 +17,7 @@ import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 从前端数据流理解 GPU 输入
 
-整个角色共享“条纹频率”，但每个顶点可以有不同的颜色权重。前者用 uniform，后者用 attribute。可以把 uniform 想成一次绘制共享的配置，把 attribute 想成一张表里逐行不同的数据。
+整个扭结环共享“条纹频率”，但每个顶点可以有不同的颜色权重。前者用 uniform，后者用 attribute。可以把 uniform 想成一次绘制共享的配置，把 attribute 想成一张表里逐行不同的数据。
 
 ```js
 const frequency = uniform(9);
@@ -30,11 +30,14 @@ UI 修改 `.value`。相同节点输入保持不变，不需要重新编译材�
 ## 为每个顶点准备三项数据
 
 ```js
+const geometry = shape.geometry;
 const position = geometry.attributes.position;
+const bounds = geometry.boundingBox;
+const width = bounds.max.x - bounds.min.x;
 const data = new Float32Array(position.count * 3);
 for (let i = 0; i < position.count; i++) {
   data[i * 3] = 1;
-  data[i * 3 + 1] = 0.5 + (position.getX(i) + 1) * 0.25;
+  data[i * 3 + 1] = 0.5 + (position.getX(i) - bounds.min.x) / width * 0.5;
   data[i * 3 + 2] = 1;
 }
 geometry.setAttribute('aTint', new THREE.BufferAttribute(data, 3));
@@ -42,7 +45,7 @@ geometry.setAttribute('aTint', new THREE.BufferAttribute(data, 3));
 
 `position.count` 是顶点数；一个顶点的 tint 有 R、G、B 三个分量，所以数组长度乘 3。`BufferAttribute(data, 3)` 告诉 Three.js 每三项是一条记录。这里使用定长浮点数组，方便上传 GPU。
 
-角色由多个网格组成，所以示例遍历每个网格，分别给它的 geometry 设置同名属性。漏掉其中一个网格，材质就无法读到该几何体上的完整输入。
+扭结环是一个网格，示例直接给 `shape.geometry` 设置属性。根据几何体的实际 X 范围，把绿色权重从左到右映射到 0.5–1，使颜色变化连续且不受环体大小影响。
 
 ## 在节点中读取
 
@@ -60,8 +63,8 @@ material.colorNode = mix(color('#326ca3'), color('#ffd58b'), bands)
 以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
 
 1. 暂停动画，拖动面板“所有顶点共享的频率”。条纹密度应变化，左右偏色仍然存在。
-2. 在 `character.traverse()` 的 for 循环内，把 `data[i * 3 + 1] = ...` 替换为 `data[i * 3 + 1] = 1;`。重新生成预览，左右 tint 差异应消失，因为所有顶点的三个分量都是 1。
-3. 恢复原来的绿色分量公式。本课数组在初始化时生成，所以重新生成预览即可；若你在已经运行的页面中修改数组，则应对对应网格设置 `object.geometry.attributes.aTint.needsUpdate = true`，让 GPU 收到新数据。
+2. 在填充顶点数据的 for 循环内，把 `data[i * 3 + 1] = ...` 替换为 `data[i * 3 + 1] = 1;`。重新生成预览，左右 tint 差异应消失，因为所有顶点的三个分量都是 1。
+3. 恢复原来的绿色分量公式。本课数组在初始化时生成，所以重新生成预览即可；若你在已经运行的页面中修改数组，则应设置 `shape.geometry.attributes.aTint.needsUpdate = true`，让 GPU 收到新数据。
 
 ## 运行与源码
 

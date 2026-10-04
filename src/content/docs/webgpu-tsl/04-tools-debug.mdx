@@ -50,7 +50,7 @@ const { Inspector } = await import('three/addons/inspector/Inspector.js');
 app.renderer.inspector = new Inspector();
 ```
 
-Inspector 来自 Three.js addon，具体界面随版本变化。r186 官方 compute 示例也通过 `renderer.inspector` 接入它；参考图里的节点编辑视图属于工具界面，默认预览则先展示容易理解的可视化调试球。[r186 官方示例](https://github.com/mrdoob/three.js/blob/r186/examples/webgpu_compute_particles.html)
+Inspector 来自 Three.js addon，具体界面随版本变化。r186 官方 compute 示例也通过 `renderer.inspector` 接入它；参考图里的节点编辑视图属于工具界面，默认预览则先展示容易理解的可视化调试环体。[r186 官方示例](https://github.com/mrdoob/three.js/blob/r186/examples/webgpu_compute_particles.html)
 
 如果面板在 iframe 中太窄，可以直接打开 `/previews/webgpu-04-tools-debug.html`。先理解节点输出，再看节点连接图，会更容易对应屏幕与代码。
 

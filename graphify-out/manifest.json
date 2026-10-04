@@ -25,8 +25,8 @@
     "semantic_hash": ""
   },
   "astro.config.mjs": {
-    "mtime": 1791074818.9513898,
-    "ast_hash": "4177f2fa5baa695e92090b0eaf293acd",
+    "mtime": 1791082826.7982967,
+    "ast_hash": "3ae38e2ddd85925a4c496df90dae1128",
     "semantic_hash": ""
   },
   "capacitor.config.ts": {
@@ -35,8 +35,8 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1791073456.4021554,
-    "ast_hash": "3f32cd1979b99c9d2b68c91b4c407964",
+    "mtime": 1791082652.966644,
+    "ast_hash": "22b5825d43da7d52358de6709633741f",
     "semantic_hash": ""
   },
   "public/fonts/helvetiker_regular.typeface.json": {
@@ -45,8 +45,8 @@
     "semantic_hash": ""
   },
   "scripts/copy-vendor.js": {
-    "mtime": 1791074282.6282904,
-    "ast_hash": "47b5dfdb00f9a6bf48128023fab7fd93",
+    "mtime": 1791082715.7101789,
+    "ast_hash": "fe91611f1ad3d678891123495bf40c00",
     "semantic_hash": ""
   },
   "scripts/generate-icons.mjs": {
@@ -55,8 +55,8 @@
     "semantic_hash": ""
   },
   "scripts/generate-previews.js": {
-    "mtime": 1791074749.2212684,
-    "ast_hash": "fda54973b4f7a55d8988926736e63892",
+    "mtime": 1791082715.710618,
+    "ast_hash": "0ac5325a68548f314aa215185400355d",
     "semantic_hash": ""
   },
   "scripts/patch-csm.js": {
@@ -720,8 +720,8 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1791075888.6266189,
-    "ast_hash": "1c7f140ed8c35561861a68205f0f48eb",
+    "mtime": 1791083354.3484836,
+    "ast_hash": "4795f3b051b23511663283a9d8536b3a",
     "semantic_hash": ""
   },
   "openspec/changes/enhance-tutorial-with-code-examples/.openspec.yaml": {
@@ -775,8 +775,8 @@
     "semantic_hash": ""
   },
   "pnpm-workspace.yaml": {
-    "mtime": 1791073456.403935,
-    "ast_hash": "b51253444e89eb12e391816db90e29a3",
+    "mtime": 1791082652.9668293,
+    "ast_hash": "18f656a28b66918d21d92e9ba4e3fe52",
     "semantic_hash": ""
   },
   "src/content/docs/advanced/45-post-processing.mdx": {
@@ -1394,249 +1394,219 @@
     "ast_hash": "ba0d492736ce0665d6e3bcd6b66f64cc",
     "semantic_hash": ""
   },
-  "src-tauri/gen/schemas/acl-manifests.json": {
-    "mtime": 1777174677.6760006,
-    "ast_hash": "a673f6469181308a10ec1481e82a366b",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/schemas/android-schema.json": {
-    "mtime": 1777686005.8491678,
-    "ast_hash": "4929c2d11dd0abc1152152aaeecb7e04",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/schemas/capabilities.json": {
-    "mtime": 1777174677.6818533,
-    "ast_hash": "e04e99f1b01a6dfab195659570cb39f0",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/schemas/desktop-schema.json": {
-    "mtime": 1777174677.6812015,
-    "ast_hash": "4929c2d11dd0abc1152152aaeecb7e04",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/schemas/macOS-schema.json": {
-    "mtime": 1777174677.6812015,
-    "ast_hash": "4929c2d11dd0abc1152152aaeecb7e04",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/schemas/mobile-schema.json": {
-    "mtime": 1777686005.8491678,
-    "ast_hash": "4929c2d11dd0abc1152152aaeecb7e04",
-    "semantic_hash": ""
-  },
   "src/lesson-code/_webgpu/common.js": {
-    "mtime": 1791075657.260924,
-    "ast_hash": "1fbf27bbc731b01d83e58fbd75406f2c",
+    "mtime": 1791084621.55637,
+    "ast_hash": "afcbc43a82f846e11dbf5509fe4588cb",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-01-introduction/src/script.js": {
-    "mtime": 1791074715.9780896,
-    "ast_hash": "1b9b0555af10c1b21ff6f04c4b03dd36",
+    "mtime": 1791084621.556804,
+    "ast_hash": "05d630e67896a62f609a6f96674439c2",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-02-node-materials/src/script.js": {
-    "mtime": 1791074715.9785502,
-    "ast_hash": "448b05acaac29a61dcb5ba58637a058a",
+    "mtime": 1791084749.4655154,
+    "ast_hash": "2195928c643128e44b109d50fd73296e",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-03-variables-references/src/script.js": {
-    "mtime": 1791074715.9792867,
-    "ast_hash": "8f4f550d08aa7f13b1507fbddc456db2",
+    "mtime": 1791084621.5573065,
+    "ast_hash": "b8c8c409ad386ce101a83f07f141bb96",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-04-tools-debug/src/script.js": {
-    "mtime": 1791074715.9790168,
-    "ast_hash": "a3c37a2fcdaedcc96ea3c8afef596b64",
+    "mtime": 1791084621.557222,
+    "ast_hash": "52454a458bec27be6f59f7a9daba080f",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-05-math/src/script.js": {
-    "mtime": 1791074715.978837,
-    "ast_hash": "fe7f222f6f19930ec843d621c1346c25",
+    "mtime": 1791084621.5571399,
+    "ast_hash": "552dd9fbee8d6fc18aed2d63619dab38",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-06-textures/src/script.js": {
-    "mtime": 1791074715.9775128,
-    "ast_hash": "1b772710ef658aead0eb0575343edc90",
+    "mtime": 1791084621.5567043,
+    "ast_hash": "cc51e1640165749e5020e0247dc4face",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-07-uniforms-attributes/src/script.js": {
-    "mtime": 1791074715.9783676,
-    "ast_hash": "09296ef3d228063a1b5b08f75762434f",
+    "mtime": 1791084621.5575268,
+    "ast_hash": "11c148f9d00197076478378c307b278f",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-08-node-functions/src/script.js": {
-    "mtime": 1791074715.9781768,
-    "ast_hash": "d96cfe82398e970e32f21c8bac1973f4",
+    "mtime": 1791084621.5568905,
+    "ast_hash": "557e91b427fd143847ca09e01df1aa42",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-09-patterns/src/script.js": {
-    "mtime": 1791074715.9793766,
+    "mtime": 1791084621.557387,
     "ast_hash": "0cdb61b7d5139e7d8bdc38be01a5b85d",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-10-coffee-smoke/src/script.js": {
-    "mtime": 1791075657.2610452,
-    "ast_hash": "43525f1ae7884cab724220633ee6517d",
+    "mtime": 1791079417.7577372,
+    "ast_hash": "6d70863202b4f6042c74a7e85f1c9da9",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-11-post-processing/src/script.js": {
-    "mtime": 1791074715.978266,
-    "ast_hash": "a403c1509ba04c36214403ea04ecd0b8",
+    "mtime": 1791079417.7580643,
+    "ast_hash": "54956b848ac00c4534c2f0ea470e48df",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-12-shield/src/script.js": {
-    "mtime": 1791074715.977814,
+    "mtime": 1791079417.7574441,
     "ast_hash": "dbb9abbafff3bddc589044cd577c96b5",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-13-instances/src/script.js": {
-    "mtime": 1791074715.9789257,
+    "mtime": 1791079417.7589135,
     "ast_hash": "d060aa22e100f8008ebc24ac8ee37bca",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-14-magic-explosions/src/script.js": {
-    "mtime": 1791074715.9791968,
-    "ast_hash": "db0eb7dd73da850b78f822be06d7aae0",
+    "mtime": 1791079417.759229,
+    "ast_hash": "0a9b011023c97e460f9e236c22b0d18d",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-15-sprites/src/script.js": {
-    "mtime": 1791074715.9786408,
+    "mtime": 1791079417.7585037,
     "ast_hash": "961c92174546178a2dc60965f8d18daa",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-16-galaxy/src/script.js": {
-    "mtime": 1791074715.977613,
-    "ast_hash": "9a27e9ec0aa0cbef1d626d2796fc5996",
+    "mtime": 1791079417.7564673,
+    "ast_hash": "d0b57aed52392589f716b866ba890f62",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-17-anvil/src/script.js": {
-    "mtime": 1791074715.979103,
-    "ast_hash": "1d304193085ab57b46b91bf02921c838",
+    "mtime": 1791079417.7591186,
+    "ast_hash": "ef55cecb72758589c96b82db665307d4",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-18-clair-obscur-title/src/script.js": {
-    "mtime": 1791074715.9784598,
-    "ast_hash": "b4726104bcd4738b485d9e2156bc92de",
+    "mtime": 1791079417.7582946,
+    "ast_hash": "2e22807e9dc43fb22698101ac4ef9b54",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-19-sphere-particles-physics/src/script.js": {
-    "mtime": 1791075657.2584066,
-    "ast_hash": "1e4addba180d5713a23d569c4e8acac5",
+    "mtime": 1791079417.7575521,
+    "ast_hash": "4e14e53931f541d353b9b41d95e99590",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-20-stylized-nature-scene/src/script.js": {
-    "mtime": 1791074715.9777198,
+    "mtime": 1791079417.7573211,
     "ast_hash": "b1e5633b84609d64289be4b81bdb67df",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-21-snow/src/script.js": {
-    "mtime": 1791074715.9787326,
-    "ast_hash": "4cc5f40a56f177bae13e288793afec19",
+    "mtime": 1791079417.7586958,
+    "ast_hash": "344514006ed13ba8d891f282fa4baeae",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/01-introduction.mdx": {
-    "mtime": 1791075888.6264172,
-    "ast_hash": "c8189416748c658a84ed34adb5989f91",
+    "mtime": 1791084621.5589228,
+    "ast_hash": "753e4cf373b36c78f00b5686775885db",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/02-node-materials.mdx": {
-    "mtime": 1791075448.864711,
-    "ast_hash": "2cebd0a478e9b1b7d4b000ac637bb4ba",
+    "mtime": 1791084749.465688,
+    "ast_hash": "0ae10582f9ca3c893bc0cbe726f9edce",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/03-variables-references.mdx": {
-    "mtime": 1791075448.8649898,
-    "ast_hash": "c7b67a3b4b2367601113eaba55580dcd",
+    "mtime": 1791084621.5591202,
+    "ast_hash": "9845cf41d427c9341a0c99c1ea34690a",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/04-tools-debug.mdx": {
-    "mtime": 1791075448.8651342,
-    "ast_hash": "02e8d50eab98538d85b34abd80523099",
+    "mtime": 1791084621.5585256,
+    "ast_hash": "a65eb3474b7570734ec5cdddccb383d4",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/05-math.mdx": {
-    "mtime": 1791075448.8653147,
-    "ast_hash": "0740be3cd013bf7869c49c276f788d10",
+    "mtime": 1791084621.5579617,
+    "ast_hash": "be5bc840b1a3f6a33027e9f6570ff2d9",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/06-textures.mdx": {
-    "mtime": 1791075448.8672469,
-    "ast_hash": "acf9d4f6f864daefbd322aa964ec562f",
+    "mtime": 1791084621.558185,
+    "ast_hash": "b22dbc78c8e8451b718ee68b2f010af1",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/07-uniforms-attributes.mdx": {
-    "mtime": 1791075448.865497,
-    "ast_hash": "f3e8a2e2224ee525b2089ce666b566ae",
+    "mtime": 1791084690.6889653,
+    "ast_hash": "5b7ff08fd44ae377403cce9326630838",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/08-node-functions.mdx": {
-    "mtime": 1791075448.8655758,
-    "ast_hash": "129f65b6ff9dc2b12393927797294800",
+    "mtime": 1791084660.1140623,
+    "ast_hash": "e2161f58a7beb3368a189bd602bbe546",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/09-patterns.mdx": {
-    "mtime": 1791075448.8656554,
-    "ast_hash": "c56790a7aaedc02ce9af6d15a3ec0fd7",
+    "mtime": 1791084621.5578418,
+    "ast_hash": "f3efd9f08235de5f556be69874739bb5",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/10-coffee-smoke.mdx": {
-    "mtime": 1791075657.2636461,
-    "ast_hash": "6b8376bdc0aaba66cf792a21b770003d",
+    "mtime": 1791079674.5902414,
+    "ast_hash": "03b37ac55000fd524aa0203601a3488d",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/11-post-processing.mdx": {
-    "mtime": 1791075448.865811,
-    "ast_hash": "acd30bde7dcac632f86bd2b7ac7bd485",
+    "mtime": 1791082653.0794425,
+    "ast_hash": "048a43216abbe018e8cf6afc657805e4",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/12-shield.mdx": {
-    "mtime": 1791075448.865888,
-    "ast_hash": "a114580b8b06de0bfb4ed1dcfb4184f1",
+    "mtime": 1791079674.5906055,
+    "ast_hash": "cd2ee1406b035d077022e23b215c9e84",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/13-instances.mdx": {
-    "mtime": 1791075448.865969,
-    "ast_hash": "fbe972042da402c48264fdab56a92b81",
+    "mtime": 1791079674.5907855,
+    "ast_hash": "f39fa0d8a75ed97b892bdf543574883c",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/14-magic-explosions.mdx": {
-    "mtime": 1791075448.8660452,
-    "ast_hash": "5b3a8a86d07c4c24f157d455e990a280",
+    "mtime": 1791079674.5909517,
+    "ast_hash": "8db33bcf73a4a4908374225ceecb672b",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/15-sprites.mdx": {
-    "mtime": 1791075448.8661249,
-    "ast_hash": "f6dae9703a29a0105ebf78612462f86b",
+    "mtime": 1791079674.5911205,
+    "ast_hash": "29efa6124a52b4f7671d147ace1eb362",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/16-galaxy.mdx": {
-    "mtime": 1791075888.626738,
-    "ast_hash": "ac957cde5c204815524240372de78566",
+    "mtime": 1791079674.5912962,
+    "ast_hash": "200d2950f9b740171ebdaa173fbc1681",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/17-anvil.mdx": {
-    "mtime": 1791075448.8664215,
-    "ast_hash": "99b4a990be743e2deea0de1d94988071",
+    "mtime": 1791079674.5914571,
+    "ast_hash": "5de20d3ad37161613b89f2da31659b34",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/18-clair-obscur-title.mdx": {
-    "mtime": 1791075448.8665128,
-    "ast_hash": "5a578d0e9f9ab9393126e2aa163d8be5",
+    "mtime": 1791079674.5916255,
+    "ast_hash": "5a20847e50666ef850d48b3217b1f523",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/19-sphere-particles-physics.mdx": {
-    "mtime": 1791075657.2607613,
-    "ast_hash": "a822f42c3285bc76dfccbd46b1dc7766",
+    "mtime": 1791079674.5917983,
+    "ast_hash": "32a79691d55bf2e16f3e5fc7b4ffdf0d",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/20-stylized-nature-scene.mdx": {
-    "mtime": 1791075448.866763,
-    "ast_hash": "9c9dcf942a47014c6f86d77744e150e0",
+    "mtime": 1791079674.5919685,
+    "ast_hash": "474929163c341b61d7f633ab885cadaf",
     "semantic_hash": ""
   },
   "src/content/docs/webgpu-tsl/21-snow.mdx": {
-    "mtime": 1791075448.866857,
-    "ast_hash": "5c33f5b0670f672d7a3f3cf91d96d646",
+    "mtime": 1791079674.5921462,
+    "ast_hash": "2912099c60c7fe787d99385414902d63",
     "semantic_hash": ""
   },
   "src/lesson-code/webgpu-01-introduction/src/index.html": {
@@ -1744,94 +1714,9 @@
     "ast_hash": "46364870572cd794a7bb06840fe71475",
     "semantic_hash": ""
   },
-  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-20x20@1x.png": {
-    "mtime": 1777697753.792624,
-    "ast_hash": "e6e111a890de8799877ad2925c804ff6",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-20x20@2x-1.png": {
-    "mtime": 1777697753.7774937,
-    "ast_hash": "ac71e34752016cfdb483720018c03e5e",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-20x20@2x.png": {
-    "mtime": 1777697753.8086772,
-    "ast_hash": "ac71e34752016cfdb483720018c03e5e",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-20x20@3x.png": {
-    "mtime": 1777697753.825903,
-    "ast_hash": "e304ae980a39880fbf66ec25faf81424",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-29x29@1x.png": {
-    "mtime": 1777697753.8585637,
-    "ast_hash": "e685160df7d98ba5d9cd37231628e88b",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-29x29@2x-1.png": {
-    "mtime": 1777697753.842809,
-    "ast_hash": "5e4483fab690694eec79087b255fb8e5",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-29x29@2x.png": {
-    "mtime": 1777697753.875408,
-    "ast_hash": "5e4483fab690694eec79087b255fb8e5",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-29x29@3x.png": {
-    "mtime": 1777697753.8951821,
-    "ast_hash": "7174b6c057b8e07972e5a5b894ca6c1c",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-40x40@1x.png": {
-    "mtime": 1777697753.930082,
-    "ast_hash": "ac71e34752016cfdb483720018c03e5e",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-40x40@2x-1.png": {
-    "mtime": 1777697753.9138005,
-    "ast_hash": "0ed6ce34dfa81ed18421ef6d35bfd4f9",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-40x40@2x.png": {
-    "mtime": 1777697753.9486947,
-    "ast_hash": "0ed6ce34dfa81ed18421ef6d35bfd4f9",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-40x40@3x.png": {
-    "mtime": 1777697753.9734273,
-    "ast_hash": "e92af58571ae68270e91d9b03e5c0754",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png": {
-    "mtime": 1777697755.3233447,
-    "ast_hash": "7f09e0f16794cd39e73c8fcd13012afe",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-60x60@2x.png": {
-    "mtime": 1777697753.9980907,
-    "ast_hash": "e92af58571ae68270e91d9b03e5c0754",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-60x60@3x.png": {
-    "mtime": 1777697754.0425398,
-    "ast_hash": "2a450bb3d5181aa1fba7f395d66be092",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-76x76@1x.png": {
-    "mtime": 1777697754.060793,
-    "ast_hash": "bb831c85ad398bf826395b661fba3f87",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-76x76@2x.png": {
-    "mtime": 1777697754.094659,
-    "ast_hash": "b7af3e4dfcba8bd515e0fae900f91998",
-    "semantic_hash": ""
-  },
-  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-83.5x83.5@2x.png": {
-    "mtime": 1777697754.1337812,
-    "ast_hash": "e92f9e253e539de69cb556280d6d15bd",
+  "scripts/three-version.js": {
+    "mtime": 1791082715.709932,
+    "ast_hash": "6333dd9785d7d133c5b1d5b65411e0b9",
     "semantic_hash": ""
   }
 }

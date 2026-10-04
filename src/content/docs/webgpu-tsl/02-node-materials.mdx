@@ -1,6 +1,6 @@
 ---
 title: "02 节点材质"
-description: 给角色添加棋盘格，并切换有光照与无光照的节点材质
+description: 给扭结环添加棋盘格，并切换有光照与无光照的节点材质
 sidebar:
   order: 2
 ---
@@ -9,7 +9,7 @@ import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 本课要做什么
 
-给角色添加棋盘格，并切换有光照与无光照的节点材质。对应目录中的 **Node Materials**。先观察结果，再读代码，最后修改参数验证理解。
+给扭结环添加棋盘格，并切换有光照与无光照的节点材质。对应目录中的 **Node Materials**。先观察结果，再读代码，最后修改参数验证理解。
 
 [查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/02@2x.webp)
 
@@ -19,7 +19,7 @@ import LessonPreview from "../../../components/LessonPreview.astro";
 
 材质是一组关于表面如何显现的规则。一张白色纸在暗室里仍可能看起来黑；材质的“基础颜色”与屏幕上最终的像素颜色不是一回事。`MeshStandardNodeMaterial` 把基础颜色送进光照模型；`MeshBasicNodeMaterial` 适合直接展示图案，不需要灯光。[MeshBasicNodeMaterial](https://threejs.org/docs/pages/MeshBasicNodeMaterial.html)、[MeshStandardNodeMaterial](https://threejs.org/docs/pages/MeshStandardNodeMaterial.html)
 
-在面板中关闭“启用光照材质”。棋盘格仍然存在，但明暗层次减少。观察球的边缘比盯着颜色更容易看出差异。
+在面板中关闭“启用光照材质”。棋盘格仍然存在，但明暗层次减少。观察环体弯曲处的明暗比盯着颜色更容易看出差异。
 
 ## 先给 GPU 一个可调数字
 
@@ -28,24 +28,24 @@ import LessonPreview from "../../../components/LessonPreview.astro";
 ```js
 import { uniform } from 'three/tsl'; // 合并到文件顶部现有的 TSL import 中
 const density = uniform(12);
-app.gui.add(density, 'value', 2, 24, 1).name('每轴格子数');
+app.gui.add(density, 'value', 2, 24, 1).name('格子密度');
 ```
 
 `density` 是节点对象，`density.value` 是 JS 中可修改的数值；GUI 会修改 `.value`，Three.js 在绘制时同步它。节点图保持不变，无需每次调参都重新编译材质。第 07 课会对比这种共享输入与每个顶点的数据。[UniformNode 文档](https://threejs.org/docs/pages/UniformNode.html)
 
 ## 从 UV 开始画棋盘格
 
-UV 是几何体自带的二维表面坐标，通常在 0 到 1 之间。你可以把它理解成贴纸上的百分比坐标：`u=0.5` 位于横向中间，`v=0.5` 位于纵向中间。球面需要把二维贴纸包起来，所以会有接缝与极点拉伸。
+UV 是几何体自带的二维表面坐标，通常在 0 到 1 之间。你可以把它理解成贴纸上的百分比坐标：`u=0.5` 位于横向中间，`v=0.5` 位于纵向中间。扭结环需要把二维贴纸沿管道包起来，所以沿环绕方向和管道周向都会有 UV 接缝。
 
 ```js
-import { uv, color, mix, floor, uniform } from 'three/tsl';
+import { uv, color, mix, floor, uniform, vec2 } from 'three/tsl';
 const density = uniform(12);
-const cell = floor(uv().mul(density));
+const cell = floor(uv().mul(vec2(4, 1)).mul(density));
 const checker = cell.x.add(cell.y).mod(2);
 const pattern = mix(color('#180d17'), color('#ff2449'), checker);
 ```
 
-`uv().mul(density)` 在 density 为 12 时，将每个坐标轴分成 12 格。`floor()` 取所在格子的整数编号。横纵编号相加，再对 2 取余：偶数格输出 0，奇数格输出 1。最后 `mix(a, b, t)` 根据这个数选择两种颜色，结果保存为 `pattern`。与 CSS 棋盘背景类似，只是这次每个表面片元都在 GPU 上计算自己的颜色。
+环绕路径比管道周长更长，所以先用 `uv().mul(vec2(4, 1))` 增加 U 方向的重复次数，避免格子被拉成细长条；再乘 density。在 density 为 12 时，U 方向是 48 格、V 方向是 12 格。这是贴图比例的调整，不会改变几何体。`floor()` 取所在格子的整数编号。横纵编号相加，再对 2 取余：偶数格输出 0，奇数格输出 1。最后 `mix(a, b, t)` 根据这个数选择两种颜色，结果保存为 `pattern`。与 CSS 棋盘背景类似，只是这次每个表面片元都在 GPU 上计算自己的颜色。
 
 上面的代码块逐段解释同一份源码，不要将所有代码块连续粘贴，否则会重复声明变量。后面的练习以源码查看器中的完整 `script.js` 为准。
 
@@ -60,7 +60,7 @@ const standard = new THREE.MeshStandardNodeMaterial({ roughness: 0.25, metalness
 standard.colorNode = pattern;
 ```
 
-示例把同一个节点图接到两个材质上，然后遍历角色的各个网格切换 `object.material`。`roughness` 可以先理解为表面粗糙程度：小值高光集中，大值高光分散。`metalness` 表示金属程度，一般用 0 或 1 描述非金属或金属；本课的中间值仅用来观察效果。
+示例把同一个节点图接到两个材质上，再切换扭结环的 `shape.material`。`roughness` 可以先理解为表面粗糙程度：小值高光集中，大值高光分散。`metalness` 表示金属程度，一般用 0 或 1 描述非金属或金属；本课的中间值仅用来观察效果。
 
 ## 节点接到哪里
 
@@ -77,7 +77,7 @@ standard.colorNode = pattern;
 
 以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
 
-1. 用面板把“每轴格子数”从 12 改成 4，棋盘格应变大。要修改初始值，就把 `script.js` 中的 `uniform(12)` 改成 `uniform(4)`。
+1. 用面板把“格子密度”从 12 改成 4，棋盘格应变大。要修改初始值，就把 `script.js` 中的 `uniform(12)` 改成 `uniform(4)`。
 2. 给文件顶部的 `three/tsl` import 增加 `vec3`，将 `basic.colorNode = mix(...)` 这一整行替换为：
 
 ```js
@@ -86,7 +86,7 @@ basic.colorNode = vec3(checker);
 
 `standard.colorNode = basic.colorNode` 保持原样，两种材质都会使用同一黑白棋盘。面板关闭光照时更容易看到纯黑白。
 
-3. 完成后恢复彩色的 `mix(...)` 表达式。球顶处格子变形来自 UV 布局；第 08 课会展示世界坐标这一不同选择。
+3. 完成后恢复彩色的 `mix(...)` 表达式。环体接缝处的图案衔接来自 UV 布局与重复次数；第 08 课会展示世界坐标这一不同选择。
 
 ## 运行与源码
 

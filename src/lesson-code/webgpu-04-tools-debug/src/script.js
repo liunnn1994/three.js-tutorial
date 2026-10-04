@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
 import { uv, vec3, normalWorld, positionLocal, mix, color } from 'three/tsl';
-import { createStage, mascot, showError } from '../../_webgpu/common.js';
+import { createStage, createStudyShape, showError } from '../../_webgpu/common.js';
 async function main() {
   const app = await createStage();
   const material = new THREE.MeshBasicNodeMaterial();
@@ -13,7 +13,7 @@ async function main() {
   };
   const parameters = { mode: 'UV 坐标', wireframe: false };
   material.colorNode = modes[parameters.mode];
-  mascot(app.scene, material);
+  createStudyShape(app.scene, material);
   app.gui.add(parameters, 'mode', Object.keys(modes)).name('观察 GPU 的输入').onChange((value) => {
     material.colorNode = modes[value]; material.needsUpdate = true;
   });

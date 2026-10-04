@@ -100,18 +100,17 @@ export async function createStage({ floor = true, background = '#11131d', camera
   };
 }
 
-// 自制“节点测试角色”：球形身体、鼻子和两条腿，共用同一个材质。
-export function mascot(scene, material) {
-  const group = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.SphereGeometry(0.85, 48, 32), material);
-  body.position.y = 1.45; group.add(body);
-  const nose = new THREE.Mesh(new THREE.CapsuleGeometry(0.25, 0.65, 8, 24), material);
-  nose.rotation.x = Math.PI / 2.8; nose.position.set(0, 1.05, 0.75); group.add(nose);
-  for (const x of [-0.35, 0.35]) {
-    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.26, 0.45, 8, 24), material);
-    leg.position.set(x, 0.55, 0); group.add(leg);
-  }
-  scene.add(group); return group;
+// 连续、光滑的扭结环，统一用于第 01–08 课的材质观察。
+// TorusKnot 是管状扭结造型；它与数学上单面的莫比乌斯带不同。
+export function createStudyShape(scene, material) {
+  const geometry = new THREE.TorusKnotGeometry(0.78, 0.28, 256, 48, 2, 3);
+  geometry.rotateZ(Math.PI / 12);
+  geometry.computeBoundingBox();
+  const mesh = new THREE.Mesh(geometry, material);
+  // 以几何体实际最低点确定高度，让扭结环靠近地面而不穿入地面。
+  mesh.position.y = 0.06 - geometry.boundingBox.min.y;
+  scene.add(mesh);
+  return mesh;
 }
 
 export function seededRandom(seed = 42) {

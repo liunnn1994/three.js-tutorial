@@ -1,6 +1,6 @@
 ---
 title: "01 WebGPU 与 TSL 入门"
-description: 从前端熟悉的 JavaScript 出发，搭建第一个 WebGPU 场景，并用 TSL 给角色上色
+description: 从前端熟悉的 JavaScript 出发，搭建第一个 WebGPU 场景，并用 TSL 给扭结环上色
 sidebar:
   order: 1
 ---
@@ -9,7 +9,7 @@ import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 本课要做什么
 
-从前端熟悉的 JavaScript 出发，搭建第一个 WebGPU 场景，并用 TSL 给角色上色。对应目录中的 **Introduction to WebGPU and TSL**。先观察结果，再读代码，最后修改参数验证理解。
+从前端熟悉的 JavaScript 出发，搭建第一个 WebGPU 场景，并用 TSL 给扭结环上色。对应目录中的 **Introduction to WebGPU and TSL**。先观察结果，再读代码，最后修改参数验证理解。
 
 [查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/01@2x.webp)
 
@@ -19,9 +19,9 @@ import LessonPreview from "../../../components/LessonPreview.astro";
 
 网页里的 DOM 元素有大小、位置和 CSS 外观。3D 页面也有类似分工：**几何体**描述表面的形状，**材质**描述外观，**Mesh（网格）**把两者组合起来。**Scene（场景）**装下物体和灯光，**Camera（相机）**决定从哪里看，**Renderer（渲染器）**把这些信息变成 canvas 上的像素。
 
-示例中的角色由球和胶囊组合而成，不需要建模软件。地面是一张平面。默认把 Y 轴当作上下方向，X 是左右，Z 是前后；单位由你自己约定。本系列把 1 个单位理解成约 1 米即可。相机在 `(3.8, 2.7, 5)`，看向 `(0, 1, 0)`，所以能看到角色的正面和侧面。
+示例使用一个连续、光滑的扭结环，外观类似莫比乌斯环绕造型，不需要建模软件。它通过 Three.js 内置的 `TorusKnotGeometry` 生成，管道沿闭合路径交错环绕；数学上的莫比乌斯带则是只有一个面的扭转带，两者几何结构不同。地面是一张平面。默认把 Y 轴当作上下方向，X 是左右，Z 是前后；单位由你自己约定。本系列把 1 个单位理解成约 1 米即可。相机在 `(3.8, 2.7, 5)`，看向 `(0, 1, 0)`，所以能看到环体的内外曲面和交错轮廓。
 
-先完成一个实验：拖动预览旋转相机，再关闭“角色旋转”。前者改变观察位置，后者改变物体本身的位置关系。它们都会改变画面，但改的是不同对象。
+先完成一个实验：拖动预览旋转相机，再关闭“扭结环旋转”。前者改变观察位置，后者改变物体本身的位置关系。它们都会改变画面，但改的是不同对象。
 
 ## 一个平面怎样变成屏幕上的颜色
 
@@ -60,7 +60,7 @@ const material = new THREE.MeshStandardNodeMaterial();
 material.colorNode = color('#a6baff');
 ```
 
-`color()` 返回节点对象；`colorNode` 把它接入材质的颜色输入。标准材质仍然计算灯光，让球有明暗和立体感。[NodeMaterial 官方文档](https://threejs.org/docs/pages/NodeMaterial.html)
+`color()` 返回节点对象；`colorNode` 把它接入材质的颜色输入。标准材质仍然计算灯光，让曲面有明暗和立体感。[NodeMaterial 官方文档](https://threejs.org/docs/pages/NodeMaterial.html)
 
 ## 独立运行一个最小项目
 
@@ -104,7 +104,7 @@ await renderer.init();
 
 const material = new THREE.MeshStandardNodeMaterial({ roughness: 0.3 });
 material.colorNode = color('#a6baff');
-scene.add(new THREE.Mesh(new THREE.SphereGeometry(1, 32, 24), material));
+scene.add(new THREE.Mesh(new THREE.TorusKnotGeometry(0.78, 0.28, 256, 48, 2, 3), material));
 scene.add(new THREE.HemisphereLight('#b6c8ff', '#4a302a', 2));
 const light = new THREE.DirectionalLight('#ffe4ca', 4);
 light.position.set(3, 6, 4);
@@ -132,11 +132,11 @@ addEventListener('resize', () => {
 const app = await createStage();
 const material = new THREE.MeshStandardNodeMaterial({ roughness: 0.3 });
 material.colorNode = color('#a6baff');
-const character = mascot(app.scene, material);
-app.animate((seconds) => { character.rotation.y = seconds * 0.3; });
+const shape = createStudyShape(app.scene, material);
+app.animate((seconds) => { shape.rotation.y = seconds * 0.3; });
 ```
 
-完整角色、灯光和外壳都可以在源码查看器中阅读。这里的 `seconds` 是 JS 侧累加的真实前台秒数，点击“暂停动画”或把页面切到后台后停止累加，恢复页面时重新建立计时基准。低帧率下不会丢掉每帧超过 1/30 秒的时间。第 02 课先用 uniform 传入一个可调数字，第 05 课再传入动画时间。
+完整扭结环、灯光和外壳都可以在源码查看器中阅读。这里的 `seconds` 是 JS 侧累加的真实前台秒数，点击“暂停动画”或把页面切到后台后停止累加，恢复页面时重新建立计时基准。低帧率下不会丢掉每帧超过 1/30 秒的时间。第 02 课先用 uniform 传入一个可调数字，第 05 课再传入动画时间。
 
 公共外壳会释放场景中正在使用的几何体和材质。纹理、后处理 pass、备用材质等对象需要通过 `app.track(resource)` 登记，离开页面时统一释放；第 11 课会展示这个用法。
 
@@ -144,11 +144,11 @@ app.animate((seconds) => { character.rotation.y = seconds * 0.3; });
 
 以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
 
-1. 修改本课 `script.js` 中的 `material.colorNode = color('#a6baff')`，把颜色换成 `'#ff8b5e'`。刷新生成后的预览，角色应变成橙色，形状保持不变。
-2. 角色球体在 `src/lesson-code/_webgpu/common.js` 的 `mascot()` 中创建。把 `new THREE.SphereGeometry(0.85, 48, 32)` 的第一个参数改成 `0.5`，球形身体应缩小，鼻子与腿保持原大小。公共文件会影响使用这个角色的其他课，实验后恢复 `0.85`。
-3. 在同一公共文件的 `createStage()` 中，暂时注释 `scene.add(new THREE.HemisphereLight(...))` 和 `scene.add(light)` 两行。角色与地面应明显变暗；完成后恢复灯光，第 02 课会比较不依赖灯光的材质。
+1. 修改本课 `script.js` 中的 `material.colorNode = color('#a6baff')`，把颜色换成 `'#ff8b5e'`。刷新生成后的预览，扭结环应变成橙色，形状保持不变。
+2. 扭结环在 `src/lesson-code/_webgpu/common.js` 的 `createStudyShape()` 中创建。把 `new THREE.TorusKnotGeometry(0.78, 0.28, 256, 48, 2, 3)` 的第二个参数改成 `0.18`，管道应变细，孔洞与交错关系更明显。前两个参数分别控制环绕尺度和管道粗细，后两个分段数影响曲面的光滑度。[TorusKnotGeometry 官方文档](https://threejs.org/docs/pages/TorusKnotGeometry.html)。公共文件会影响第 01–08 课，实验后恢复 `0.28`。
+3. 在同一公共文件的 `createStage()` 中，暂时注释 `scene.add(new THREE.HemisphereLight(...))` 和 `scene.add(light)` 两行。扭结环与地面应明显变暗；完成后恢复灯光，第 02 课会比较不依赖灯光的材质。
 
-参考图包含另一种角色造型与场景纹理。本系列使用程序化角色和自制场景，训练同一条渲染流程；不会把参考图片当作可运行效果。
+本系列的基础课程统一使用这个程序化扭结环展示颜色、UV、法线和条纹，让同一曲面在不同节点计算下的变化更容易比较。
 
 ## 运行与源码
 

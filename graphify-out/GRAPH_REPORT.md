@@ -1,16 +1,16 @@
 # Graph Report - three.js-tutorial  (2026-10-04)
 
 ## Corpus Check
-- 263 files · ~938,109 words
+- 258 files · ~864,824 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 4204 nodes · 4177 edges · 317 communities (297 shown, 20 thin omitted)
+- 3925 nodes · 3889 edges · 283 communities (263 shown, 20 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 34 edges (avg confidence: 0.69)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e95ef718`
+- Built from commit: `2968ae50`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -153,7 +153,7 @@
 - explore.md
 - Decisions
 - Requirement: 为缺失代码示例的章节创建 lesson-code 目录
-- copy-vendor.js
+- esbuild
 - sync-version.js
 - BufferGeometry（缓冲几何体）
 - Blender 合并工作流
@@ -255,29 +255,9 @@
 - FirstTresApp.vue
 - LoadModels.vue
 - content.config.ts
-- definitions
-- properties
-- definitions
-- properties
-- definitions
-- properties
-- definitions
-- permissions
-- permissions
-- permissions
-- permissions
-- webviews
-- webviews
-- webviews
-- webviews
 - 19-sphere-particles-physics.mdx
 - 20-stylized-nature-scene.mdx
 - 21-snow.mdx
-- CapabilityRemote
-- CapabilityRemote
-- CapabilityRemote
-- properties
-- CapabilityRemote
 - webgpu-tsl/01-introduction.mdx
 - 02-node-materials.mdx
 - 04-tools-debug.mdx
@@ -296,21 +276,7 @@
 - 07-uniforms-attributes.mdx
 - 14-magic-explosions.mdx
 - 16-galaxy.mdx
-- Capability
-- Capability
-- Capability
-- Capability
-- android-schema.json
-- desktop-schema.json
-- macOS-schema.json
-- local
-- local
-- local
-- description
-- local
 - [1.9.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.8.0...v1.9.0) (2026-09-03)
-- Value
-- cannon-es
 
 ## God Nodes (most connected - your core abstractions)
 1. `createStage()` - 44 edges
@@ -318,7 +284,7 @@
 3. `showError()` - 24 edges
 4. `Three.js Materials` - 21 edges
 5. `Three.js Materials` - 21 edges
-6. `mascot()` - 17 edges
+6. `createStudyShape()` - 17 edges
 7. `Three.js Lighting` - 17 edges
 8. `Three.js Lighting` - 17 edges
 9. `Three.js Textures` - 16 edges
@@ -341,7 +307,7 @@
 - 3-file cycle: `src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/Experience.js -> src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/World/World.js -> src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/World/Floor.js -> src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/Experience.js`
 - 3-file cycle: `src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/Experience.js -> src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/World/World.js -> src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/World/Fox.js -> src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/Experience.js`
 
-## Communities (317 total, 20 thin omitted)
+## Communities (283 total, 20 thin omitted)
 
 ### Community 0 - "Experience.js"
 Cohesion: 0.05
@@ -601,11 +567,11 @@ Nodes (19): camera, canvas, controls, cubeTextureLoader, debugObject, directiona
 
 ### Community 64 - "devDependencies"
 Cohesion: 0.10
-Nodes (21): @capacitor/cli, cross-env, esbuild, git-cz, devDependencies, @capacitor/cli, cross-env, esbuild (+13 more)
+Nodes (21): cannon-es, @capacitor/cli, cross-env, git-cz, devDependencies, cannon-es, @capacitor/cli, cross-env (+13 more)
 
 ### Community 65 - "generate-previews.js"
-Cohesion: 0.13
-Nodes (15): CDN_BASE, CDN_IMPORT_MAP, codeRoot, __dirname, getVendorPath(), inlineGlslImports(), lessons, normalizeCss (+7 more)
+Cohesion: 0.07
+Nodes (26): __dirname, nm, preservedFiles, projectRoot, rewriteThreeImportsInDir(), rewriteThreeImportsInFile(), THREE_VERSION, tmpDir (+18 more)
 
 ### Community 66 - "28-shader-patterns.mdx"
 Cohesion: 0.10
@@ -629,7 +595,7 @@ Nodes (19): Codebase Analysis, Graceful Exit Handling, Guardrails, Phase 10: Arc
 
 ### Community 71 - "Three.js 教程"
 Cohesion: 0.10
-Nodes (20): Android, Capacitor 移动端开发, CI/CD, iOS, Three.js 教程, WebGPU & TSL 课程, 发布流程, 图标生成 (+12 more)
+Nodes (19): Android, Capacitor 移动端开发, CI/CD, iOS, Three.js 教程, 发布流程, 图标生成, 安装与启动 (+11 more)
 
 ### Community 72 - "49-creating-scene-blender.mdx"
 Cohesion: 0.10
@@ -894,10 +860,6 @@ Nodes (9): 1. 静态资源存放策略：按章节命名空间存入 `public/`, 
 ### Community 137 - "Requirement: 为缺失代码示例的章节创建 lesson-code 目录"
 Cohesion: 0.20
 Nodes (9): ADDED Requirements, Requirement: 为缺失代码示例的章节创建 lesson-code 目录, Requirement: 为缺失章节创建预览 HTML, Scenario: 代码与章节内容强关联, Scenario: 基础章节源码迁移, Scenario: 增强过于简单的源码, Scenario: 源码文件高亮支持, Scenario: 预览 HTML 可在 iframe 中运行 (+1 more)
-
-### Community 138 - "copy-vendor.js"
-Cohesion: 0.22
-Nodes (8): __dirname, nm, preservedFiles, projectRoot, rewriteThreeImportsInDir(), rewriteThreeImportsInFile(), tmpDir, vendorDir
 
 ### Community 139 - "sync-version.js"
 Cohesion: 0.20
@@ -1227,105 +1189,25 @@ Nodes (3): 在动画循环中同步所有对象, 批量创建方块, 批量创�
 Cohesion: 0.13
 Nodes (26): main(), main(), main(), main(), main(), main(), main(), main() (+18 more)
 
-### Community 261 - "definitions"
-Cohesion: 0.13
-Nodes (14): anyOf, definitions, Number, PermissionEntry, Target, description, anyOf, description (+6 more)
-
-### Community 262 - "properties"
-Cohesion: 0.15
-Nodes (13): properties, Identifier, default, description, type, description, oneOf, type (+5 more)
-
-### Community 263 - "definitions"
-Cohesion: 0.15
-Nodes (13): definitions, Number, PermissionEntry, Target, Value, anyOf, description, anyOf (+5 more)
-
-### Community 264 - "properties"
-Cohesion: 0.15
-Nodes (13): properties, Identifier, default, description, type, description, oneOf, type (+5 more)
-
-### Community 265 - "definitions"
-Cohesion: 0.15
-Nodes (13): definitions, Number, PermissionEntry, Target, Value, anyOf, description, anyOf (+5 more)
-
-### Community 266 - "properties"
-Cohesion: 0.15
-Nodes (13): properties, Identifier, default, description, type, description, oneOf, type (+5 more)
-
-### Community 267 - "definitions"
-Cohesion: 0.15
-Nodes (13): definitions, Number, PermissionEntry, Target, Value, anyOf, description, anyOf (+5 more)
-
-### Community 268 - "permissions"
-Cohesion: 0.17
-Nodes (12): $ref, array, null, description, items, type, uniqueItems, description (+4 more)
-
-### Community 269 - "permissions"
-Cohesion: 0.17
-Nodes (12): $ref, array, null, description, items, type, uniqueItems, description (+4 more)
-
-### Community 270 - "permissions"
-Cohesion: 0.17
-Nodes (12): $ref, array, null, description, items, type, uniqueItems, description (+4 more)
-
-### Community 271 - "permissions"
-Cohesion: 0.17
-Nodes (12): $ref, array, null, description, items, type, uniqueItems, description (+4 more)
-
-### Community 272 - "webviews"
-Cohesion: 0.20
-Nodes (10): type, webviews, windows, items, description, items, type, description (+2 more)
-
-### Community 273 - "webviews"
-Cohesion: 0.20
-Nodes (10): type, webviews, windows, items, description, items, type, description (+2 more)
-
-### Community 274 - "webviews"
-Cohesion: 0.20
-Nodes (10): type, webviews, windows, items, description, items, type, description (+2 more)
-
-### Community 275 - "webviews"
-Cohesion: 0.20
-Nodes (10): type, webviews, windows, items, description, items, type, description (+2 more)
-
 ### Community 276 - "19-sphere-particles-physics.mdx"
 Cohesion: 0.22
 Nodes (8): 先更新速度，再更新位置, 动手检查, 本课要做什么, 每个粒子有两条记录, 碰到球边界怎么办, 绘制读取同一份 GPU 数据, 运行与源码, 这一次要记住上一帧
 
 ### Community 277 - "20-stylized-nature-scene.mdx"
-Cohesion: 0.22
-Nodes (8): 动手检查, 同一张遮罩决定河岸颜色与河床高度, 当前示例的光照取舍, 把平面变成缓坡, 拆成四层来做, 本课要做什么, 草叶根固定，草尖摆动, 运行与源码
+Cohesion: 0.20
+Nodes (9): 动手检查, 同一张遮罩决定河岸颜色与河床高度, 当前示例的光照取舍, 把平面变成缓坡, 拆成四层来做, 旋转物体与旋转顶点数据, 本课要做什么, 草叶根固定，草尖摆动 (+1 more)
 
 ### Community 278 - "21-snow.mdx"
 Cohesion: 0.22
 Nodes (8): 不是每帧都盖一个脚印, 世界坐标对应 Canvas 坐标, 动手检查, 持久效果还有哪些实现路线, 本课要做什么, 运行与源码, 雪地需要记忆, 黑色表示平地，白色表示踩下去
 
-### Community 279 - "CapabilityRemote"
-Cohesion: 0.22
-Nodes (9): description, properties, required, type, CapabilityRemote, urls, urls, description (+1 more)
-
-### Community 280 - "CapabilityRemote"
-Cohesion: 0.22
-Nodes (9): description, properties, required, type, CapabilityRemote, urls, urls, description (+1 more)
-
-### Community 281 - "CapabilityRemote"
-Cohesion: 0.22
-Nodes (9): description, properties, required, type, CapabilityRemote, urls, urls, description (+1 more)
-
-### Community 282 - "properties"
-Cohesion: 0.22
-Nodes (9): properties, Identifier, description, oneOf, type, identifier, remote, anyOf (+1 more)
-
-### Community 283 - "CapabilityRemote"
-Cohesion: 0.22
-Nodes (9): description, properties, required, type, CapabilityRemote, urls, urls, description (+1 more)
-
 ### Community 284 - "webgpu-tsl/01-introduction.mdx"
-Cohesion: 0.25
-Nodes (7): WebGPU、Three.js、TSL 各自做什么, 不需要先学三维数学, 仓库中的教学外壳, 动手检查, 本课要做什么, 独立运行一个最小项目, 运行与源码
+Cohesion: 0.20
+Nodes (9): WebGPU、Three.js、TSL 各自做什么, 一个平面怎样变成屏幕上的颜色, 不需要先学三维数学, 仓库中的教学外壳, 先认识一个数与一组数, 动手检查, 本课要做什么, 独立运行一个最小项目 (+1 more)
 
 ### Community 285 - "02-node-materials.mdx"
-Cohesion: 0.25
-Nodes (7): 不改变图案，改变光照模型, 从 UV 开始画棋盘格, 动手检查, 本课要做什么, 材质不是图片, 节点接到哪里, 运行与源码
+Cohesion: 0.22
+Nodes (8): 不改变图案，改变光照模型, 从 UV 开始画棋盘格, 先给 GPU 一个可调数字, 动手检查, 本课要做什么, 材质不是图片, 节点接到哪里, 运行与源码
 
 ### Community 286 - "04-tools-debug.mdx"
 Cohesion: 0.25
@@ -1352,8 +1234,8 @@ Cohesion: 0.25
 Nodes (7): 先让烟“长出来”, 动手检查, 将方形边界藏起来, 本课要做什么, 烟雾不一定要用大量粒子, 用滚动噪声表示浓度, 运行与源码
 
 ### Community 292 - "11-post-processing.mdx"
-Cohesion: 0.25
-Nodes (7): 为什么要相加, 动手检查, 后处理处理的是整张画面, 搭建最小后处理链, 本课要做什么, 运行与源码, 颜色处理只做一次
+Cohesion: 0.22
+Nodes (8): 为什么要相加, 动手检查, 后处理处理的是整张画面, 搭建最小后处理链, 本课要做什么, 登记后处理资源, 运行与源码, 颜色处理只做一次
 
 ### Community 293 - "12-shield.mdx"
 Cohesion: 0.25
@@ -1376,8 +1258,8 @@ Cohesion: 0.25
 Nodes (7): 从左向右显现, 动手检查, 图层与透明限制, 把排版当作透明纹理, 本课要做什么, 花瓣为何不是圆点, 运行与源码
 
 ### Community 298 - "03-variables-references.mdx"
-Cohesion: 0.29
-Nodes (6): 三种“变量”放在哪里, 动手检查, 引用一个 JS 对象属性, 本课要做什么, 用局部位置当颜色, 运行与源码
+Cohesion: 0.25
+Nodes (7): 三种“变量”放在哪里, 先读懂 Fn 的两对括号, 先连接一个 JS 对象属性, 动手检查, 本课要做什么, 用局部位置当颜色, 运行与源码
 
 ### Community 299 - "07-uniforms-attributes.mdx"
 Cohesion: 0.29
@@ -1391,81 +1273,29 @@ Nodes (6): 动手检查, 发光来自两个步骤, 扩张与淡出使用不同�
 Cohesion: 0.29
 Nodes (6): 从极坐标回到空间位置, 动手检查, 本课要做什么, 运行与源码, 银河先是一套坐标规则, 颜色与亮度层次
 
-### Community 302 - "Capability"
-Cohesion: 0.33
-Nodes (6): description, required, type, Capability, identifier, permissions
-
-### Community 303 - "Capability"
-Cohesion: 0.33
-Nodes (6): description, required, type, Capability, identifier, permissions
-
-### Community 304 - "Capability"
-Cohesion: 0.33
-Nodes (6): description, required, type, Capability, identifier, permissions
-
-### Community 305 - "Capability"
-Cohesion: 0.33
-Nodes (6): description, required, type, Capability, identifier, permissions
-
-### Community 306 - "android-schema.json"
-Cohesion: 0.40
-Nodes (4): anyOf, description, $schema, title
-
-### Community 307 - "desktop-schema.json"
-Cohesion: 0.40
-Nodes (4): anyOf, description, $schema, title
-
-### Community 308 - "macOS-schema.json"
-Cohesion: 0.40
-Nodes (4): anyOf, description, $schema, title
-
-### Community 309 - "local"
-Cohesion: 0.50
-Nodes (4): default, description, type, local
-
-### Community 310 - "local"
-Cohesion: 0.50
-Nodes (4): default, description, type, local
-
-### Community 311 - "local"
-Cohesion: 0.50
-Nodes (4): default, description, type, local
-
-### Community 312 - "description"
-Cohesion: 0.50
-Nodes (4): default, description, type, description
-
-### Community 313 - "local"
-Cohesion: 0.50
-Nodes (4): default, description, type, local
-
 ### Community 314 - "[1.9.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.8.0...v1.9.0) (2026-09-03)"
 Cohesion: 0.67
 Nodes (3): [1.9.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.8.0...v1.9.0) (2026-09-03), Bug Fixes, Features
 
-### Community 315 - "Value"
-Cohesion: 0.67
-Nodes (3): Value, anyOf, description
-
 ## Knowledge Gaps
-- **3112 isolated node(s):** `serverConfig`, `config`, `name`, `version`, `type` (+3107 more)
+- **2955 isolated node(s):** `serverConfig`, `config`, `name`, `version`, `type` (+2950 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **20 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `properties` connect `properties` to `webviews`, `permissions`, `local`, `Capability`?**
+- **Why does `devDependencies` connect `devDependencies` to `npm-run-all2`, `png-to-ico`, `esbuild`, `semantic-release`, `sharp`, `package.json`?**
+  _High betweenness centrality (0.001) - this node is a cross-community bridge._
+- **Why does `scripts` connect `scripts` to `package.json`?**
   _High betweenness centrality (0.000) - this node is a cross-community bridge._
-- **Why does `definitions` connect `definitions` to `Capability`, `CapabilityRemote`, `properties`, `macOS-schema.json`?**
+- **Why does `dependencies` connect `dependencies` to `package.json`?**
   _High betweenness centrality (0.000) - this node is a cross-community bridge._
 - **Are the 21 inferred relationships involving `showError()` (e.g. with `webgpu-01-introduction/src/script.js` and `webgpu-02-node-materials/src/script.js`) actually correct?**
   _`showError()` has 21 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `serverConfig`, `config`, `name` to the rest of the system?**
-  _3112 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _2955 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Experience.js` be split into smaller, more focused modules?**
   _Cohesion score 0.0504828797190518 - nodes in this community are weakly interconnected._
 - **Should `10-textures.mdx` be split into smaller, more focused modules?**
-  _Cohesion score 0.041666666666666664 - nodes in this community are weakly interconnected._
-- **Should `第四部分：烘焙过程` be split into smaller, more focused modules?**
   _Cohesion score 0.041666666666666664 - nodes in this community are weakly interconnected._

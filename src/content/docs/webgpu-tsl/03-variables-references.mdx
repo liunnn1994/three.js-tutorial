@@ -1,6 +1,6 @@
 ---
 title: "03 变量与引用"
-description: 区分 JavaScript 变量、GPU 局部变量与对象属性引用，并交互调整角色配色
+description: 区分 JavaScript 变量、GPU 局部变量与对象属性引用，并交互调整扭结环配色
 sidebar:
   order: 3
 ---
@@ -9,7 +9,7 @@ import LessonPreview from "../../../components/LessonPreview.astro";
 
 ## 本课要做什么
 
-区分 JavaScript 变量、GPU 局部变量与对象属性引用，并交互调整角色配色。对应目录中的 **Variables & References**。先观察结果，再读代码，最后修改参数验证理解。
+区分 JavaScript 变量、GPU 局部变量与对象属性引用，并交互调整扭结环配色。对应目录中的 **Variables & References**。先观察结果，再读代码，最后修改参数验证理解。
 
 [查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/03@2x.webp)
 
@@ -63,13 +63,13 @@ material.colorNode = makeGray();
 
 ## 用局部位置当颜色
 
-角色的每个网格都有自己的局部原点。球的 XYZ 坐标有负数，颜色的 RGB 通道则通常希望位于 0 到 1。先只做映射，看看位置怎么变成颜色：
+扭结环是一个网格，局部原点位于环体中心。曲面的 XYZ 坐标有负数，颜色的 RGB 通道则通常希望位于 0 到 1。先只做映射，看看位置怎么变成颜色：
 
 ```js
 material.colorNode = positionLocal.mul(0.5).add(0.5);
 ```
 
-第 01 课已经介绍过向量与标量运算。这里先乘 `0.5` 再加 `0.5`，把约 `[-1, 1]` 映射到 `[0, 1]`。X、Y、Z 分别作为 R、G、B，显示的是表面的位置，不是法线方向。颜色输入在片元阶段读取插值后的局部位置。
+第 01 课已经介绍过向量与标量运算。这里先乘 `0.5` 再加 `0.5`，把 `[-1, 1]` 映射到 `[0, 1]`。环体的部分坐标略超过这个范围，因此这种映射并不保证所有颜色通道都落在 0 到 1。X、Y、Z 分别作为 R、G、B，显示的是表面的位置，不是法线方向。颜色输入在片元阶段读取插值后的局部位置。
 
 现在替换成完整源码里的写法，在函数里只改红色通道。`offset` 已在前面的输入部分定义：
 
@@ -91,7 +91,7 @@ material.colorNode = Fn(() => {
 
 1. 在 `script.js` 的 Fn 内，把赋值行完整替换为 `tint.y.assign(tint.y.add(offset).fract());`。拖动 offset，应变为绿色通道循环变化；只改等号左侧会产生另一种效果，因为右侧仍读取红色通道。
 2. 恢复原来的 `tint.x.assign(...)`，再删除右侧的 `.fract()`。红色不会超过 1 后跳回低值，而会出现更亮的区域；最终观感还受光照和色调映射影响。
-3. 在顶部的 TSL import 中增加 `positionWorld`，只将 Fn 中 `const tint = positionLocal...` 的 `positionLocal` 换成 `positionWorld`。各零件会按世界位置着色，局部重复会改变。世界坐标范围更大，这个实验没有把所有值都限制到 0 到 1。完成后恢复局部坐标。
+3. 在顶部的 TSL import 中增加 `positionWorld`，只将 Fn 中 `const tint = positionLocal...` 的 `positionLocal` 换成 `positionWorld`。整个环体会按世界位置着色，颜色会反映它相对于地面的高度，而不再仅取决于局部位置。世界坐标范围更大，这个实验没有把所有值都限制到 0 到 1。完成后恢复局部坐标。
 
 ## 运行与源码
 

@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
 import { Fn, length, fract, smoothstep, positionWorld, uniform, mix, color } from 'three/tsl';
-import { createStage, mascot, showError } from '../../_webgpu/common.js';
+import { createStage, createStudyShape, showError } from '../../_webgpu/common.js';
 async function main() {
   const app = await createStage({ floor: false });
   const clock = uniform(0), frequency = uniform(2);
@@ -13,7 +13,7 @@ async function main() {
   floorMaterial.colorNode = mix(color('#101119'), color('#b1b4ff'), rings(positionWorld.xz, frequency, clock));
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), floorMaterial);
   ground.rotation.x = -Math.PI / 2; app.scene.add(ground);
-  mascot(app.scene, new THREE.MeshStandardNodeMaterial({ color: '#afbfff', roughness: 0.2 }));
+  createStudyShape(app.scene, new THREE.MeshStandardNodeMaterial({ color: '#afbfff', roughness: 0.2 }));
   app.gui.add(frequency, 'value', 0.5, 5, 0.1).name('环密度');
   app.animate((seconds) => { clock.value = seconds * 0.3; });
 }

@@ -61,7 +61,7 @@ material.colorNode = texture(map, uv()).rgb;
 
 以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
 
-1. 用面板把“UV 重复”改为 3，观察球面极点和接缝。此实验无需修改源码。
+1. 用面板把“UV 重复”改为 3，观察环体上的纹理方向和 UV 接缝。此实验无需修改源码。
 2. 在 `script.js` 顶部的 TSL import 增加 `vec3`，将整个 `material.colorNode = texture(...).rgb` 赋值替换为：
 
 ```js
