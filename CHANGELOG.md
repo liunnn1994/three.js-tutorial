@@ -1,3 +1,11 @@
+# [1.11.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.10.0...v1.11.0) (2026-10-04)
+
+
+### Features
+
+* 修改基础形状 ([64e536b](https://github.com/liunnn1994/three.js-tutorial/commit/64e536b3e8a532224084e05b09d0cb696662f866))
+* 新增阅读进度记忆功能 ([6eac852](https://github.com/liunnn1994/three.js-tutorial/commit/6eac852405a26215367ce491912e147c263a4e56))
+
 # [1.10.0](https://github.com/liunnn1994/three.js-tutorial/compare/v1.9.1...v1.10.0) (2026-10-04)
 
 
