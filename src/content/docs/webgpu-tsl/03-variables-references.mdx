@@ -1,0 +1,100 @@
+---
+title: "03 变量与引用"
+description: 区分 JavaScript 变量、GPU 局部变量与对象属性引用，并交互调整角色配色
+sidebar:
+  order: 3
+---
+
+import LessonPreview from "../../../components/LessonPreview.astro";
+
+## 本课要做什么
+
+区分 JavaScript 变量、GPU 局部变量与对象属性引用，并交互调整角色配色。对应目录中的 **Variables & References**。先观察结果，再读代码，最后修改参数验证理解。
+
+[查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/03@2x.webp)
+
+<LessonPreview lesson="webgpu-03-variables-references" />
+
+## 三种“变量”放在哪里
+
+前端开发者最容易踩的坑是把节点当成普通数值。下面的 `height` 是 JS 变量，它保存了节点对象；节点描述 GPU 如何读取局部坐标的 Y 分量。
+
+```js
+const height = positionLocal.y;
+const raised = height.add(0.5); // 新表达式，没有修改 height
+```
+
+`height + 0.5` 是 JS 运算，不能替代 `.add(0.5)`。TSL 用方法建立图中的连接。`const` 限制的是 JS 变量重新赋值，并不表示这个表达式在 GPU 上是常量。
+
+| 写法 | 所在位置 | 用途 |
+| --- | --- | --- |
+| `const settings = { offset: 0.5 }` | CPU / JS | 界面和业务数据 |
+| `expression.toVar()` | GPU 一次调用内部 | 保存中间结果、允许赋值 |
+| `reference('offset', 'float', settings)` | CPU 属性连接到 GPU uniform | UI 调参同步 |
+
+## 先连接一个 JS 对象属性
+
+第 02 课用 `uniform()` 显式保存一个可调数字。这里用 `reference()` 直接读取已有 JS 对象上的属性，由它在绘制时把值作为 uniform 同步到 GPU。先定义输入，再写使用它的表达式：
+
+```js
+import { reference } from 'three/tsl';
+const parameters = { offset: 0.5 };
+const offset = reference('offset', 'float', parameters);
+app.gui.add(parameters, 'offset', 0, 1, 0.01);
+```
+
+面板改动 `parameters.offset`，reference 从同一个对象读取属性。类型 `'float'` 是第 01 课的标量类型，表示这里传入一个浮点数；不需要在每帧手动复制。[ReferenceNode 文档](https://threejs.org/docs/pages/ReferenceNode.html)
+
+注意不要把 `parameters` 替换成一个新对象后，期待旧 reference 自动找到新对象。前端状态管理中常见的不可变更新，和这里“引用同一个对象”的方式不同。
+
+## 先读懂 Fn 的两对括号
+
+普通节点方法如 `.add()` 会创建一个新表达式。想按顺序执行“创建变量，再修改变量”，需要一个能记录 GPU 语句的函数容器 `Fn`：
+
+```js
+import { Fn, vec3 } from 'three/tsl';
+const makeGray = Fn(() => {
+  return vec3(0.5);
+});
+material.colorNode = makeGray();
+```
+
+`Fn(() => { ... })` 定义节点函数，`makeGray()` 生成调用它的节点；合写就是 `Fn(() => { ... })()`。这个 JS 回调在构建着色器时记录计算和语句，GPU 随后执行生成的着色器。它和每帧执行的 `app.animate()` 回调发生在不同阶段。第 08 课再介绍如何给节点函数传参和复用。[官方 Fn 说明](https://github.com/mrdoob/three.js/wiki/Three.js-Shading-Language#function)
+
+## 用局部位置当颜色
+
+角色的每个网格都有自己的局部原点。球的 XYZ 坐标有负数，颜色的 RGB 通道则通常希望位于 0 到 1。先只做映射，看看位置怎么变成颜色：
+
+```js
+material.colorNode = positionLocal.mul(0.5).add(0.5);
+```
+
+第 01 课已经介绍过向量与标量运算。这里先乘 `0.5` 再加 `0.5`，把约 `[-1, 1]` 映射到 `[0, 1]`。X、Y、Z 分别作为 R、G、B，显示的是表面的位置，不是法线方向。颜色输入在片元阶段读取插值后的局部位置。
+
+现在替换成完整源码里的写法，在函数里只改红色通道。`offset` 已在前面的输入部分定义：
+
+```js
+material.colorNode = Fn(() => {
+  const tint = positionLocal.mul(0.5).add(0.5).toVar();
+  tint.x.assign(tint.x.add(offset).fract());
+  return vec3(tint);
+})();
+```
+
+`.toVar()` 把表达式结果存入着色器中的局部变量，`.assign()` 往该变量写入。`fract()` 取小数部分，例如 `fract(1.2)` 为 `0.2`，所以红色偏移超过 1 后会回到低值；负数的小数部分也按 `x - floor(x)` 计算。`vec3(tint)` 把三个分量作为 RGB 返回。
+
+带赋值的语句放在 `Fn` 内，TSL 才能记录执行顺序。这个变量只属于当前着色器调用，不保存上一帧的状态；下一帧的片元仍然从头计算。[VarNode 文档](https://threejs.org/docs/pages/VarNode.html)
+
+## 动手检查
+
+以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
+
+1. 在 `script.js` 的 Fn 内，把赋值行完整替换为 `tint.y.assign(tint.y.add(offset).fract());`。拖动 offset，应变为绿色通道循环变化；只改等号左侧会产生另一种效果，因为右侧仍读取红色通道。
+2. 恢复原来的 `tint.x.assign(...)`，再删除右侧的 `.fract()`。红色不会超过 1 后跳回低值，而会出现更亮的区域；最终观感还受光照和色调映射影响。
+3. 在顶部的 TSL import 中增加 `positionWorld`，只将 Fn 中 `const tint = positionLocal...` 的 `positionLocal` 换成 `positionWorld`。各零件会按世界位置着色，局部重复会改变。世界坐标范围更大，这个实验没有把所有值都限制到 0 到 1。完成后恢复局部坐标。
+
+## 运行与源码
+
+展开上面的“查看源码”：`script.js` 是本课完整实现，`shared/common.js` 是创建场景、相机、渲染器和调试面板的公共外壳。仓库内对应的 `src/lesson-code/webgpu-03-variables-references/src/` 可直接修改；运行 `pnpm dev` 后，源代码会在启动时生成预览，修改示例后需要重新运行 `pnpm generate-previews` 并刷新 iframe。
+
+首次学习请先读 [第 01 课的运行说明](/webgpu-tsl/01-introduction/)。节点材质使用 WebGPURenderer；底部状态栏会显示 WebGPU 或 WebGL 2 回退。遇到空白，先查看状态栏和控制台，再按 [第 04 课](/webgpu-tsl/04-tools-debug/) 的顺序排查。

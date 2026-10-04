@@ -2,10 +2,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
+import { getThreeVersion } from "./three-version.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, "..");
 const nm = path.join(projectRoot, "node_modules");
+const THREE_VERSION = getThreeVersion(projectRoot);
 const vendorDir = path.join(projectRoot, "public", "vendor");
 
 // VENDOR_MODE: 'local' (default/dev/mobile) | 'cdn' (web build)
@@ -85,6 +87,12 @@ fs.copyFileSync(
 );
 fs.copyFileSync(path.join(nm, "three/build/three.core.js"), path.join(vendorDir, "three.core.js"));
 
+// WebGPU and TSL share three.core.js; keep all three builds at the same version.
+for (const name of ["three.webgpu.js", "three.tsl.js"]) {
+  fs.copyFileSync(path.join(nm, "three/build", name), path.join(vendorDir, name));
+  rewriteThreeImportsInFile(path.join(vendorDir, name));
+}
+
 // Three.js addons (full directory for relative import resolution)
 // After copying, rewrite bare 'three' specifiers so the files work without importmap
 copyDir(path.join(nm, "three/examples/jsm"), path.join(vendorDir, "three/examples/jsm"));
@@ -144,12 +152,20 @@ function copyDir(src, dest) {
 function rewriteThreeImportsInFile(filePath, useCdn = false) {
   const original = fs.readFileSync(filePath, "utf-8");
   const threeCore = useCdn
-    ? `https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js`
+    ? `https://cdn.jsdelivr.net/npm/three@${THREE_VERSION}/build/three.module.js`
     : "/vendor/three.module.js";
   const threeAddons = useCdn
-    ? `https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm`
+    ? `https://cdn.jsdelivr.net/npm/three@${THREE_VERSION}/examples/jsm`
     : "/vendor/three/examples/jsm";
+  const threeWebGPU = useCdn
+    ? `https://cdn.jsdelivr.net/npm/three@${THREE_VERSION}/build/three.webgpu.js`
+    : "/vendor/three.webgpu.js";
+  const threeTSL = useCdn
+    ? `https://cdn.jsdelivr.net/npm/three@${THREE_VERSION}/build/three.tsl.js`
+    : "/vendor/three.tsl.js";
   const rewritten = original
+    .replace(/from\s+['"]three\/webgpu['"]/g, `from '${threeWebGPU}'`)
+    .replace(/from\s+['"]three\/tsl['"]/g, `from '${threeTSL}'`)
     .replace(/from\s+['"]three['"]/g, `from '${threeCore}'`)
     .replace(/from\s+['"]three\/addons\/(.+?)['"]/g, `from '${threeAddons}/$1'`)
     .replace(/from\s+['"]three\/examples\/jsm\/(.+?)['"]/g, `from '${threeAddons}/$1'`);

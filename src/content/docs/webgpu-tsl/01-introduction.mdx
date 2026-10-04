@@ -1,0 +1,157 @@
+---
+title: "01 WebGPU 与 TSL 入门"
+description: 从前端熟悉的 JavaScript 出发，搭建第一个 WebGPU 场景，并用 TSL 给角色上色
+sidebar:
+  order: 1
+---
+
+import LessonPreview from "../../../components/LessonPreview.astro";
+
+## 本课要做什么
+
+从前端熟悉的 JavaScript 出发，搭建第一个 WebGPU 场景，并用 TSL 给角色上色。对应目录中的 **Introduction to WebGPU and TSL**。先观察结果，再读代码，最后修改参数验证理解。
+
+[查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/01@2x.webp)
+
+<LessonPreview lesson="webgpu-01-introduction" />
+
+## 不需要先学三维数学
+
+网页里的 DOM 元素有大小、位置和 CSS 外观。3D 页面也有类似分工：**几何体**描述表面的形状，**材质**描述外观，**Mesh（网格）**把两者组合起来。**Scene（场景）**装下物体和灯光，**Camera（相机）**决定从哪里看，**Renderer（渲染器）**把这些信息变成 canvas 上的像素。
+
+示例中的角色由球和胶囊组合而成，不需要建模软件。地面是一张平面。默认把 Y 轴当作上下方向，X 是左右，Z 是前后；单位由你自己约定。本系列把 1 个单位理解成约 1 米即可。相机在 `(3.8, 2.7, 5)`，看向 `(0, 1, 0)`，所以能看到角色的正面和侧面。
+
+先完成一个实验：拖动预览旋转相机，再关闭“角色旋转”。前者改变观察位置，后者改变物体本身的位置关系。它们都会改变画面，但改的是不同对象。
+
+## 一个平面怎样变成屏幕上的颜色
+
+几何体里保存着一组 **顶点**，每个顶点都有 XYZ 位置。三个顶点连成一个三角形；一张最简单的平面由四个顶点、两个三角形组成。球也由许多小三角形拼成，只是看起来接近光滑曲面。
+
+渲染时可以先记住这条顺序：**顶点位置 → 相机投影 → 三角形覆盖屏幕 → 片元颜色 → 屏幕像素**。顶点阶段处理每个顶点的位置；三角形覆盖屏幕后，GPU 为覆盖到的位置生成 **片元（fragment）**，片元阶段计算颜色和透明度。片元经过深度测试、混合等步骤才成为最终像素；同一个屏幕位置可能有多个物体的片元。
+
+顶点还能携带 UV 等数据。假设三角形两端的 U 分别是 0 和 1，中间位置会得到中间的 U 值，这叫 **插值**。后面使用 `uv()` 给表面画图时，GPU 会为各个片元得到相应的坐标，不需要我们在 JS 中遍历屏幕像素。
+
+`colorNode` 通常在片元阶段决定表面颜色，`positionNode` 在顶点阶段改变形状。因此，四个顶点的平面可以显示很细的棋盘格，却只能弯成很简单的折面；要让烟雾弯成曲线，需要增加顶点。图片的分辨率与几何体的细分数是两个独立参数。
+
+## 先认识一个数与一组数
+
+**标量（float）**是一个数，例如透明度 `0.7`；**向量**是一组数。`vec2` 有两个分量，常用于 UV；`vec3` 有三个分量，常用于 XYZ 位置或 RGB 颜色。位置向量与方向向量都用三个数表示，但含义不同。以下是 TSL 节点写法：
+
+```js
+import { float, vec2, vec3 } from 'three/tsl';
+const amount = float(0.7);
+const point = vec2(0.2, 0.8);
+const gray = vec3(0.5); // 相当于 vec3(0.5, 0.5, 0.5)
+```
+
+`.x/.y/.z` 取出位置分量，`.r/.g/.b` 取出颜色分量；它们是同一组数据的不同命名。`point.mul(2)` 得到 `(0.4, 1.6)`，`point.add(0.1)` 得到 `(0.3, 0.9)`：标量运算会作用到每个分量。`.xy` 或 `.xz` 可以从三个分量中选出两个。这里的函数返回描述计算的节点，具体结果由 GPU 求出。[官方 TSL 类型与分量说明](https://github.com/mrdoob/three.js/wiki/Three.js-Shading-Language#constants-and-explicit-conversions)
+
+## WebGPU、Three.js、TSL 各自做什么
+
+WebGPU 是浏览器访问 GPU 的 API，既可以画图，也可以并行计算。直接使用它，需要管理设备、缓冲区、着色器与绘制管线。Three.js 封装这些工作；本课使用的 `WebGPURenderer` 就是封装后的渲染器。WebGPU 需要安全上下文，开发时使用 `localhost`，上线使用 HTTPS。支持情况还与浏览器、系统、显卡及驱动有关，不能仅凭浏览器名称判断。[MDN WebGPU 文档](https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API)
+
+TSL 是 Three.js Shading Language，用 JavaScript 组合“GPU 要计算什么”的节点。它生成 WGSL 或 GLSL；这不等于 JavaScript 函数直接运行在 GPU 上。普通 JS 负责搭建计算图，着色器负责对顶点和像素执行图中的运算。WebGPURenderer 可以在无法使用 WebGPU 时选择 WebGL 2 后端；第 19 课的计算示例另外要求真正的 WebGPU。[WebGPURenderer 官方文档](https://threejs.org/docs/pages/WebGPURenderer.html)
+
+```js
+import * as THREE from 'three/webgpu';
+import { color } from 'three/tsl';
+
+const material = new THREE.MeshStandardNodeMaterial();
+material.colorNode = color('#a6baff');
+```
+
+`color()` 返回节点对象；`colorNode` 把它接入材质的颜色输入。标准材质仍然计算灯光，让球有明暗和立体感。[NodeMaterial 官方文档](https://threejs.org/docs/pages/NodeMaterial.html)
+
+## 独立运行一个最小项目
+
+本系列与仓库统一使用当前最新稳定版 Three.js 0.186.1（r186）。独立练习也安装同一版本，核心库、WebGPU、TSL 与 addons 都来自同一个包。项目预览的本地与 CDN 模块从已安装包读取版本号，避免混用。
+
+```sh
+mkdir my-tsl-demo
+cd my-tsl-demo
+npm init -y
+npm install three@0.186.1
+npm install -D vite
+npx vite --host
+```
+
+根目录创建 `index.html`：
+
+```html
+<!doctype html>
+<html lang="zh-CN">
+  <head><meta charset="UTF-8"><title>我的第一个 TSL 场景</title></head>
+  <body style="margin: 0"><script type="module" src="/main.js"></script></body>
+</html>
+```
+
+再创建完整的 `main.js`：
+
+```js
+import * as THREE from 'three/webgpu';
+import { color } from 'three/tsl';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#11131d');
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 100);
+camera.position.set(3, 2, 5);
+const renderer = new THREE.WebGPURenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+await renderer.init();
+
+const material = new THREE.MeshStandardNodeMaterial({ roughness: 0.3 });
+material.colorNode = color('#a6baff');
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(1, 32, 24), material));
+scene.add(new THREE.HemisphereLight('#b6c8ff', '#4a302a', 2));
+const light = new THREE.DirectionalLight('#ffe4ca', 4);
+light.position.set(3, 6, 4);
+scene.add(light);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+renderer.setAnimationLoop(() => {
+  controls.update();
+  renderer.render(scene, camera);
+});
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+```
+
+访问 Vite 输出的 localhost 地址，不要双击 HTML 使用 `file://`。`await renderer.init()` 完成设备初始化后，才开始绘制。相机的 `45` 是垂直视角，`0.1` 与 `100` 是近、远裁剪平面的位置，沿相机观看方向计算；它们不是以相机为中心的两个球面。越过裁剪平面的部分不会显示。
+
+## 仓库中的教学外壳
+
+21 节课各有自己的 `script.js`。公共的 `createStage()` 只负责窗口尺寸、OrbitControls、灯光、GUI、错误提示、动画循环和离开页面后的清理。它返回 `app.scene`、`app.renderer`、`app.gui` 等对象。本课的核心代码只有：
+
+```js
+const app = await createStage();
+const material = new THREE.MeshStandardNodeMaterial({ roughness: 0.3 });
+material.colorNode = color('#a6baff');
+const character = mascot(app.scene, material);
+app.animate((seconds) => { character.rotation.y = seconds * 0.3; });
+```
+
+完整角色、灯光和外壳都可以在源码查看器中阅读。这里的 `seconds` 是 JS 侧累加的真实前台秒数，点击“暂停动画”或把页面切到后台后停止累加，恢复页面时重新建立计时基准。低帧率下不会丢掉每帧超过 1/30 秒的时间。第 02 课先用 uniform 传入一个可调数字，第 05 课再传入动画时间。
+
+公共外壳会释放场景中正在使用的几何体和材质。纹理、后处理 pass、备用材质等对象需要通过 `app.track(resource)` 登记，离开页面时统一释放；第 11 课会展示这个用法。
+
+## 动手检查
+
+以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
+
+1. 修改本课 `script.js` 中的 `material.colorNode = color('#a6baff')`，把颜色换成 `'#ff8b5e'`。刷新生成后的预览，角色应变成橙色，形状保持不变。
+2. 角色球体在 `src/lesson-code/_webgpu/common.js` 的 `mascot()` 中创建。把 `new THREE.SphereGeometry(0.85, 48, 32)` 的第一个参数改成 `0.5`，球形身体应缩小，鼻子与腿保持原大小。公共文件会影响使用这个角色的其他课，实验后恢复 `0.85`。
+3. 在同一公共文件的 `createStage()` 中，暂时注释 `scene.add(new THREE.HemisphereLight(...))` 和 `scene.add(light)` 两行。角色与地面应明显变暗；完成后恢复灯光，第 02 课会比较不依赖灯光的材质。
+
+参考图包含另一种角色造型与场景纹理。本系列使用程序化角色和自制场景，训练同一条渲染流程；不会把参考图片当作可运行效果。
+
+## 运行与源码
+
+展开上面的“查看源码”：`script.js` 是本课完整实现，`shared/common.js` 是创建场景、相机、渲染器和调试面板的公共外壳。仓库内对应的 `src/lesson-code/webgpu-01-introduction/src/` 可直接修改；运行 `pnpm dev` 后，源代码会在启动时生成预览，修改示例后需要重新运行 `pnpm generate-previews` 并刷新 iframe。
+
+首次学习请先读 [第 01 课的运行说明](/webgpu-tsl/01-introduction/)。节点材质使用 WebGPURenderer；底部状态栏会显示 WebGPU 或 WebGL 2 回退。遇到空白，先查看状态栏和控制台，再按 [第 04 课](/webgpu-tsl/04-tools-debug/) 的顺序排查。

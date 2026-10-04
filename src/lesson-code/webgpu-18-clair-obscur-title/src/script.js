@@ -1,0 +1,37 @@
+import * as THREE from 'three/webgpu';
+import { instancedBufferAttribute, uv, uniform, vec3, sin, cos, mix, color, smoothstep, texture, pass } from 'three/tsl';
+import { bloom } from 'three/addons/tsl/display/BloomNode.js';
+import { createStage, seededRandom, showError } from '../../_webgpu/common.js';
+async function main() {
+  const app = await createStage({ floor: false, background: '#150709', camera: [0, 0, 7], target: [0, 0, 0] });
+  const canvas = document.createElement('canvas'); canvas.width = 1024; canvas.height = 384;
+  const ctx = canvas.getContext('2d');
+  ctx.textAlign = 'center'; ctx.fillStyle = '#efd9b3';
+  ctx.font = '60px Georgia'; ctx.fillText('CLAIR OBSCUR', 512, 145);
+  ctx.font = '110px Georgia'; ctx.fillText('33', 512, 275);
+  const titleMap = new THREE.CanvasTexture(canvas); titleMap.colorSpace = THREE.SRGBColorSpace;
+  const reveal = uniform(0), clock = uniform(0);
+  const titleMaterial = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false });
+  const sampled = texture(titleMap);
+  titleMaterial.colorNode = sampled.rgb.mul(1.6);
+  titleMaterial.opacityNode = sampled.a.mul(smoothstep(0, 0.15, reveal.sub(uv().x)));
+  const title = new THREE.Mesh(new THREE.PlaneGeometry(5.7, 2.15), titleMaterial); title.position.z = 0.3; app.scene.add(title);
+  const count = 2400, random = seededRandom(18), data = new Float32Array(count * 3);
+  for (let i = 0; i < data.length; i++) data[i] = random();
+  const seed = instancedBufferAttribute(new THREE.InstancedBufferAttribute(data, 3));
+  const petals = new THREE.SpriteNodeMaterial({ depthWrite: false, transparent: true, side: THREE.DoubleSide });
+  petals.positionNode = vec3(seed.x.mul(8).sub(4).add(sin(clock.mul(0.4).add(seed.y.mul(20))).mul(0.4)), seed.y.sub(clock.mul(0.07)).fract().mul(5).sub(2.5), seed.z.mul(4).sub(2));
+  petals.rotationNode = clock.add(seed.x.mul(20));
+  petals.scaleNode = vec3(0.045, 0.1, 1).xy;
+  petals.colorNode = mix(color('#bd3456'), color('#ffbb61'), seed.z).mul(1.4);
+  const p = uv().sub(0.5); const ellipse = vec3(p.x.mul(2), p.y, 0).length();
+  petals.opacityNode = smoothstep(0.3, 0.5, ellipse).oneMinus();
+  const cloud = new THREE.Sprite(petals); cloud.count = count; cloud.frustumCulled = false; app.scene.add(cloud);
+  const pipeline = new THREE.RenderPipeline(app.renderer), scenePass = pass(app.scene, app.camera);
+  const output = scenePass.getTextureNode('output'), glow = bloom(output, 0.3, 0.3, 1);
+  pipeline.outputNode = output.add(glow); app.postProcessing(pipeline);
+  app.gui.add({ replay() { reveal.value = 0; } }, 'replay').name('重新显现标题');
+  app.animate((seconds, dt) => { clock.value = seconds; reveal.value = Math.min(1.2, reveal.value + dt * 0.22); });
+  app.track(titleMap, scenePass, glow);
+}
+main().catch(showError);

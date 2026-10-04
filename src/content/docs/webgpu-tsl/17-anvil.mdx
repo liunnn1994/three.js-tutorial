@@ -1,0 +1,64 @@
+---
+title: "17 铁砧"
+description: 把节点热度、发光与闪烁精灵组合到一个程序化铁砧场景中
+sidebar:
+  order: 17
+---
+
+import LessonPreview from "../../../components/LessonPreview.astro";
+
+## 本课要做什么
+
+把节点热度、发光与闪烁精灵组合到一个程序化铁砧场景中。对应目录中的 **Anvil**。先观察结果，再读代码，最后修改参数验证理解。
+
+[查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/17@2x.webp)
+
+<LessonPreview lesson="webgpu-17-anvil" />
+
+## 复杂物体可以从简单形状开始
+
+参考图有一把精细建模的铁砧。本课使用盒子组成底座、腰部和台面，用挤出 Shape 做尖角，再放到木墩上。它不具有参考模型的精细细节，但所有形状都能在公共源码中看懂，也无需获取付费模型。
+
+先关闭“铁砧热度”，观察金属本身的明暗，再逐步提高热度。自发光和灯光反射是两条输入：热度为零时，物体仍由灯光照亮。
+
+## 热区是一张移动遮罩
+
+```js
+const band = sin(positionWorld.x.mul(2).sub(clock)).mul(0.5).add(0.5);
+const hot = smoothstep(0.5, 0.95, band).mul(heat);
+material.colorNode = mix(color('#414b82'), color('#e99273'), hot);
+material.emissiveNode = color('#ff6a18').mul(hot.pow(3)).mul(3);
+```
+
+hot 由位置、时间与界面参数共同决定。颜色从冷蓝向暖橙过渡，自发光使用更集中的 `hot³`，让最热部分进入 Bloom。因为用世界位置，铁砧不同网格共享同一热带，不会每个零件各自从头重复。[MeshStandardNodeMaterial emissiveNode](https://threejs.org/docs/pages/MeshStandardNodeMaterial.html)
+
+本课的热度是可控视觉效果，没有模拟真实温度扩散。以后要做热传导，可把温度作为持久纹理或缓冲数据逐步更新。
+
+## 周围的闪光
+
+800 个精灵使用不同随机种子作为位置与闪烁相位：
+
+```js
+sparks.scaleNode = sin(seed.y.mul(20).add(clock.mul(3)))
+  .mul(0.5).add(0.5).mul(0.045);
+```
+
+缩放永远非负，部分星点缩到接近 0 再放大。位置数据保持不变，只改变尺寸。这样的例子能清楚区分“数据更新”和“表达式求值”。
+
+## 做组合时先保持各层可检查
+
+先确认几何体轮廓，再输出热区灰度，再接颜色与 emissive，最后开 Bloom 和精灵。过早加入光晕会让错误遮罩看起来也像一个漂亮效果，却不好定位。
+
+## 动手检查
+
+以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
+
+1. 在 `script.js` 顶部的 TSL import 增加 `vec3`，将 `material.colorNode = mix(...)` 临时换成 `material.colorNode = vec3(hot)`，同时把 emissiveNode 的完整赋值临时换成 `material.emissiveNode = color('#000000')`。热带应沿世界 X 方向移动，更容易检查灰度。
+2. 将 band 表达式的 `positionWorld` 换成源码已导入的 `positionLocal`，台面、底座与尖角的局部重复应更明显。
+3. 恢复世界坐标与原来的 colorNode，保持自发光为黑色，观察铁砧颜色仍变化但光晕减弱。周围精灵有自己的高亮输入，因此 Bloom 不会全部消失；最后恢复 emissiveNode。
+
+## 运行与源码
+
+展开上面的“查看源码”：`script.js` 是本课完整实现，`shared/common.js` 是创建场景、相机、渲染器和调试面板的公共外壳。仓库内对应的 `src/lesson-code/webgpu-17-anvil/src/` 可直接修改；运行 `pnpm dev` 后，源代码会在启动时生成预览，修改示例后需要重新运行 `pnpm generate-previews` 并刷新 iframe。
+
+首次学习请先读 [第 01 课的运行说明](/webgpu-tsl/01-introduction/)。节点材质使用 WebGPURenderer；底部状态栏会显示 WebGPU 或 WebGL 2 回退。遇到空白，先查看状态栏和控制台，再按 [第 04 课](/webgpu-tsl/04-tools-debug/) 的顺序排查。

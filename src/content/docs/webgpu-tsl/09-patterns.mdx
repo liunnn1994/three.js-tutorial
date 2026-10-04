@@ -1,0 +1,70 @@
+---
+title: "09 程序化图案"
+description: 通过网格中的随机动点与距离场，生成接近参考图的发光细胞图案
+sidebar:
+  order: 9
+---
+
+import LessonPreview from "../../../components/LessonPreview.astro";
+
+## 本课要做什么
+
+通过网格中的随机动点与距离场，生成接近参考图的发光细胞图案。对应目录中的 **Patterns**。先观察结果，再读代码，最后修改参数验证理解。
+
+[查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/09@2x.webp)
+
+<LessonPreview lesson="webgpu-09-patterns" />
+
+## 从图形形状倒推数学
+
+参考图是黑蓝背景上的橙色亮斑。本课不加载这张图片，而是计算一张随时间变化的图案：将平面分成格子，每格放一个点，对当前片元找到最近的点，用距离决定亮度。这种方法接近 Worley / cellular 距离图案。
+
+**距离场**就是“每个位置到某种目标的距离”。数值小表示靠近点，数值大表示远离。先理解距离，再将距离转换为遮罩，最后配色。
+
+## 为什么要检查相邻格子
+
+```js
+const p = uv().mul(density);
+const cell = p.floor();
+let nearest = p.mul(0).add(10).x;
+for (let y = -1; y <= 1; y++) {
+  for (let x = -1; x <= 1; x++) {
+    const id = cell.add(vec2(x, y));
+    // 根据格子编号算出该格的 center
+    nearest = nearest.min(length(p.sub(center)));
+  }
+}
+```
+
+只看自己格子会在格子边界产生断裂：隔壁格子的点可能更近。示例检查周围 3×3 格子，取九个候选距离的最小值。`center` 的完整计算在源码中，它使用格子编号确定相位，再用 sin/cos 让点小范围运动。点始终靠近各自格子中心，因此这组邻域足以覆盖示例的候选点。
+
+这两个 `for` 是 JS 循环，用来建立九份节点表达式；不是 GPU 每帧调用 JS 循环。格子内动点由 GPU 读取当前 clock 来计算。
+
+## 从距离到亮斑
+
+```js
+const glow = smoothstep(0.08, 0.45, nearest).oneMinus();
+const core = smoothstep(0, 0.2, nearest).oneMinus();
+material.colorNode = mix(color('#050b43'), color('#ff6545').mul(2), glow)
+  .add(core.mul(1.4));
+```
+
+距离很小处 glow 接近 1，远处接近 0。core 使用更小范围，形成中心亮点。颜色乘 2 允许线性颜色超过 1；经过渲染器的 tone mapping 后会变成明亮颜色，但本课尚未添加光晕扩散。第 11 课再用 Bloom 处理整张画面。[MathNode](https://threejs.org/docs/pages/MathNode.html)
+
+## 图案为什么“随机但稳定”
+
+示例使用 `sin(id.x * 127.1 + id.y * 311.7)` 的简易哈希生成相位。这适合教学图案，可能出现可辨认的相关性；不是密码学随机数，也不是高质量噪声库。相同格子编号每帧得到相同种子，避免完全重新随机造成闪烁。
+
+## 动手检查
+
+以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
+
+1. 在 `script.js` 顶部的 TSL import 增加 `vec3`，将完整的两行 `material.colorNode = mix(...).add(...)` 替换为 `material.colorNode = vec3(nearest);`。亮斑中心应较黑，距离更远处更亮。
+2. 将 `app.animate()` 内的 `clock.value = seconds * 0.7` 临时改成 `clock.value = 0`，随机分布仍存在，但点停止运动。
+3. 将两个 for 循环分别改成 `for (let y = 0; y <= 0; y++)` 与 `for (let x = 0; x <= 0; x++)`，只检查自身格子，观察格子边缘的不连续。完成后恢复 -1 到 1 的范围、动画回调和配色。
+
+## 运行与源码
+
+展开上面的“查看源码”：`script.js` 是本课完整实现，`shared/common.js` 是创建场景、相机、渲染器和调试面板的公共外壳。仓库内对应的 `src/lesson-code/webgpu-09-patterns/src/` 可直接修改；运行 `pnpm dev` 后，源代码会在启动时生成预览，修改示例后需要重新运行 `pnpm generate-previews` 并刷新 iframe。
+
+首次学习请先读 [第 01 课的运行说明](/webgpu-tsl/01-introduction/)。节点材质使用 WebGPURenderer；底部状态栏会显示 WebGPU 或 WebGL 2 回退。遇到空白，先查看状态栏和控制台，再按 [第 04 课](/webgpu-tsl/04-tools-debug/) 的顺序排查。

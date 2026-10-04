@@ -1,0 +1,77 @@
+---
+title: "10 咖啡烟雾"
+description: 把细分平面变成上升、弯曲、边缘柔和的咖啡烟雾
+sidebar:
+  order: 10
+---
+
+import LessonPreview from "../../../components/LessonPreview.astro";
+
+## 本课要做什么
+
+把细分平面变成上升、弯曲、边缘柔和的咖啡烟雾。对应目录中的 **Coffee Smoke**。先观察结果，再读代码，最后修改参数验证理解。
+
+[查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/10@2x.webp)
+
+<LessonPreview lesson="webgpu-10-coffee-smoke" />
+
+## 烟雾不一定要用大量粒子
+
+本课只有一张细分平面。GPU 改变顶点位置让它弯曲，再改变透明度，让平面看起来像烟。杯子由空心圆柱、把手圆环和咖啡圆面组成；参考图中的完整杯子资产可在掌握原理后替换。
+
+平面宽 1.6、高 3.6，使用 32×64 段。增加段数是为了弯曲，不是为了纹理更清晰。纹理分辨率和几何体顶点数分别控制不同问题。
+
+## 先让烟“长出来”
+
+```js
+const smoke = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 3.6, 32, 64), material);
+smoke.position.y = 2.75;
+```
+
+平面默认中心在原点，所以下边缘在 `2.75 - 3.6 / 2 = 0.95`，正好接近杯口。烟的 `uv().y` 从下到上增长，是后续弯曲幅度与淡出的输入。
+
+```js
+const bend = sin(positionLocal.y.mul(2).sub(clock))
+  .mul(uv().y.pow(2)).mul(0.45);
+material.positionNode = positionLocal.add(vec3(bend, 0, bend.mul(0.4)));
+```
+
+底部 UV 接近 0，弯曲很小；顶部接近 1，摆动更明显。这里传给 `positionNode` 的是改变后的完整局部位置，不是只传位移量。[NodeMaterial positionNode](https://threejs.org/docs/pages/NodeMaterial.html)
+
+## 用滚动噪声表示浓度
+
+```js
+const sampleUV = vec2(uv().x.mul(1.8), uv().y.mul(1.2).sub(clock.mul(0.18)));
+const density = texture(noise, sampleUV).r;
+```
+
+图片是仓库现有咖啡课的 `perlin.png`。它存储噪声数据，保持默认的 NoColorSpace，并开启 RepeatWrapping。随着时间向负 V 采样，图案会在平面上向上流动。噪声纹理不是真的模拟空气，只给浓度一个变化规律。[TextureNode](https://threejs.org/docs/pages/TextureNode.html)
+
+## 将方形边界藏起来
+
+示例分别计算左右边缘和上下边缘的软遮罩，把它们相乘：
+
+```js
+const side = smoothstep(0, 0.2, uv().x)
+  .mul(smoothstep(0, 0.2, uv().x.oneMinus()));
+const height = smoothstep(0, 0.12, uv().y)
+  .mul(smoothstep(0, 0.55, uv().y.oneMinus()));
+material.opacityNode = smoothstep(0.25, 0.85, density)
+  .mul(side).mul(height).mul(strength);
+```
+
+任一遮罩接近 0，最终透明度就接近 0。`transparent: true` 启用透明混合，`depthWrite: false` 避免烟面先写入深度后挡住后续透明物体，`DoubleSide` 允许背面可见。这里使用普通透明混合；把普通烟雾设为加法混合会使它像发光物，更适合魔法效果。
+
+## 动手检查
+
+以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
+
+1. 在 `script.js` 中将 `material.colorNode = vec3(0.8, 0.78, 0.75)` 替换为 `material.colorNode = vec3(density)`，同时临时把 `material.opacityNode = ...` 的完整赋值改成 `material.opacityNode = strength`，避免浓度遮罩把你想看的纹理藏起来。源码已导入 `vec3`，应能看到滚动噪声。
+2. 再把 colorNode 改成 `vec3(side)`，左右边缘应比中间更暗。恢复原来的 colorNode 和 opacityNode 后，烟面方形边界会重新被藏起来。
+3. 将 bend 表达式里的 `uv().y.pow(2)` 改为 `uv().y`，烟在中部应更早弯曲。完成后恢复平方。转动相机，验证单张烟面从侧面看会变薄。
+
+## 运行与源码
+
+展开上面的“查看源码”：`script.js` 是本课完整实现，`shared/common.js` 是创建场景、相机、渲染器和调试面板的公共外壳。仓库内对应的 `src/lesson-code/webgpu-10-coffee-smoke/src/` 可直接修改；运行 `pnpm dev` 后，源代码会在启动时生成预览，修改示例后需要重新运行 `pnpm generate-previews` 并刷新 iframe。
+
+首次学习请先读 [第 01 课的运行说明](/webgpu-tsl/01-introduction/)。节点材质使用 WebGPURenderer；底部状态栏会显示 WebGPU 或 WebGL 2 回退。遇到空白，先查看状态栏和控制台，再按 [第 04 课](/webgpu-tsl/04-tools-debug/) 的顺序排查。

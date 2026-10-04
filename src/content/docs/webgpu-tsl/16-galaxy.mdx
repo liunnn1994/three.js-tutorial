@@ -1,0 +1,63 @@
+---
+title: "16 银河"
+description: 把实例种子转换成螺旋坐标，在 GPU 上生成与旋转四臂银河
+sidebar:
+  order: 16
+---
+
+import LessonPreview from "../../../components/LessonPreview.astro";
+
+## 本课要做什么
+
+把实例种子转换成螺旋坐标，在 GPU 上生成与旋转四臂银河。对应目录中的 **Galaxy**。先观察结果，再读代码，最后修改参数验证理解。
+
+[查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/16@2x.webp)
+
+<LessonPreview lesson="webgpu-16-galaxy" />
+
+## 银河先是一套坐标规则
+
+本课沿用精灵软边，用 18000 个粒子表示恒星。CPU 只在开始时产生种子，GPU 根据半径、旋臂编号和时间算出实际位置。参考图偏白色星云，这里用暖中心与冷蓝边缘让空间规律更清楚。
+
+```js
+data[i * 3] = Math.pow(random(), 1.6) * 4; // 半径
+data[i * 3 + 1] = i % 4 / 4 * Math.PI * 2 + jitter; // 初始角度
+data[i * 3 + 2] = (random() - 0.5) * 0.2; // 高度
+```
+
+数据有三项，但不一定必须是 XYZ。指数 1.6 让更多星靠近中心；四个离散角度产生四臂，再加小幅随机扰动，避免每颗星都在一条完美曲线上。
+
+## 从极坐标回到空间位置
+
+```js
+const radius = seed.x;
+const angle = seed.y.add(radius.mul(twist))
+  .add(clock.mul(0.25).div(radius.add(0.3)));
+material.positionNode = vec3(
+  cos(angle).mul(radius), seed.z, sin(angle).mul(radius)
+);
+```
+
+圆上某个角度的位置可以由 cos 和 sin 描述。`radius * twist` 让外层比内层多扭一段角度，形成螺旋。时间项除以半径，模拟中心转得更快；分母加 0.3 避免中心除零。这是艺术化运动规律，不是天体物理模拟。
+
+## 颜色与亮度层次
+
+用 `mix(暖色, 冷色, radius / 4)` 给中心与边缘不同颜色。加法混合让星点重叠更亮，Bloom 让明亮核心扩散。不要先靠无限提高粒子数量解决画面“空”，分布、大小和透明度往往更有效。[SpriteNodeMaterial](https://threejs.org/docs/pages/SpriteNodeMaterial.html)、[BloomNode](https://threejs.org/docs/pages/BloomNode.html)
+
+固定种子意味着拖动参数时恒星不会重新随机位置。对比两张截图时，这一点有助于判断改变的是 twist 还是数据分布。
+
+## 动手检查
+
+以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
+
+1. 暂停动画，再把“旋臂缠绕”设为 0，旋臂应接近径向分布；提高到 4 后应更弯。
+2. 在 `script.js` 的 angle 表达式中，删去 `.add(clock.mul(0.25).div(radius.add(0.3)))`，银河应不再随时间旋转。
+3. 恢复时间项，再把其中的 `.div(radius.add(0.3))` 改为 `.div(1)`，所有半径将按相同角速度转动，形状更像整体转盘。完成后恢复半径分母。
+
+本课每帧由种子与时间重新求位置，不记住上一帧；第 19 课会保存持久的位置与速度。
+
+## 运行与源码
+
+展开上面的“查看源码”：`script.js` 是本课完整实现，`shared/common.js` 是创建场景、相机、渲染器和调试面板的公共外壳。仓库内对应的 `src/lesson-code/webgpu-16-galaxy/src/` 可直接修改；运行 `pnpm dev` 后，源代码会在启动时生成预览，修改示例后需要重新运行 `pnpm generate-previews` 并刷新 iframe。
+
+首次学习请先读 [第 01 课的运行说明](/webgpu-tsl/01-introduction/)。节点材质使用 WebGPURenderer；底部状态栏会显示 WebGPU 或 WebGL 2 回退。遇到空白，先查看状态栏和控制台，再按 [第 04 课](/webgpu-tsl/04-tools-debug/) 的顺序排查。

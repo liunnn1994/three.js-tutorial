@@ -1,6 +1,8 @@
 import fs from "node:fs";
+import { build } from "esbuild";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { getThreeVersion } from "./three-version.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, "..");
@@ -10,7 +12,7 @@ const outputRoot = path.join(projectRoot, "public/previews");
 // VENDOR_MODE: 'local' (default/dev/mobile) | 'cdn' (web build)
 const VENDOR_MODE = process.env.VENDOR_MODE || "local";
 
-const THREE_VERSION = "0.184.0";
+const THREE_VERSION = getThreeVersion(projectRoot);
 const LIL_GUI_VERSION = "0.21.0";
 const GSAP_VERSION = "3.15.0";
 
@@ -23,6 +25,8 @@ const CDN_BASE = {
 const CDN_IMPORT_MAP = JSON.stringify({
   imports: {
     three: `${CDN_BASE.three}/build/three.module.js`,
+    "three/webgpu": `${CDN_BASE.three}/build/three.webgpu.js`,
+    "three/tsl": `${CDN_BASE.three}/build/three.tsl.js`,
     "three/addons/": `${CDN_BASE.three}/examples/jsm/`,
     "three/examples/jsm/": `${CDN_BASE.three}/examples/jsm/`,
   },
@@ -50,7 +54,11 @@ function getVendorPath(pkg, subPath = "") {
   return `/vendor/${pkg}`;
 }
 
+const webgpuLessons = fs.readdirSync(codeRoot)
+  .filter((name) => name.startsWith("webgpu-") && !name.endsWith("-final"))
+  .sort();
 const lessons = [
+  ...webgpuLessons,
   "03-first-threejs-project",
   "04-transform-objects",
   "05-animations",
@@ -232,11 +240,15 @@ function rewriteModuleSpecifiers(content) {
   const gsap = getVendorPath("gsap");
 
   let result = content
+    .replace(/from\s+['"]three\/webgpu['"]/g, `from '${getVendorPath("three", "/build/three.webgpu.js")}'`)
+    .replace(/from\s+['"]three\/tsl['"]/g, `from '${getVendorPath("three", "/build/three.tsl.js")}'`)
     .replace(/from\s+['"]three\/addons\/(.+?)['"]/g, `from '${threeAddons}/$1'`)
     .replace(/from\s+['"]three\/examples\/jsm\/(.+?)['"]/g, `from '${threeAddons}/$1'`)
     .replace(/from\s+['"]three['"]/g, `from '${threeCore}'`)
     .replace(/from\s+['"]lil-gui['"]/g, `from '${lilGui}'`)
     .replace(/from\s+['"]gsap['"]/g, `from '${gsap}'`);
+
+  result = result.replace(/import\(\s*['"]three\/addons\/(.+?)['"]\s*\)/g, `import('${threeAddons}/$1')`);
 
   // These don't have reliable CDN equivalents, always use local
   result = result
@@ -333,6 +345,17 @@ for (const lesson of lessons) {
     for (const [fp, content] of jsFiles) {
       combinedJs += rewriteModuleSpecifiers(inlineGlslImports(content, fp, glslFiles)) + "\n";
     }
+  }
+
+  // Bundle shared teaching utilities with a real module resolver, retaining public
+  // Three.js imports so WebGPU and TSL use exactly the same module instance.
+  if (lesson.startsWith("webgpu-")) {
+    const bundled = await build({
+      entryPoints: [path.join(srcDir, "script.js")], bundle: true,
+      write: false, format: "esm", target: "es2022",
+      external: ["three", "three/*", "lil-gui"],
+    });
+    combinedJs = rewriteModuleSpecifiers(bundled.outputFiles[0].text);
   }
 
   const previewHtml = rawHtml

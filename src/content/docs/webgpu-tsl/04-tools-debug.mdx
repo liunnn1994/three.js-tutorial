@@ -1,0 +1,77 @@
+---
+title: "04 工具与调试"
+description: 把 UV、法线、位置和遮罩直接画成颜色，并使用官方 Inspector 检查节点
+sidebar:
+  order: 4
+---
+
+import LessonPreview from "../../../components/LessonPreview.astro";
+
+## 本课要做什么
+
+把 UV、法线、位置和遮罩直接画成颜色，并使用官方 Inspector 检查节点。对应目录中的 **Tools & debug**。先观察结果，再读代码，最后修改参数验证理解。
+
+[查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/04@2x.webp)
+
+<LessonPreview lesson="webgpu-04-tools-debug" />
+
+## 先把数据画出来
+
+当一个 shader 看起来不对，先判断是输入错了，还是组合方式错了。GPU 上一个节点会对大量片元求值，`console.log(node)` 只能看到 JS 对象结构。最简单的办法是暂时让 `colorNode` 输出你要检查的值。
+
+```js
+const modes = {
+  'UV 坐标': vec3(uv(), 0),
+  '世界法线': normalWorld.mul(0.5).add(0.5),
+  '局部位置': positionLocal.mul(0.5).add(0.5),
+  '黑白遮罩': vec3(uv().y.step(0.5)),
+};
+```
+
+UV 图的红色表示 U、绿色表示 V；移动到表面边缘，通道逐渐变化。**法线**是垂直于表面的方向向量，用于判断表面朝哪里。它可以有负数，所以先映射到 0 到 1 再作为颜色。遮罩是 0 到 1 的标量：黑色代表“没有”，白色代表“有”。后续烟雾浓度、河岸和粒子轮廓都可以用这个方法调试。
+
+## 改节点图与改数据的区别
+
+面板切换调试模式时，示例重新设置节点输入：
+
+```js
+material.colorNode = modes[value];
+material.needsUpdate = true;
+```
+
+这是结构变化，需要重新构建材质。第 07 课的 uniform 只是改变节点读取的数据，不需要每帧设 `needsUpdate`。如果每帧改节点图，就像前端动画每帧重新创建整棵组件树一样，会增加不必要的工作。
+
+## 官方 Inspector
+
+本课“打开官方 Inspector”按钮按需导入工具：
+
+```js
+const { Inspector } = await import('three/addons/inspector/Inspector.js');
+app.renderer.inspector = new Inspector();
+```
+
+Inspector 来自 Three.js addon，具体界面随版本变化。r186 官方 compute 示例也通过 `renderer.inspector` 接入它；参考图里的节点编辑视图属于工具界面，默认预览则先展示容易理解的可视化调试球。[r186 官方示例](https://github.com/mrdoob/three.js/blob/r186/examples/webgpu_compute_particles.html)
+
+如果面板在 iframe 中太窄，可以直接打开 `/previews/webgpu-04-tools-debug.html`。先理解节点输出，再看节点连接图，会更容易对应屏幕与代码。
+
+## 按这个顺序排查空白
+
+1. 状态栏仍显示初始化或报错：检查 localhost / HTTPS、浏览器设备可用性和网络请求。`navigator.gpu` 存在也不保证设备初始化成功。
+2. 查看控制台的模块加载错误。`three/webgpu`、`three/tsl`、addons 必须来自同一 Three.js 版本。
+3. 把材质暂时换成 `MeshBasicNodeMaterial`，颜色设为常量，确认几何体与相机正确。
+4. 查看线框，确认顶点数量足够；烟雾位移需要细分平面，四个顶点无法弯成曲线。
+5. 按 UV、位置、遮罩逐项输出，不要一次改五处代码。
+
+## 动手检查
+
+以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
+
+1. 在面板开启“查看三角形”，再切换“世界法线”，观察球是怎样由三角形拼成的。
+2. 在 `script.js` 的 `modes` 对象中，把 `'黑白遮罩': vec3(uv().y.step(0.5))` 的阈值改为 `0.2`。生成预览后选“黑白遮罩”，白色区域应增多，因为 V 大于等于 0.2 的区域都输出 1。这里 `value.step(edge)` 等价于 `step(edge, value)`。
+3. 将阈值恢复为 `0.5`；比较 UV 模式与遮罩模式，找出边界对应的 V 值。
+
+## 运行与源码
+
+展开上面的“查看源码”：`script.js` 是本课完整实现，`shared/common.js` 是创建场景、相机、渲染器和调试面板的公共外壳。仓库内对应的 `src/lesson-code/webgpu-04-tools-debug/src/` 可直接修改；运行 `pnpm dev` 后，源代码会在启动时生成预览，修改示例后需要重新运行 `pnpm generate-previews` 并刷新 iframe。
+
+首次学习请先读 [第 01 课的运行说明](/webgpu-tsl/01-introduction/)。节点材质使用 WebGPURenderer；底部状态栏会显示 WebGPU 或 WebGL 2 回退。遇到空白，先查看状态栏和控制台，再按 [第 04 课](/webgpu-tsl/04-tools-debug/) 的顺序排查。

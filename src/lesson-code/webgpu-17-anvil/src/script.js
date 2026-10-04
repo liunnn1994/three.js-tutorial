@@ -1,0 +1,30 @@
+import * as THREE from 'three/webgpu';
+import { positionLocal, positionWorld, uniform, sin, smoothstep, mix, color, instancedBufferAttribute, uv, pass } from 'three/tsl';
+import { bloom } from 'three/addons/tsl/display/BloomNode.js';
+import { createStage, anvil, seededRandom, showError } from '../../_webgpu/common.js';
+async function main() {
+  const app = await createStage({ background: '#120c22', camera: [5, 3.5, 6] });
+  const clock = uniform(0), heat = uniform(1);
+  const band = sin(positionWorld.x.mul(2).sub(clock)).mul(0.5).add(0.5);
+  const hot = smoothstep(0.5, 0.95, band).mul(heat);
+  const material = new THREE.MeshStandardNodeMaterial({ metalness: 0.5, roughness: 0.35 });
+  material.colorNode = mix(color('#414b82'), color('#e99273'), hot);
+  material.emissiveNode = color('#ff6a18').mul(hot.pow(3)).mul(3);
+  const model = anvil(app.scene, material);
+  const random = seededRandom(17), count = 800, data = new Float32Array(count * 3);
+  for (let i = 0; i < data.length; i++) data[i] = random();
+  const seed = instancedBufferAttribute(new THREE.InstancedBufferAttribute(data, 3));
+  const sparks = new THREE.SpriteNodeMaterial({ depthWrite: false, blending: THREE.AdditiveBlending });
+  sparks.positionNode = seed.sub(0.5).mul(6);
+  sparks.colorNode = mix(color('#ffa342'), color('#ac7dff'), seed.x).mul(3);
+  sparks.scaleNode = sin(seed.y.mul(20).add(clock.mul(3))).mul(0.5).add(0.5).mul(0.045);
+  sparks.opacityNode = smoothstep(0, 0.5, uv().sub(0.5).length()).oneMinus().pow(2);
+  const cloud = new THREE.Sprite(sparks); cloud.count = count; cloud.frustumCulled = false; cloud.position.y = 1.5; app.scene.add(cloud);
+  const pipeline = new THREE.RenderPipeline(app.renderer), scenePass = pass(app.scene, app.camera);
+  const output = scenePass.getTextureNode('output'), glow = bloom(output, 0.5, 0.3, 1);
+  pipeline.outputNode = output.add(glow); app.postProcessing(pipeline);
+  app.gui.add(heat, 'value', 0, 1, 0.01).name('铁砧热度');
+  app.animate((seconds) => { clock.value = seconds; model.rotation.y = Math.sin(seconds * 0.3) * 0.15; });
+  app.track(scenePass, glow);
+}
+main().catch(showError);

@@ -1,0 +1,83 @@
+---
+title: "21 交互雪地"
+description: 让角色在雪面行走，把落脚位置写入持久高度纹理，并在 TSL 中生成凹陷足迹
+sidebar:
+  order: 21
+---
+
+import LessonPreview from "../../../components/LessonPreview.astro";
+
+## 本课要做什么
+
+让角色在雪面行走，把落脚位置写入持久高度纹理，并在 TSL 中生成凹陷足迹。对应目录中的 **Snow**。先观察结果，再读代码，最后修改参数验证理解。
+
+[查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/21@2x.webp)
+
+<LessonPreview lesson="webgpu-21-snow" />
+
+## 雪地需要记忆
+
+第 10 课烟雾由时间重新计算；雪地走过的地方应持续保留。这里用 Canvas 保存足迹，再用 CanvasTexture 作为 GPU 读取的高度场。它是 CPU 写纹理、TSL 读纹理的混合方案，适合从前端 Canvas 经验过渡到持久 GPU 状态。
+
+参考图包含完整人物、精细雪材质与步态。本课使用程序化人物、交替脚步和可见凹陷，把交互链路实现完整；没有宣称已实现角色碰撞或完整积雪物理。
+
+## 黑色表示平地，白色表示踩下去
+
+```js
+const heightMap = new THREE.CanvasTexture(canvas);
+heightMap.colorSpace = THREE.NoColorSpace;
+heightMap.generateMipmaps = false;
+heightMap.minFilter = THREE.LinearFilter;
+const imprint = texture(heightMap, uv()).r;
+material.positionNode = positionLocal.add(vec3(0, imprint.mul(depth).negate(), 0));
+material.colorNode = mix(color('#effaff'), color('#4289ae'), imprint);
+```
+
+纹理黑色时高度变化为 0，白色时向下移 depth。颜色同时变成冷蓝，让凹陷在小屏幕上也容易辨认。这里的蓝色是一种艺术辅助，不是完整的真实阴影。[CanvasTexture](https://threejs.org/docs/pages/CanvasTexture.html)、[TextureNode](https://threejs.org/docs/pages/TextureNode.html)
+
+平面有 192×192 段，因为位移发生在顶点上。源码通过 `geometry.rotateX(-Math.PI / 2)` 把顶点数据转到局部 XZ 平面，网格自身没有再旋转，所以负的局部 Y 位移就是向下踩。两种旋转方式的区别见 [第 20 课](/webgpu-tsl/20-stylized-nature-scene/)。纹理本身是 512×512，即使画出很细的脚印，网格顶点不足也无法表现相应的凹陷。
+
+## 世界坐标对应 Canvas 坐标
+
+雪面宽 8，中心在原点。世界 X 从 -4 到 4 映射到 Canvas 左右：
+
+```js
+const u = (x / 8 + 0.5) * 512;
+const v = (z / 8 + 0.5) * 512;
+```
+
+为什么 Z 使用加号？PlaneGeometry 旋转后，世界 +Z 对应 UV 的 -V，而 Canvas 的 Y 又向下增长，两次方向反转抵消。映射错时，脚印会出现在人物另一侧；先在一个已知位置画点验证，不要只凭直觉猜。
+
+每次落脚绘制一个椭圆径向渐变，中心白色、边缘透明，使凹陷由中心向边缘变浅。绘制后设置 `heightMap.needsUpdate = true`，才会把 Canvas 新内容上传给 GPU。
+
+## 不是每帧都盖一个脚印
+
+角色移动距离累计超过 0.24 才记录一次脚步，左右脚交替。脚的局部位置通过 `getWorldPosition()` 转为世界坐标，因此转向后脚印仍贴着正确的脚。按距离触发比固定帧数触发更能适应帧率变化。
+
+自动绕圈用于快速展示。关闭后点击雪面，Raycaster 找到目标点，角色每帧按 `speed * dt` 走近目标。这里点击使用原始网格求交，shader 变形不会自动反映到 CPU Raycaster；足迹较浅时误差可以接受。
+
+## 持久效果还有哪些实现路线
+
+| 路线 | 写入位置 | 适合学习什么 |
+| --- | --- | --- |
+| 本课 CanvasTexture | CPU Canvas，落脚时上传 | 坐标映射与前端交互 |
+| RenderTarget 轮换 | GPU 绘制并积累 | 图像反馈、避免读写同一纹理 |
+| WebGPU storage texture / buffer | GPU compute | 大规模持久状态和并行更新 |
+
+“使用 WebGPU 渲染”不意味着每个步骤都必须在 GPU 上发生。确认数据更新规模，再选择路线。如果足迹数量与分辨率很大，可以考虑后两种方案。
+
+## 动手检查
+
+以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
+
+1. 等角色走一圈，再开启“暂停动画”，已有足迹应保留。把“足迹深度”拖到 0，凹陷应消失，蓝色痕迹仍在，因为几何位移与颜色是两个输出。
+2. 点击“清空足迹”，旧痕迹应消失。先解除暂停，再关闭自动绕圈，点击雪面让角色走一条新路线。
+3. 在 `script.js` 的 stamp 函数中临时把 `v = (z / 8 + 0.5) * 512` 改成 `v = (-z / 8 + 0.5) * 512`，重新生成预览。足迹应相对 Z=0 镜像到另一侧；随后恢复加号，验证世界坐标与纹理映射。
+
+本课沿用平面法线，凹陷颜色增强了深浅对比。真实雪坑侧面的光照还需从高度邻域构建法线；真实步态则需骨骼动画与地面约束。
+
+## 运行与源码
+
+展开上面的“查看源码”：`script.js` 是本课完整实现，`shared/common.js` 是创建场景、相机、渲染器和调试面板的公共外壳。仓库内对应的 `src/lesson-code/webgpu-21-snow/src/` 可直接修改；运行 `pnpm dev` 后，源代码会在启动时生成预览，修改示例后需要重新运行 `pnpm generate-previews` 并刷新 iframe。
+
+首次学习请先读 [第 01 课的运行说明](/webgpu-tsl/01-introduction/)。节点材质使用 WebGPURenderer；底部状态栏会显示 WebGPU 或 WebGL 2 回退。遇到空白，先查看状态栏和控制台，再按 [第 04 课](/webgpu-tsl/04-tools-debug/) 的顺序排查。

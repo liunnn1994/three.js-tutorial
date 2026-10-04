@@ -1,0 +1,70 @@
+---
+title: "13 实例渲染"
+description: 一次绘制生成 225 根柱子，使用每实例属性与 TSL 让它们起伏
+sidebar:
+  order: 13
+---
+
+import LessonPreview from "../../../components/LessonPreview.astro";
+
+## 本课要做什么
+
+一次绘制生成 225 根柱子，使用每实例属性与 TSL 让它们起伏。对应目录中的 **Instances**。先观察结果，再读代码，最后修改参数验证理解。
+
+[查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/13@2x.webp)
+
+<LessonPreview lesson="webgpu-13-instances" />
+
+## 为什么复制网格会有开销
+
+普通 Mesh 通常需要自己的绘制提交。只有形状、材质相同，位置不同的物体，适合用 `InstancedMesh`：共享几何体和材质，另存每个实例的变换。本课把参考图中的三根柱子扩展成 15×15 阵列。[InstancedMesh 文档](https://threejs.org/docs/pages/InstancedMesh.html)
+
+实例减少绘制提交，不会减少三角形数量，也不会自动解决透明排序。先确认瓶颈再优化。
+
+## 初始化布局
+
+```js
+const mesh = new THREE.InstancedMesh(geometry, material, count);
+const transform = new THREE.Object3D();
+for (let i = 0; i < count; i++) {
+  transform.position.set((i % 15 - 7) * 0.48, 0, (Math.floor(i / 15) - 7) * 0.48);
+  transform.updateMatrix();
+  mesh.setMatrixAt(i, transform.matrix);
+}
+mesh.instanceMatrix.needsUpdate = true;
+```
+
+`i % 15` 是列，`Math.floor(i / 15)` 是行。矩阵保存移动、旋转和缩放的组合。先改 Object3D，再调用 updateMatrix，最后存到实例数组。面板改变起伏时，不需要重新写这些矩阵。
+
+## 每根柱子有不同相位
+
+```js
+geometry.setAttribute('aPhase', new THREE.InstancedBufferAttribute(phases, 1));
+const phase = attribute('aPhase', 'float');
+const height = sin(phase.add(clock)).mul(amplitude).add(1.2);
+material.positionNode = vec3(
+  positionLocal.x, positionLocal.y.add(0.5).mul(height), positionLocal.z
+);
+```
+
+`phases` 有 count 项，每根柱子一项。`InstancedBufferAttribute` 默认每项供一个实例使用；普通 BufferAttribute 则按顶点取数据。[InstancedBufferAttribute 文档](https://threejs.org/docs/pages/InstancedBufferAttribute.html)
+
+盒子原本 Y 从 -0.5 到 0.5。先加 0.5 变成 0 到 1，再乘 height，柱底就保持在地面，柱顶才会升降。直接乘原 Y 会让底部一起伸进地下。
+
+## GPU 位移与包围盒
+
+CPU 计算的包围盒不知道 shader 额外做了多少位移。示例设置 `frustumCulled = false`，确保教学观察时不会突然消失。生产中可以根据最大位移扩大边界，再恢复剔除，否则大量屏幕外物体仍会被提交绘制。
+
+## 动手检查
+
+以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
+
+1. 用面板将“柱子起伏幅度”设为 0，柱子应等高，颜色仍按 phase 变化。
+2. 在 `script.js` 的初始化循环中，将 `phases[i] = i / count * Math.PI * 8` 改为 `phases[i] = 0`。重新生成预览，把幅度调回 0.45，所有柱子应同步起伏，配色也相同。
+3. 恢复 phases 公式。amplitude 是所有实例共享的 uniform，phases 是每根柱子不同的实例属性。
+
+## 运行与源码
+
+展开上面的“查看源码”：`script.js` 是本课完整实现，`shared/common.js` 是创建场景、相机、渲染器和调试面板的公共外壳。仓库内对应的 `src/lesson-code/webgpu-13-instances/src/` 可直接修改；运行 `pnpm dev` 后，源代码会在启动时生成预览，修改示例后需要重新运行 `pnpm generate-previews` 并刷新 iframe。
+
+首次学习请先读 [第 01 课的运行说明](/webgpu-tsl/01-introduction/)。节点材质使用 WebGPURenderer；底部状态栏会显示 WebGPU 或 WebGL 2 回退。遇到空白，先查看状态栏和控制台，再按 [第 04 课](/webgpu-tsl/04-tools-debug/) 的顺序排查。

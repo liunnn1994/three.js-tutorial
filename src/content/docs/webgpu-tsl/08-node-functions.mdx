@@ -1,0 +1,83 @@
+---
+title: "08 节点函数"
+description: 封装可复用的 TSL 函数，在角色脚下生成不断扩散的同心圆
+sidebar:
+  order: 8
+---
+
+import LessonPreview from "../../../components/LessonPreview.astro";
+
+## 本课要做什么
+
+封装可复用的 TSL 函数，在角色脚下生成不断扩散的同心圆。对应目录中的 **Node Functions**。先观察结果，再读代码，最后修改参数验证理解。
+
+[查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/08@2x.webp)
+
+<LessonPreview lesson="webgpu-08-node-functions" />
+
+## 从一段表达式到一个工具
+
+前几节一直把节点直接写进材质。现在把“圆环遮罩”封装成函数，像前端提取一个计算工具一样，把输入坐标、重复密度、时间相位与输出分开。
+
+```js
+const rings = Fn(([point, density, phase]) => {
+  const radius = length(point).toVar();
+  return smoothstep(0.42, 0.48, fract(radius.mul(density).sub(phase)));
+});
+```
+
+`Fn` 回调里的参数是节点，不是某个像素的 JS 数值。`rings(...)` 会生成函数调用节点；回调在构建 shader 时用于记录图与语句，不能当成每帧 CPU 回调使用。与普通 JS 函数相比，Fn 还能承载 `.assign()`、`If()` 等 GPU 语句。[官方 TSL 函数说明](https://github.com/mrdoob/three.js/wiki/Three.js-Shading-Language#function)
+
+## 为什么 length 会产生圆
+
+取地面的二维坐标 `(x, z)`，到中心的距离是 `sqrt(x² + z²)`。所有距离相同的点都落在一条圆上，因此 `length(point)` 是生成圆环最直接的输入。
+
+将距离乘 density 后取 `fract()`，距离每增加一个周期都会从 0 回到 1。`smoothstep` 把某个区间变成颜色边界。减去 phase 会使圆环向外扩散；改成加号，运动方向就会反转。
+
+```js
+floorMaterial.colorNode = mix(
+  color('#101119'), color('#b1b4ff'),
+  rings(positionWorld.xz, frequency, clock)
+);
+```
+
+## 选择正确的坐标空间
+
+`positionLocal` 是网格自身的坐标，`positionWorld` 是经过物体变换后的场景坐标。地面旋转到水平后，用 `positionWorld.xz` 表示水平面，计算结果不受它原来的二维 UV 布局影响。
+
+局部图案会跟着物体走；世界图案像投射在场景中的一束光，物体移动会穿过它。没有“哪种总是正确”，要看效果属于物体表面还是整个空间。
+
+## 函数还有一个实际好处
+
+可以把同一个遮罩输出给不同材质：作为颜色系数、透明度或发光强度。函数只描述规律，不绑定某个颜色。这样不用为了改配色再复制一遍数学逻辑。
+
+## 动手检查
+
+以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
+
+1. 给 `script.js` 顶部的 TSL import 增加 `vec2`，将 Fn 内的 `const radius = length(point).toVar();` 替换为：
+
+```js
+const radius = length(point.sub(vec2(2, 0))).toVar();
+```
+
+圆心应移动到世界 `(x, z) = (2, 0)`。此处 `point` 来自 `positionWorld.xz`，第二分量是 Z。
+
+2. 恢复原来的 radius 行，然后在 `ground.rotation.x = ...; app.scene.add(ground);` 后增加：
+
+```js
+const second = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), floorMaterial);
+second.rotation.x = -Math.PI / 2;
+second.position.set(3, 0.01, 0);
+app.scene.add(second);
+```
+
+第二块平面略高于原地面，避免重叠闪烁。同一个世界坐标圆环应连续穿过它。
+
+3. 暂时把 Fn 内的 return 行改为 `return length(point);`，先看距离决定的颜色。数值超过 1 时 `mix` 会外推，这不是归一化距离图。完成后恢复 return 行并删掉新增平面。
+
+## 运行与源码
+
+展开上面的“查看源码”：`script.js` 是本课完整实现，`shared/common.js` 是创建场景、相机、渲染器和调试面板的公共外壳。仓库内对应的 `src/lesson-code/webgpu-08-node-functions/src/` 可直接修改；运行 `pnpm dev` 后，源代码会在启动时生成预览，修改示例后需要重新运行 `pnpm generate-previews` 并刷新 iframe。
+
+首次学习请先读 [第 01 课的运行说明](/webgpu-tsl/01-introduction/)。节点材质使用 WebGPURenderer；底部状态栏会显示 WebGPU 或 WebGL 2 回退。遇到空白，先查看状态栏和控制台，再按 [第 04 课](/webgpu-tsl/04-tools-debug/) 的顺序排查。

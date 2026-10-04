@@ -1,0 +1,79 @@
+---
+title: "11 后期处理"
+description: 把场景渲染成纹理，再使用 TSL 后处理给高亮区域添加 Bloom 光晕
+sidebar:
+  order: 11
+---
+
+import LessonPreview from "../../../components/LessonPreview.astro";
+
+## 本课要做什么
+
+把场景渲染成纹理，再使用 TSL 后处理给高亮区域添加 Bloom 光晕。对应目录中的 **Post-processing**。先观察结果，再读代码，最后修改参数验证理解。
+
+[查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/11@2x.webp)
+
+<LessonPreview lesson="webgpu-11-post-processing" />
+
+## 后处理处理的是整张画面
+
+材质决定一个物体如何显现，后处理在场景已经变成图片后，处理图片。本课先放置程序化铁砧，再用透明外壳上的亮线提供高亮输入。外壳的经纬线是教学替代，参考图则使用更精细的多边形网格。
+
+**Pass** 可以理解为一次中间绘制：场景先画到离屏纹理，再把这张纹理交给后续节点，最后显示到 canvas。
+
+## 搭建最小后处理链
+
+```js
+import { pass } from 'three/tsl';
+import { bloom } from 'three/addons/tsl/display/BloomNode.js';
+const pipeline = new THREE.RenderPipeline(app.renderer);
+const scenePass = pass(app.scene, app.camera);
+const sceneColor = scenePass.getTextureNode('output');
+const glow = bloom(sceneColor, 0.7, 0.35, 1);
+pipeline.outputNode = sceneColor.add(glow);
+```
+
+RenderPipeline 属于 WebGPURenderer 的节点后处理系统。动画循环调用 `pipeline.render()`；公共外壳通过 `app.postProcessing(pipeline)` 完成切换。旧 WebGL 课程中的 EffectComposer 不直接接到这个系统中。[RenderPipeline 文档](https://threejs.org/docs/pages/RenderPipeline.html)
+
+## 为什么要相加
+
+Bloom 输出高亮区域扩散形成的光晕。`sceneColor.add(glow)` 保留原始画面并加上扩散；只输出 glow 会丢掉正常场景。线条颜色乘以 5，给后处理提供大于普通白色的线性强度。
+
+Bloom 的三个参数分别控制强度、半径和亮度阈值。本课阈值为 1，面板可以实时调整强度与阈值。提高阈值会减少参与发光的区域，降低阈值可能使整个画面泛光。[BloomNode 文档](https://threejs.org/docs/pages/BloomNode.html)
+
+## 颜色处理只做一次
+
+RenderPipeline 默认负责最终输出的色调映射与颜色转换。本课保留这个默认行为，并在公共 renderer 中使用 ACES tone mapping。不要再手动给最终结果补一个重复的 sRGB 转换，否则画面会变得不正确。需要在色调映射之后运行的效果，要按官方 API 单独安排顺序。
+
+多一个后处理节点并不一定只多一次绘制：Bloom 内部会进行多次降采样和模糊。降低 `strength` 只会让光晕变暗，即使设为 0，节点仍然执行模糊；它不是减少绘制工作的开关。移动端可以先降低 renderer 像素比、降低 Bloom 中间纹理分辨率或切换到不包含 Bloom 的输出，再测实际帧率。[r186 Bloom 实现](https://github.com/mrdoob/three.js/blob/r186/examples/jsm/tsl/display/BloomNode.js)
+
+```js
+glow.setResolutionScale(0.25); // 相对于 renderer 尺寸；默认是 0.5
+```
+
+把这行放在 `const glow = bloom(...)` 后。本课与第 01 课使用同一版本，直接调用 `setResolutionScale()` 调整 Bloom 的处理分辨率。更低的分辨率减少需要处理的像素，但可能让光晕细节变粗。如果运行中要关闭 Bloom，改成 `pipeline.outputNode = sceneColor`，并设置 `pipeline.needsUpdate = true` 让输出材质重建。需要恢复时再接回 `sceneColor.add(glow)`。[BloomNode 文档](https://threejs.org/docs/pages/BloomNode.html)、[RenderPipeline 文档](https://threejs.org/docs/pages/RenderPipeline.html)
+
+## 登记后处理资源
+
+`scenePass` 持有离屏渲染目标，`glow` 持有模糊用的渲染目标。完整源码在创建它们后调用：
+
+```js
+app.track(scenePass, glow);
+```
+
+`app.postProcessing(pipeline)` 会登记 pipeline，`app.track()` 则登记 pass 和效果节点；公共外壳在释放 renderer 前逐项调用 `dispose()`。`pipeline.dispose()` 只释放它自己的输出材质，不会递归清理整条后处理链。纹理、备用材质也按同样方式登记。[r186 RenderPipeline 清理实现](https://github.com/mrdoob/three.js/blob/r186/src/renderers/common/RenderPipeline.js)、[PassNode 文档](https://threejs.org/docs/pages/PassNode.html)
+
+## 动手检查
+
+以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
+
+1. 在面板将 Bloom 强度设为 0，原始亮线应仍存在。这只验证画面合成，不能说明模糊绘制已停止。
+2. 将阈值从 0 拖到 3，看哪些区域不再贡献光晕。
+3. 将 `script.js` 中的 `pipeline.outputNode = sceneColor.add(glow)` 临时改为 `pipeline.outputNode = glow`，生成预览后应只剩光晕图。然后改为 `pipeline.outputNode = sceneColor`，观察完全绕过 Bloom 的原场景。初始赋值发生在第一次绘制前；若在运行中切换输出，还要设置 `pipeline.needsUpdate = true`。
+4. 恢复相加，在创建 glow 后增加 `glow.setResolutionScale(0.25);`，对比光晕细节与帧率；降低分辨率与降低强度改变的是不同问题。
+
+## 运行与源码
+
+展开上面的“查看源码”：`script.js` 是本课完整实现，`shared/common.js` 是创建场景、相机、渲染器和调试面板的公共外壳。仓库内对应的 `src/lesson-code/webgpu-11-post-processing/src/` 可直接修改；运行 `pnpm dev` 后，源代码会在启动时生成预览，修改示例后需要重新运行 `pnpm generate-previews` 并刷新 iframe。
+
+首次学习请先读 [第 01 课的运行说明](/webgpu-tsl/01-introduction/)。节点材质使用 WebGPURenderer；底部状态栏会显示 WebGPU 或 WebGL 2 回退。遇到空白，先查看状态栏和控制台，再按 [第 04 课](/webgpu-tsl/04-tools-debug/) 的顺序排查。

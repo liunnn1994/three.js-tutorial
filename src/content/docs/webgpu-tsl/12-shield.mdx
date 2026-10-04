@@ -1,0 +1,73 @@
+---
+title: "12 能量护盾"
+description: 用菲涅耳边缘与点击冲击波，给铁砧加一个透明能量护盾
+sidebar:
+  order: 12
+---
+
+import LessonPreview from "../../../components/LessonPreview.astro";
+
+## 本课要做什么
+
+用菲涅耳边缘与点击冲击波，给铁砧加一个透明能量护盾。对应目录中的 **Shield**。先观察结果，再读代码，最后修改参数验证理解。
+
+[查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/12@2x.webp)
+
+<LessonPreview lesson="webgpu-12-shield" />
+
+## 为什么护盾边缘更亮
+
+参考图中的能量罩在轮廓处最亮。本课使用 **菲涅耳风格的边缘项** 模拟这个视觉规律：表面越斜着面对相机，越亮。它是简化的艺术表达，不是完整的物理薄膜模型。
+
+法线是表面朝向，视线是表面指向相机的方向。两个单位向量做点积，正对时绝对值接近 1，侧对时接近 0。
+
+```js
+const viewDirection = positionView.negate().normalize();
+const rim = normalView.dot(viewDirection).abs().oneMinus().pow(power);
+```
+
+`positionView` 与 `normalView` 都在相机空间。使用不同坐标空间的两个向量做点积，会得到看似能运行但随相机异常变化的结果。`1 - abs(dot)` 将侧面变亮，`pow(power)` 把亮边收紧。[TSL 法线与位置入口](https://github.com/mrdoob/three.js/wiki/Three.js-Shading-Language)
+
+## 做一个可以点中的球壳
+
+球半径 2.7，中心 Y 为 0.35，因此画面中主要看到罩住铁砧的上部。Raycaster 从指针的屏幕位置发射一条射线，与球网格相交：
+
+```js
+raycaster.setFromCamera(pointer, app.camera);
+const result = raycaster.intersectObject(shield)[0];
+if (result) {
+  hit.value.copy(result.point);
+  impactAge.value = 0;
+}
+```
+
+`pointer` 是标准化设备坐标：屏幕左上是 `(-1, 1)`，右下是 `(1, -1)`。命中点是世界坐标，所以冲击距离也使用 `positionWorld`。
+
+## 冲击波是移动的距离阈值
+
+```js
+const distance = positionWorld.distance(hit);
+const ring = distance.sub(impactAge.mul(2)).abs();
+const impact = smoothstep(0, 0.16, ring).oneMinus()
+  .mul(impactAge.mul(0.65).oneMinus().max(0));
+```
+
+年龄乘 2 是当前波的半径。距离与半径接近时输出一个薄环，再让它随年龄淡出。这是球表面上欧氏距离的等值线，作为入门效果比直接讲球面测地线更容易检查。颜色项和透明度项都使用同一个 impact。
+
+## 透明设置与效果范围
+
+护盾使用 `transparent` 和 `depthWrite: false`，保留 depthTest，所以铁砧仍可以遮住它后面的部分。参考图还带有六边形纹理、接触交界与更强后处理；本课先完成边缘与交互冲击。掌握后可以把第 09 课图案叠进护盾颜色，再接第 11 课 Bloom。
+
+## 动手检查
+
+以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
+
+1. 拖动相机，亮边应沿当前可见轮廓变化；用面板“边缘集中程度”从 1 调到 8，亮边应变窄。
+2. 点击两次不同位置，第二次冲击应替换第一次，因为源码只保存一组 hit 与 impactAge。
+3. 在 `script.js` 中把 `const ring = distance.sub(impactAge.mul(2)).abs()` 的 2 改成 1，冲击环的扩张速度应减半。完成后恢复 2。要同时存在多个冲击，需要保存多组命中点与年龄。
+
+## 运行与源码
+
+展开上面的“查看源码”：`script.js` 是本课完整实现，`shared/common.js` 是创建场景、相机、渲染器和调试面板的公共外壳。仓库内对应的 `src/lesson-code/webgpu-12-shield/src/` 可直接修改；运行 `pnpm dev` 后，源代码会在启动时生成预览，修改示例后需要重新运行 `pnpm generate-previews` 并刷新 iframe。
+
+首次学习请先读 [第 01 课的运行说明](/webgpu-tsl/01-introduction/)。节点材质使用 WebGPURenderer；底部状态栏会显示 WebGPU 或 WebGL 2 回退。遇到空白，先查看状态栏和控制台，再按 [第 04 课](/webgpu-tsl/04-tools-debug/) 的顺序排查。

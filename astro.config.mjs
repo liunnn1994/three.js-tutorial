@@ -54,6 +54,10 @@ export default defineConfig({
           label: "TresJS (Vue)",
           items: [{ autogenerate: { directory: "tresjs" } }],
         },
+        {
+          label: "WebGPU & TSL (01-21)",
+          items: [{ autogenerate: { directory: "webgpu-tsl" } }],
+        },
       ],
       customCss: ["./src/styles/global.css"],
     }),

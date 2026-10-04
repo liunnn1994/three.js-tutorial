@@ -1,1676 +1,1837 @@
 {
   ".claude/settings.json": {
-    "mtime": 1788414598.1657722,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.35997,
     "ast_hash": "8d0b8cd2cddeeba6ace4d2fd1e77577b",
     "semantic_hash": ""
   },
   ".claude/settings.local.json": {
-    "mtime": 1779697318.8226428,
-    "seen": 1788445642.550029,
+    "mtime": 1779319637.9330134,
     "ast_hash": "ead989f994cf8d6e22157ca8c97e753c",
     "semantic_hash": ""
   },
   ".releaserc.json": {
-    "mtime": 1779066169.2852535,
-    "seen": 1788445642.550029,
+    "mtime": 1777618029.8086538,
     "ast_hash": "19ebb7a28ce3835678092ba57a53f97a",
     "semantic_hash": ""
   },
   ".vscode/extensions.json": {
-    "mtime": 1779066169.2862554,
-    "seen": 1788445642.550029,
+    "mtime": 1777169339.901081,
     "ast_hash": "3adedb22d082dbd1ebb00b75d21403aa",
     "semantic_hash": ""
   },
   ".vscode/launch.json": {
-    "mtime": 1779066169.2862554,
-    "seen": 1788445642.550029,
+    "mtime": 1777169339.9011707,
     "ast_hash": "60493763dcbc2d109e57da86d997602a",
     "semantic_hash": ""
   },
   "astro.config.mjs": {
-    "mtime": 1788429143.0475328,
-    "seen": 1788445642.550029,
-    "ast_hash": "9358a9f21cd09856108044928022e0f0",
+    "mtime": 1791074818.9513898,
+    "ast_hash": "4177f2fa5baa695e92090b0eaf293acd",
     "semantic_hash": ""
   },
   "capacitor.config.ts": {
-    "mtime": 1788428850.9570136,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.371016,
     "ast_hash": "794eefd25f7e37da9ad68f64b6273264",
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1788445578.433108,
-    "seen": 1788445642.550029,
-    "ast_hash": "701e6e74737f7ebf944862f2d7a70afc",
+    "mtime": 1791073456.4021554,
+    "ast_hash": "3f32cd1979b99c9d2b68c91b4c407964",
     "semantic_hash": ""
   },
   "public/fonts/helvetiker_regular.typeface.json": {
-    "mtime": 1779697318.8276665,
-    "seen": 1788445642.550029,
+    "mtime": 1779318926.1573625,
     "ast_hash": "a5fcd931100f0008f32614b3c506cf44",
     "semantic_hash": ""
   },
   "scripts/copy-vendor.js": {
-    "mtime": 1788414906.5568736,
-    "seen": 1788445642.550029,
-    "ast_hash": "baf16754c847b6a5903679b772bb2250",
+    "mtime": 1791074282.6282904,
+    "ast_hash": "47b5dfdb00f9a6bf48128023fab7fd93",
     "semantic_hash": ""
   },
   "scripts/generate-icons.mjs": {
-    "mtime": 1788445550.8048365,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.4051287,
     "ast_hash": "d68bb35f7702c4cd775a46bc33e49d72",
     "semantic_hash": ""
   },
   "scripts/generate-previews.js": {
-    "mtime": 1788414906.5578804,
-    "seen": 1788445642.550029,
-    "ast_hash": "f6896a5a1f6801a1f5ef5e05ad651063",
+    "mtime": 1791074749.2212684,
+    "ast_hash": "fda54973b4f7a55d8988926736e63892",
     "semantic_hash": ""
   },
   "scripts/patch-csm.js": {
-    "mtime": 1779697318.8286655,
-    "seen": 1788445642.550029,
+    "mtime": 1779318923.3196096,
     "ast_hash": "e55686f9144cfcdb7cc4eb8412097121",
     "semantic_hash": ""
   },
   "scripts/prepare-android.js": {
-    "mtime": 1788416211.337241,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.4055462,
     "ast_hash": "049257b6771b591cb26c1e80ff07209c",
     "semantic_hash": ""
   },
   "scripts/prepare-app-routes.js": {
-    "mtime": 1788445571.514968,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.4056127,
     "ast_hash": "e76325b5287c280deaf0fdcc8dbc095f",
     "semantic_hash": ""
   },
   "scripts/sync-version.js": {
-    "mtime": 1788414810.0137832,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.4058168,
     "ast_hash": "9ec4b9120ecee11e48885ba224fef29c",
     "semantic_hash": ""
   },
   "skills-lock.json": {
-    "mtime": 1779066172.3042164,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3068223,
     "ast_hash": "d253b3efedffab2e34e788abf5b718b0",
     "semantic_hash": ""
   },
   "src/components/LessonPreview.astro": {
-    "mtime": 1779066172.3251297,
-    "seen": 1788445642.550029,
-    "ast_hash": "ae5f33149f091f2fcfa49779056da138",
+    "mtime": 1791075942.8967085,
+    "ast_hash": "cdb67a31948be4fc3469e3c59a119441",
     "semantic_hash": ""
   },
   "src/components/TresJSPreview.astro": {
-    "mtime": 1779697318.8296669,
-    "seen": 1788445642.550029,
+    "mtime": 1779312219.0856166,
     "ast_hash": "815d114f9c56cb195350c11146ddf3e8",
     "semantic_hash": ""
   },
   "src/components/tresjs/Cientos.vue": {
-    "mtime": 1779697318.8306673,
-    "seen": 1788445642.550029,
+    "mtime": 1779318922.4340487,
     "ast_hash": "e91aa9cb6baf7bdd4f261bd1dfbcd061",
     "semantic_hash": ""
   },
   "src/components/tresjs/Debug.vue": {
-    "mtime": 1779697318.8306673,
-    "seen": 1788445642.550029,
+    "mtime": 1779318922.4586217,
     "ast_hash": "49d5da6d9a86625e96f1d354fcdb17c7",
     "semantic_hash": ""
   },
   "src/components/tresjs/EnvironmentStaging.vue": {
-    "mtime": 1779697318.8306673,
-    "seen": 1788445642.550029,
+    "mtime": 1779318922.4382374,
     "ast_hash": "f0ab2208befe1040db136e34938706fe",
     "semantic_hash": ""
   },
   "src/components/tresjs/FirstTresApp.vue": {
-    "mtime": 1779697318.8321717,
-    "seen": 1788445642.550029,
+    "mtime": 1779318922.4208195,
     "ast_hash": "a5a1e4ff1c8420ebcfb0aee31cb7a7c4",
     "semantic_hash": ""
   },
   "src/components/tresjs/LoadModels.vue": {
-    "mtime": 1779697318.8321717,
-    "seen": 1788445642.550029,
+    "mtime": 1779318922.452669,
     "ast_hash": "e7b13fa9d2630ffe28dfe2d985350fac",
     "semantic_hash": ""
   },
   "src/components/tresjs/MouseEvents.vue": {
-    "mtime": 1779697318.8331761,
-    "seen": 1788445642.550029,
+    "mtime": 1779318922.4362614,
     "ast_hash": "2a7260c1d506f5b4646e6aa248279a1c",
     "semantic_hash": ""
   },
   "src/components/tresjs/Physics.vue": {
-    "mtime": 1779697318.8331761,
-    "seen": 1788445642.550029,
+    "mtime": 1779318922.450775,
     "ast_hash": "61e9fd85539fef57fe30b231f87ce317",
     "semantic_hash": ""
   },
   "src/components/tresjs/PostProcessing.vue": {
-    "mtime": 1779697318.8331761,
-    "seen": 1788445642.550029,
+    "mtime": 1779318922.4483614,
     "ast_hash": "03f120f8d663c41006d61fa5f2c12f50",
     "semantic_hash": ""
   },
   "src/components/tresjs/ThreeDText.vue": {
-    "mtime": 1779697318.8341768,
-    "seen": 1788445642.550029,
+    "mtime": 1779318922.4111202,
     "ast_hash": "11cdff1c0b759d2fe15504129b78ca27",
     "semantic_hash": ""
   },
   "src/content.config.ts": {
-    "mtime": 1779066172.3251297,
-    "seen": 1788445642.550029,
+    "mtime": 1777602796.8908908,
     "ast_hash": "9da5b344274fa94c0650dcb1a257aacc",
     "semantic_hash": ""
   },
   "src/lesson-code/03-first-threejs-project/src/script.js": {
-    "mtime": 1779066172.353204,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.340081,
     "ast_hash": "4d21b7d33c4f332dd00f433c0e1d30a4",
     "semantic_hash": ""
   },
   "src/lesson-code/04-transform-objects/src/script.js": {
-    "mtime": 1779066172.3547175,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3401792,
     "ast_hash": "08d3e1ee227a3bea2f7d5e60629cea13",
     "semantic_hash": ""
   },
   "src/lesson-code/05-animations/src/script.js": {
-    "mtime": 1779066172.3567238,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.34027,
     "ast_hash": "1067ec64a0847fbc6f6e4678acb2edc9",
     "semantic_hash": ""
   },
   "src/lesson-code/06-cameras/src/script.js": {
-    "mtime": 1779066172.3582318,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3923922,
     "ast_hash": "bbef2502201b8f8fe1eb8fe8d55723b6",
     "semantic_hash": ""
   },
   "src/lesson-code/07-fullscreen-and-resizing/src/script.js": {
-    "mtime": 1779066172.3592315,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3932683,
     "ast_hash": "11f760d8ab3025df6fd7dfbf2e1f5002",
     "semantic_hash": ""
   },
   "src/lesson-code/08-geometries/src/script.js": {
-    "mtime": 1779697318.8478718,
-    "seen": 1788445642.550029,
+    "mtime": 1779318923.2382138,
     "ast_hash": "5f999491d16863c529c1471b44cb721b",
     "semantic_hash": ""
   },
   "src/lesson-code/09-debug-ui/src/script.js": {
-    "mtime": 1779066172.3622313,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.4158285,
     "ast_hash": "aeefaea66fc8197c0a2f192b0ad90946",
     "semantic_hash": ""
   },
   "src/lesson-code/10-textures/src/script.js": {
-    "mtime": 1779066172.3642316,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3939254,
     "ast_hash": "a1b17febf9d96acc49f91b1b73c4046e",
     "semantic_hash": ""
   },
   "src/lesson-code/11-materials/src/script.js": {
-    "mtime": 1779697318.8488712,
-    "seen": 1788445642.550029,
+    "mtime": 1779318923.2364008,
     "ast_hash": "6bc83aefff8320c2661cf87f3db03f94",
     "semantic_hash": ""
   },
   "src/lesson-code/12-3d-text/src/script.js": {
-    "mtime": 1779066172.366743,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.436932,
     "ast_hash": "d8931bfd87d8779f4083afc29174581c",
     "semantic_hash": ""
   },
   "src/lesson-code/14-lights/src/script.js": {
-    "mtime": 1779066172.3689723,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.4372008,
     "ast_hash": "d92ee844ebd1e22f032a9572bac9bab7",
     "semantic_hash": ""
   },
   "src/lesson-code/15-shadows/src/script.js": {
-    "mtime": 1779066172.3699715,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3952672,
     "ast_hash": "25c1fc0e9f95df5f9b257874e2b40202",
     "semantic_hash": ""
   },
   "src/lesson-code/16-haunted-house/src/script.js": {
-    "mtime": 1779066172.3719723,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3961265,
     "ast_hash": "87b77d31b47a11b8d450b53782d66be6",
     "semantic_hash": ""
   },
   "src/lesson-code/17-particles/src/script.js": {
-    "mtime": 1779066172.3739715,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3962746,
     "ast_hash": "7d29f724cf325b56ac3e4c7e5da0ccd3",
     "semantic_hash": ""
   },
   "src/lesson-code/18-galaxy-generator/src/script.js": {
-    "mtime": 1779066172.3749712,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.396411,
     "ast_hash": "79643bdd2091fb8ebfc6d72a2cbfcff0",
     "semantic_hash": ""
   },
   "src/lesson-code/19-scroll-based-animation/src/script.js": {
-    "mtime": 1779066172.375476,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3965445,
     "ast_hash": "14cbbc1574ef7fc965157047cafc2bce",
     "semantic_hash": ""
   },
   "src/lesson-code/20-physics/src/script.js": {
-    "mtime": 1779066172.377986,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3966694,
     "ast_hash": "9055abaa9a9099305244609f724ab3d9",
     "semantic_hash": ""
   },
   "src/lesson-code/21-imported-models/src/script.js": {
-    "mtime": 1779066172.3789852,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3967874,
     "ast_hash": "00a13b4ac1264c5212b6927a511a3b34",
     "semantic_hash": ""
   },
   "src/lesson-code/22-raycaster-and-mouse-events/src/script.js": {
-    "mtime": 1779066172.3809862,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3969123,
     "ast_hash": "062c86a6b66f0e79d8ea4db352c7d4d3",
     "semantic_hash": ""
   },
   "src/lesson-code/23-custom-models-with-blender/src/script.js": {
-    "mtime": 1779066172.3829858,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3970327,
     "ast_hash": "ea8a6a9582fc1148fc6112aabc7af8b2",
     "semantic_hash": ""
   },
   "src/lesson-code/24-environment-map/src/script.js": {
-    "mtime": 1779066172.383986,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3971596,
     "ast_hash": "50085133f25d24c10ad259481e6a75d5",
     "semantic_hash": ""
   },
   "src/lesson-code/25-realistic-render/src/script.js": {
-    "mtime": 1779066172.3854945,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.39729,
     "ast_hash": "b3d152b5636d65603a5cc6821ca0bc29",
     "semantic_hash": ""
   },
   "src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/Camera.js": {
-    "mtime": 1779066172.387,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3097305,
     "ast_hash": "c1d7804dfcc1fcfffdc0b226dd788b34",
     "semantic_hash": ""
   },
   "src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/Experience.js": {
-    "mtime": 1779066172.387,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3426065,
     "ast_hash": "fb906d1a6d556c04576ea39fa4a61c7b",
     "semantic_hash": ""
   },
   "src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/Renderer.js": {
-    "mtime": 1779066172.387,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3974197,
     "ast_hash": "7fa5be78dbadfb41d8504b83eba8adf7",
     "semantic_hash": ""
   },
   "src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/Utils/Debug.js": {
-    "mtime": 1779066172.3880053,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.310139,
     "ast_hash": "cd7579ec389d34eec096afa6e7575a0f",
     "semantic_hash": ""
   },
   "src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/Utils/EventEmitter.js": {
-    "mtime": 1779066172.3880053,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3427033,
     "ast_hash": "7bc81402001ef4499f0dcf98905b2b90",
     "semantic_hash": ""
   },
   "src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/Utils/Resources.js": {
-    "mtime": 1779066172.3890052,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3427992,
     "ast_hash": "a3917ac1440d8347bad039ae496854de",
     "semantic_hash": ""
   },
   "src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/Utils/Sizes.js": {
-    "mtime": 1779066172.3890052,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.342885,
     "ast_hash": "42a1c9a9d873785feb1cf709b830ac25",
     "semantic_hash": ""
   },
   "src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/Utils/Time.js": {
-    "mtime": 1779066172.3900073,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3429704,
     "ast_hash": "f047ffe05a6e72622cde59d6a2f47af5",
     "semantic_hash": ""
   },
   "src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/World/Environment.js": {
-    "mtime": 1779066172.3900073,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3430693,
     "ast_hash": "f2b2c950013f17f65f22a9c52009bf49",
     "semantic_hash": ""
   },
   "src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/World/Floor.js": {
-    "mtime": 1779066172.3910074,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.310483,
     "ast_hash": "9a49ceb5274e3999628517638cc286e7",
     "semantic_hash": ""
   },
   "src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/World/Fox.js": {
-    "mtime": 1779066172.3910074,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3431563,
     "ast_hash": "f0b9d4429f53147c06ca490a079df3f3",
     "semantic_hash": ""
   },
   "src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/World/World.js": {
-    "mtime": 1779066172.392005,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3432486,
     "ast_hash": "0df773cfb93302e1ba6e2b95de89b8e1",
     "semantic_hash": ""
   },
   "src/lesson-code/26-code-structuring-for-bigger-projects/src/Experience/sources.js": {
-    "mtime": 1779066172.392005,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3106475,
     "ast_hash": "13f3c8f4d6b7f5cf56ffcd649aee2e80",
     "semantic_hash": ""
   },
   "src/lesson-code/26-code-structuring-for-bigger-projects/src/script.js": {
-    "mtime": 1779066172.3930042,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.310752,
     "ast_hash": "c249c7e20aa288825060e0eaec89698f",
     "semantic_hash": ""
   },
   "src/lesson-code/27-shaders/src/script.js": {
-    "mtime": 1779066172.3940065,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3975427,
     "ast_hash": "d54a544b662ad3abbff03d588bdf850e",
     "semantic_hash": ""
   },
   "src/lesson-code/28-shader-patterns/src/script.js": {
-    "mtime": 1779066172.397102,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3434498,
     "ast_hash": "9f3cf2a02fa40e4210d4912f69a73497",
     "semantic_hash": ""
   },
   "src/lesson-code/29-raging-sea/src/script.js": {
-    "mtime": 1779066172.3992863,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3976753,
     "ast_hash": "3e4074b103e8ae79831c8ec521c11447",
     "semantic_hash": ""
   },
   "src/lesson-code/30-animated-galaxy/src/script.js": {
-    "mtime": 1779066172.4032867,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3977993,
     "ast_hash": "c7daa5231da3d502adeae9f4a7ce9d87",
     "semantic_hash": ""
   },
   "src/lesson-code/31-modified-materials/src/script.js": {
-    "mtime": 1779066172.4062905,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3979285,
     "ast_hash": "dcc29f2aec5da8b8170b64ffc58727df",
     "semantic_hash": ""
   },
   "src/lesson-code/32-coffee-smoke-shader/src/script.js": {
-    "mtime": 1779066172.4083138,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3981395,
     "ast_hash": "21ee118f4055376124730ae0d5062f9e",
     "semantic_hash": ""
   },
   "src/lesson-code/33-hologram-shader/src/script.js": {
-    "mtime": 1779066172.4113135,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.398253,
     "ast_hash": "e5f4c18698e7ed12422fdaab57e6768f",
     "semantic_hash": ""
   },
   "src/lesson-code/34-fireworks-shaders/src/script.js": {
-    "mtime": 1779066172.4143138,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3449528,
     "ast_hash": "e6d479736c5362dc653ddcc07060a0f1",
     "semantic_hash": ""
   },
   "src/lesson-code/35-lights-shading-shaders/src/script.js": {
-    "mtime": 1779066172.4173248,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3983817,
     "ast_hash": "62d0d45733caa5ecccb43d184be55a55",
     "semantic_hash": ""
   },
   "src/lesson-code/36-raging-sea-shading-shaders/src/script.js": {
-    "mtime": 1779066172.4219344,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.398503,
     "ast_hash": "146856793eab73ec726cc53c42a36d67",
     "semantic_hash": ""
   },
   "src/lesson-code/37-halftone-shading-shaders/src/script.js": {
-    "mtime": 1779066172.4264464,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.398625,
     "ast_hash": "c45c0bd5b08352d76c3e47c9ca2e02b3",
     "semantic_hash": ""
   },
   "src/lesson-code/38-earth-shaders/src/script.js": {
-    "mtime": 1779066172.42995,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3987513,
     "ast_hash": "5acfc315c7f0ffe74a978837f1697aa3",
     "semantic_hash": ""
   },
   "src/lesson-code/39-particles-cursor-animation-shader/src/script.js": {
-    "mtime": 1779066172.4339528,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3478742,
     "ast_hash": "a2371447d7682e70a1ab42355a1c8839",
     "semantic_hash": ""
   },
   "src/lesson-code/40-particles-morphing-shader/src/script.js": {
-    "mtime": 1779066172.4364645,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.348068,
     "ast_hash": "4bced9ccfce8b306550158b7095984b3",
     "semantic_hash": ""
   },
   "src/lesson-code/41-gpgpu-flow-field-particles-shaders/src/script.js": {
-    "mtime": 1779066172.43971,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3988826,
     "ast_hash": "78c5af71e4b15688be73f5d37d0882c0",
     "semantic_hash": ""
   },
   "src/lesson-code/42-wobbly-sphere-shader/src/script.js": {
-    "mtime": 1779066172.4441023,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3990085,
     "ast_hash": "8c5ab4a05a8f6df2732183e427290833",
     "semantic_hash": ""
   },
   "src/lesson-code/43-sliced-model-shader/src/script.js": {
-    "mtime": 1779066172.4466143,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3991387,
     "ast_hash": "360d9c6eb5dfa5d7a0d35e73b7af0b0c",
     "semantic_hash": ""
   },
   "src/lesson-code/44-procedural-terrain-shader/src/script.js": {
-    "mtime": 1779066172.4497013,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3992743,
     "ast_hash": "d3acde48db1f363b59bb73dbdf182e37",
     "semantic_hash": ""
   },
   "src/lesson-code/45-post-processing/src/script.js": {
-    "mtime": 1779066172.4532027,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.437812,
     "ast_hash": "c6b1bf6a49f23b05bde1d53ed3abd366",
     "semantic_hash": ""
   },
   "src/lesson-code/46-performance-tips/src/script.js": {
-    "mtime": 1779066172.4542089,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3995318,
     "ast_hash": "ef5627a83c8e9c52731b261902a92546",
     "semantic_hash": ""
   },
   "src/lesson-code/47-intro-and-loading-progress/src/script.js": {
-    "mtime": 1779066172.4557126,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3996587,
     "ast_hash": "94a6f77c0bcd57844b4462eedbede1dc",
     "semantic_hash": ""
   },
   "src/lesson-code/48-mixing-html-and-webgl/src/script.js": {
-    "mtime": 1779066172.457719,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3997948,
     "ast_hash": "394f12fa19de23f0462738793d3d1a70",
     "semantic_hash": ""
   },
   "src/lesson-code/51-importing-and-optimizing-the-scene/src/script.js": {
-    "mtime": 1779066172.4589326,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.4000113,
     "ast_hash": "ef9ece17d8e538cb7467e7525f9ab0e2",
     "semantic_hash": ""
   },
   "src/lesson-code/52-adding-details-to-the-scene/src/script.js": {
-    "mtime": 1779066172.4609299,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.4002213,
     "ast_hash": "b0d9893b96ad9dfca8d15bc25825c416",
     "semantic_hash": ""
   },
   "tsconfig.json": {
-    "mtime": 1788426922.0938551,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.407491,
     "ast_hash": "57aa0e049bc19fe057476e019c77a36f",
     "semantic_hash": ""
   },
   ".agents/skills/threejs-animation/SKILL.md": {
-    "mtime": 1779066169.25856,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3339977,
     "ast_hash": "63ffc61a5776b57185ed148f665051e7",
     "semantic_hash": ""
   },
   ".agents/skills/threejs-fundamentals/SKILL.md": {
-    "mtime": 1779066169.2595663,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3341227,
     "ast_hash": "3177892708b6b68c181d5b3155a74785",
     "semantic_hash": ""
   },
   ".agents/skills/threejs-geometry/SKILL.md": {
-    "mtime": 1779066169.260074,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3342717,
     "ast_hash": "f592fe531e1224305be4fd1eed51ee8d",
     "semantic_hash": ""
   },
   ".agents/skills/threejs-interaction/SKILL.md": {
-    "mtime": 1779066169.2606738,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.334424,
     "ast_hash": "cf2e08f7b899d239fbd6acd2af58cab6",
     "semantic_hash": ""
   },
   ".agents/skills/threejs-lighting/SKILL.md": {
-    "mtime": 1779066169.261659,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3345258,
     "ast_hash": "24fa2025ba5660e688b65d0d80646299",
     "semantic_hash": ""
   },
   ".agents/skills/threejs-loaders/SKILL.md": {
-    "mtime": 1779066169.261659,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3346472,
     "ast_hash": "e2b0ce5388c946348b65964886922724",
     "semantic_hash": ""
   },
   ".agents/skills/threejs-materials/SKILL.md": {
-    "mtime": 1779066169.263253,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3051481,
     "ast_hash": "ba143d4be6aa2d2534c90a81bff8fb82",
     "semantic_hash": ""
   },
   ".agents/skills/threejs-postprocessing/SKILL.md": {
-    "mtime": 1779066169.2642581,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.334766,
     "ast_hash": "fd04b239309bebdb824769a608d321cd",
     "semantic_hash": ""
   },
   ".agents/skills/threejs-shaders/SKILL.md": {
-    "mtime": 1779066169.2642581,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3054216,
     "ast_hash": "fb7afc360f8f09f628f27bab103bc90f",
     "semantic_hash": ""
   },
   ".agents/skills/threejs-textures/SKILL.md": {
-    "mtime": 1779066169.265258,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3348808,
     "ast_hash": "b352415c86c5be1c17b1e1f70aede22e",
     "semantic_hash": ""
   },
   ".claude/CLAUDE.md": {
-    "mtime": 1788414598.162773,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.3598967,
     "ast_hash": "c232166e6492ba1ed955030b16979b05",
     "semantic_hash": ""
   },
   ".claude/commands/opsx/apply.md": {
-    "mtime": 1779066169.266258,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.334989,
     "ast_hash": "9c82c24afaa830f9cf1cc884a3b03984",
     "semantic_hash": ""
   },
   ".claude/commands/opsx/archive.md": {
-    "mtime": 1779066169.2672584,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3350945,
     "ast_hash": "a06144af90368fb9e68ac1a083a36de3",
     "semantic_hash": ""
   },
   ".claude/commands/opsx/bulk-archive.md": {
-    "mtime": 1779066169.2672584,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3351858,
     "ast_hash": "56fdcbe23916638b3b98761e063eb26a",
     "semantic_hash": ""
   },
   ".claude/commands/opsx/continue.md": {
-    "mtime": 1779066169.2672584,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.335283,
     "ast_hash": "d063015b656b5b52298cec285b5a19ce",
     "semantic_hash": ""
   },
   ".claude/commands/opsx/explore.md": {
-    "mtime": 1779066169.2687633,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3353755,
     "ast_hash": "f07e61715f622aee0dbd8fbaa3d621ae",
     "semantic_hash": ""
   },
   ".claude/commands/opsx/ff.md": {
-    "mtime": 1779066169.2687633,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3354654,
     "ast_hash": "5eef3776a280978480ab988bf37a1707",
     "semantic_hash": ""
   },
   ".claude/commands/opsx/new.md": {
-    "mtime": 1779066169.269769,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3355525,
     "ast_hash": "dec0782aa6b774307e823606ade19156",
     "semantic_hash": ""
   },
   ".claude/commands/opsx/onboard.md": {
-    "mtime": 1779066169.269769,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.335679,
     "ast_hash": "72f28b38841a37ccd7296d27f8dc5a5f",
     "semantic_hash": ""
   },
   ".claude/commands/opsx/sync.md": {
-    "mtime": 1779066169.269769,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3357873,
     "ast_hash": "3264b7ddc9ad44d2b46c6861bc96f032",
     "semantic_hash": ""
   },
   ".claude/commands/opsx/verify.md": {
-    "mtime": 1779066169.2707691,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.335886,
     "ast_hash": "22ba92254233e65aa00828331df40fdd",
     "semantic_hash": ""
   },
   ".claude/skills/graphify/SKILL.md": {
-    "mtime": 1788414598.1617725,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.3602011,
     "ast_hash": "2e223eed9c5bb9ec3999615806cf0681",
     "semantic_hash": ""
   },
   ".claude/skills/graphify/references/add-watch.md": {
-    "mtime": 1788414480.9305084,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.3603287,
     "ast_hash": "d59d027fe449f06aa03905a01184e779",
     "semantic_hash": ""
   },
   ".claude/skills/graphify/references/exports.md": {
-    "mtime": 1788414480.9305084,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.3603969,
     "ast_hash": "9da2a2152e60a22f07f05fed5158f287",
     "semantic_hash": ""
   },
   ".claude/skills/graphify/references/extraction-spec.md": {
-    "mtime": 1788414480.9315104,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.36048,
     "ast_hash": "42fef56a01698118f7fd722acdadea34",
     "semantic_hash": ""
   },
   ".claude/skills/graphify/references/github-and-merge.md": {
-    "mtime": 1788414480.932016,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.3605394,
     "ast_hash": "cde13df085e4c492aeb7ba298a996d0d",
     "semantic_hash": ""
   },
   ".claude/skills/graphify/references/hooks.md": {
-    "mtime": 1788414480.932016,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.3605947,
     "ast_hash": "3f545db6ce646650bb9de588f5512a27",
     "semantic_hash": ""
   },
   ".claude/skills/graphify/references/query.md": {
-    "mtime": 1788414480.9335182,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.360699,
     "ast_hash": "3c46f8ad006874260614ed8657d02307",
     "semantic_hash": ""
   },
   ".claude/skills/graphify/references/transcribe.md": {
-    "mtime": 1788414480.9335182,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.3607688,
     "ast_hash": "67b6a5fa6c0974e18f60db9f8932fbd8",
     "semantic_hash": ""
   },
   ".claude/skills/graphify/references/update.md": {
-    "mtime": 1788414480.9335182,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.3609545,
     "ast_hash": "9378bd03d56baaf78bd738ab3848f142",
     "semantic_hash": ""
   },
   ".claude/skills/openspec-apply-change/SKILL.md": {
-    "mtime": 1779066169.2730582,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3360858,
     "ast_hash": "59f2a6c96b74f6451024878d39e8413c",
     "semantic_hash": ""
   },
   ".claude/skills/openspec-archive-change/SKILL.md": {
-    "mtime": 1779066169.2730582,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3361905,
     "ast_hash": "0d50ddc6e9fff087bc80b2b973e7dfc0",
     "semantic_hash": ""
   },
   ".claude/skills/openspec-bulk-archive-change/SKILL.md": {
-    "mtime": 1779066169.2740588,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3362894,
     "ast_hash": "dc425ee99450f4f01564149840be7dba",
     "semantic_hash": ""
   },
   ".claude/skills/openspec-continue-change/SKILL.md": {
-    "mtime": 1779066169.2740588,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3363857,
     "ast_hash": "b3e1c8d7e3769b0a6182167b2bcc6eaf",
     "semantic_hash": ""
   },
   ".claude/skills/openspec-explore/SKILL.md": {
-    "mtime": 1779066169.275059,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3365002,
     "ast_hash": "39c6c8a8d34b7f45e2aca5cbd8cf4336",
     "semantic_hash": ""
   },
   ".claude/skills/openspec-ff-change/SKILL.md": {
-    "mtime": 1779066169.276059,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3365912,
     "ast_hash": "f82ea8233b2192cfd1dca13f84a6cc2c",
     "semantic_hash": ""
   },
   ".claude/skills/openspec-new-change/SKILL.md": {
-    "mtime": 1779066169.276059,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3366928,
     "ast_hash": "f96b86ba1feb2cc01f03a52e3056d650",
     "semantic_hash": ""
   },
   ".claude/skills/openspec-onboard/SKILL.md": {
-    "mtime": 1779066169.276059,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3368134,
     "ast_hash": "26c1f38aaaa00a3c76f26a59d4033fe3",
     "semantic_hash": ""
   },
   ".claude/skills/openspec-sync-specs/SKILL.md": {
-    "mtime": 1779066169.277059,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.336914,
     "ast_hash": "a1277700a20af959e76facc751a1ac95",
     "semantic_hash": ""
   },
   ".claude/skills/openspec-verify-change/SKILL.md": {
-    "mtime": 1779066169.2780585,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3370156,
     "ast_hash": "71fbcb202896a917358e7c4862255c64",
     "semantic_hash": ""
   },
   ".claude/skills/threejs-animation/SKILL.md": {
-    "mtime": 1779066169.2780585,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.337126,
     "ast_hash": "63ffc61a5776b57185ed148f665051e7",
     "semantic_hash": ""
   },
   ".claude/skills/threejs-fundamentals/SKILL.md": {
-    "mtime": 1779066169.2791746,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3372138,
     "ast_hash": "3177892708b6b68c181d5b3155a74785",
     "semantic_hash": ""
   },
   ".claude/skills/threejs-geometry/SKILL.md": {
-    "mtime": 1779066169.2791746,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.337327,
     "ast_hash": "f592fe531e1224305be4fd1eed51ee8d",
     "semantic_hash": ""
   },
   ".claude/skills/threejs-interaction/SKILL.md": {
-    "mtime": 1779066169.280181,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3374486,
     "ast_hash": "cf2e08f7b899d239fbd6acd2af58cab6",
     "semantic_hash": ""
   },
   ".claude/skills/threejs-lighting/SKILL.md": {
-    "mtime": 1779066169.280181,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3375223,
     "ast_hash": "24fa2025ba5660e688b65d0d80646299",
     "semantic_hash": ""
   },
   ".claude/skills/threejs-loaders/SKILL.md": {
-    "mtime": 1779066169.28118,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.337634,
     "ast_hash": "e2b0ce5388c946348b65964886922724",
     "semantic_hash": ""
   },
   ".claude/skills/threejs-materials/SKILL.md": {
-    "mtime": 1779066169.28118,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3063235,
     "ast_hash": "ba143d4be6aa2d2534c90a81bff8fb82",
     "semantic_hash": ""
   },
   ".claude/skills/threejs-postprocessing/SKILL.md": {
-    "mtime": 1779066169.2827342,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.337733,
     "ast_hash": "fd04b239309bebdb824769a608d321cd",
     "semantic_hash": ""
   },
   ".claude/skills/threejs-shaders/SKILL.md": {
-    "mtime": 1779066169.2827342,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.306547,
     "ast_hash": "fb7afc360f8f09f628f27bab103bc90f",
     "semantic_hash": ""
   },
   ".claude/skills/threejs-textures/SKILL.md": {
-    "mtime": 1779066169.2827342,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3378317,
     "ast_hash": "b352415c86c5be1c17b1e1f70aede22e",
     "semantic_hash": ""
   },
   ".github/workflows/build.yml": {
-    "mtime": 1788418731.2743957,
-    "seen": 1788445642.550029,
-    "ast_hash": "b26891dad117773af54e3162a9e42363",
+    "mtime": 1791073456.361212,
+    "ast_hash": "327e357e25b5e2111782a0f8f5792d5b",
     "semantic_hash": ""
   },
   ".github/workflows/release.yml": {
-    "mtime": 1788412479.1541684,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.361325,
     "ast_hash": "2d3941fd32386a949370ae70bf960f94",
     "semantic_hash": ""
   },
   "CHANGELOG.md": {
-    "mtime": 1779697318.8226428,
-    "seen": 1788445642.550029,
-    "ast_hash": "83d99310e57992244bccaea9f3e55b37",
+    "mtime": 1791073456.3617864,
+    "ast_hash": "cdbc5c49ab401918f485575315f34af0",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1788414598.1637726,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.3618634,
     "ast_hash": "8a6643a420fdad6bfb583523bc6cef16",
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1788445586.2930536,
-    "seen": 1788445642.550029,
-    "ast_hash": "afe336e1a797a8e5ff90a963eaaaea83",
+    "mtime": 1791075888.6266189,
+    "ast_hash": "1c7f140ed8c35561861a68205f0f48eb",
     "semantic_hash": ""
   },
   "openspec/changes/enhance-tutorial-with-code-examples/.openspec.yaml": {
-    "mtime": 1779066169.288257,
-    "seen": 1788445642.550029,
+    "mtime": 1777467481.65187,
     "ast_hash": "46531959a26faa503c52ae0709cf42e1",
     "semantic_hash": ""
   },
   "openspec/changes/enhance-tutorial-with-code-examples/design.md": {
-    "mtime": 1779066169.2892537,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.2562492,
     "ast_hash": "5b2657f8985f41c72a69234e09d4be8c",
     "semantic_hash": ""
   },
   "openspec/changes/enhance-tutorial-with-code-examples/proposal.md": {
-    "mtime": 1779066169.2897582,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.148356,
     "ast_hash": "853245f6b5af0f76aaf69b6925416271",
     "semantic_hash": ""
   },
   "openspec/changes/enhance-tutorial-with-code-examples/specs/downloadable-resources/spec.md": {
-    "mtime": 1779066169.2897582,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1830614,
     "ast_hash": "52cb0bacbd9e56dc00c6e1f8c899af07",
     "semantic_hash": ""
   },
   "openspec/changes/enhance-tutorial-with-code-examples/specs/final-version-lessons/spec.md": {
-    "mtime": 1779066169.291264,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.178834,
     "ast_hash": "2a79296671a9e3498a7039c53f69495a",
     "semantic_hash": ""
   },
   "openspec/changes/enhance-tutorial-with-code-examples/specs/lesson-mdx-updates/spec.md": {
-    "mtime": 1779066169.2922711,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1580815,
     "ast_hash": "34435d2224ab4d6a862e218b05633ef2",
     "semantic_hash": ""
   },
   "openspec/changes/enhance-tutorial-with-code-examples/specs/lesson-static-assets/spec.md": {
-    "mtime": 1779066169.2922711,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1671875,
     "ast_hash": "3ff40984106e39baa1d030674820db89",
     "semantic_hash": ""
   },
   "openspec/changes/enhance-tutorial-with-code-examples/specs/missing-lesson-code/spec.md": {
-    "mtime": 1779066169.2922711,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1864493,
     "ast_hash": "825871ffc858fd53f1ca19a089a8d716",
     "semantic_hash": ""
   },
   "openspec/changes/enhance-tutorial-with-code-examples/tasks.md": {
-    "mtime": 1779066169.2943635,
-    "seen": 1788445642.550029,
+    "mtime": 1777501732.6184764,
     "ast_hash": "436f0febc2e79a803535f5ebd77ddfa2",
     "semantic_hash": ""
   },
   "openspec/config.yaml": {
-    "mtime": 1779066169.294867,
-    "seen": 1788445642.550029,
+    "mtime": 1777467217.1074524,
     "ast_hash": "9e3e7672b387a282583011181ab35f9a",
     "semantic_hash": ""
   },
   "pnpm-workspace.yaml": {
-    "mtime": 1788401619.8725696,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.403935,
     "ast_hash": "b51253444e89eb12e391816db90e29a3",
     "semantic_hash": ""
   },
   "src/content/docs/advanced/45-post-processing.mdx": {
-    "mtime": 1779697318.835314,
-    "seen": 1788445642.550029,
+    "mtime": 1779318923.1261938,
     "ast_hash": "20301ed408ae9a9f74e8c30ba71ca636",
     "semantic_hash": ""
   },
   "src/content/docs/advanced/46-performance-tips.mdx": {
-    "mtime": 1779066172.3266337,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3849645,
     "ast_hash": "a081ba72a4ee03c1ed7445399dbd17a3",
     "semantic_hash": ""
   },
   "src/content/docs/advanced/47-intro-loading-progress.mdx": {
-    "mtime": 1779066172.3276393,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3852432,
     "ast_hash": "5a49d58a61b9e6b2bf72d4200536c1e7",
     "semantic_hash": ""
   },
   "src/content/docs/advanced/48-mixing-html-webgl.mdx": {
-    "mtime": 1779066172.3276393,
-    "seen": 1788445642.550029,
+    "mtime": 1777602796.7905314,
     "ast_hash": "403f1aade86b7b41dcebe171610dfd1f",
     "semantic_hash": ""
   },
   "src/content/docs/basics/01-introduction.mdx": {
-    "mtime": 1779066172.3286393,
-    "seen": 1788445642.550029,
+    "mtime": 1777698311.6993787,
     "ast_hash": "2c613235283f6843c31253f6e5dda79d",
     "semantic_hash": ""
   },
   "src/content/docs/basics/02-what-is-webgl.mdx": {
-    "mtime": 1779066172.3286393,
-    "seen": 1788445642.550029,
+    "mtime": 1777604019.2062554,
     "ast_hash": "fd2ea94dde8c493b225ce7e2d92124ef",
     "semantic_hash": ""
   },
   "src/content/docs/basics/03-first-project.mdx": {
-    "mtime": 1779066172.3296392,
-    "seen": 1788445642.550029,
+    "mtime": 1777604019.0952404,
     "ast_hash": "19f0b9edc6b48274686066a329a6f3f0",
     "semantic_hash": ""
   },
   "src/content/docs/basics/04-transform-objects.mdx": {
-    "mtime": 1779066172.3296392,
-    "seen": 1788445642.550029,
+    "mtime": 1777604019.925851,
     "ast_hash": "701c13854e2eaf5634cccac384685048",
     "semantic_hash": ""
   },
   "src/content/docs/basics/05-animations.mdx": {
-    "mtime": 1779066172.3296392,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.4141257,
     "ast_hash": "e63e379696c5784503b7dc8d6301249a",
     "semantic_hash": ""
   },
   "src/content/docs/basics/06-cameras.mdx": {
-    "mtime": 1779066172.3306396,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3861468,
     "ast_hash": "5c73b37c80cf91da1bc5fbbd6bf30e34",
     "semantic_hash": ""
   },
   "src/content/docs/basics/07-fullscreen-resizing.mdx": {
-    "mtime": 1779066172.3306396,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3864186,
     "ast_hash": "5c297ab736184d3dde97e658c5979d80",
     "semantic_hash": ""
   },
   "src/content/docs/basics/08-geometries.mdx": {
-    "mtime": 1779697318.8363202,
-    "seen": 1788445642.550029,
+    "mtime": 1779318923.2462575,
     "ast_hash": "a5c1e8104f0a8d653309e01810e9ab34",
     "semantic_hash": ""
   },
   "src/content/docs/basics/09-debug-ui.mdx": {
-    "mtime": 1779066172.3316407,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3390167,
     "ast_hash": "a6d52c4a0619d44f70783d9626851469",
     "semantic_hash": ""
   },
   "src/content/docs/basics/10-textures.mdx": {
-    "mtime": 1779066172.3326397,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.43504,
     "ast_hash": "93d66c1f52bb641b72f50eeac3d5c60f",
     "semantic_hash": ""
   },
   "src/content/docs/basics/11-materials.mdx": {
-    "mtime": 1779697318.8373256,
-    "seen": 1788445642.550029,
+    "mtime": 1779318923.180853,
     "ast_hash": "70451d90bf6396466329e54ff2b6bb6b",
     "semantic_hash": ""
   },
   "src/content/docs/basics/12-3d-text.mdx": {
-    "mtime": 1779066172.3336403,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3873591,
     "ast_hash": "0c5ba32b7a2410c91f40030267e7e6d9",
     "semantic_hash": ""
   },
   "src/content/docs/basics/13-go-live.mdx": {
-    "mtime": 1788426832.5134459,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.4062104,
     "ast_hash": "04c42ff5d75b9a561ecfe1e8035f7a52",
     "semantic_hash": ""
   },
   "src/content/docs/index.mdx": {
-    "mtime": 1779697318.8393247,
-    "seen": 1788445642.550029,
-    "ast_hash": "f5acf6c2c3e39da3c47ed358a6cb1ca9",
+    "mtime": 1791075888.6268418,
+    "ast_hash": "a23b2145cade171b3a4203cb9aa2d530",
     "semantic_hash": ""
   },
   "src/content/docs/scene-creation/49-creating-scene-blender.mdx": {
-    "mtime": 1779066172.335144,
-    "seen": 1788445642.550029,
+    "mtime": 1777602796.2280867,
     "ast_hash": "f56b14d476184397983df95a6954498a",
     "semantic_hash": ""
   },
   "src/content/docs/scene-creation/50-baking-exporting.mdx": {
-    "mtime": 1779066172.335144,
-    "seen": 1788445642.550029,
+    "mtime": 1777603582.3997638,
     "ast_hash": "1502e34ccb58496673e8f7e0e84b8171",
     "semantic_hash": ""
   },
   "src/content/docs/scene-creation/51-importing-optimizing.mdx": {
-    "mtime": 1779066172.335144,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3394852,
     "ast_hash": "e7715de54dc59ebfb62122b832ef0a7e",
     "semantic_hash": ""
   },
   "src/content/docs/scene-creation/52-adding-details.mdx": {
-    "mtime": 1779066172.3366482,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.38753,
     "ast_hash": "ad823931c982d9735088a77381da7fbf",
     "semantic_hash": ""
   },
   "src/content/docs/shaders/26-code-structuring.mdx": {
-    "mtime": 1779066172.3376546,
-    "seen": 1788445642.550029,
+    "mtime": 1777602796.505545,
     "ast_hash": "ee0370000e926989fbcc3a79c4292eb0",
     "semantic_hash": ""
   },
   "src/content/docs/shaders/27-shaders.mdx": {
-    "mtime": 1779697318.8403244,
-    "seen": 1788445642.550029,
+    "mtime": 1779318922.8308887,
     "ast_hash": "41b7ea0714b1c019d6c68743b464adc5",
     "semantic_hash": ""
   },
   "src/content/docs/shaders/28-shader-patterns.mdx": {
-    "mtime": 1779066172.3386538,
-    "seen": 1788445642.550029,
+    "mtime": 1777602796.54012,
     "ast_hash": "2e34d643fd7dc29167f266ed86687b60",
     "semantic_hash": ""
   },
   "src/content/docs/shaders/29-raging-sea.mdx": {
-    "mtime": 1779066172.3386538,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3882275,
     "ast_hash": "d29a6fbfad0cb6262c4f3a3ed901d17d",
     "semantic_hash": ""
   },
   "src/content/docs/shaders/30-animated-galaxy.mdx": {
-    "mtime": 1779066172.3386538,
-    "seen": 1788445642.550029,
+    "mtime": 1777602796.554545,
     "ast_hash": "36971f01a65214a6d40ff1285e176ed3",
     "semantic_hash": ""
   },
   "src/content/docs/shaders/31-modified-materials.mdx": {
-    "mtime": 1779066172.3396547,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3886793,
     "ast_hash": "e4e16276020d1e069e11a2cf0f9018e7",
     "semantic_hash": ""
   },
   "src/content/docs/shaders/32-coffee-smoke.mdx": {
-    "mtime": 1779066172.3406546,
-    "seen": 1788445642.550029,
+    "mtime": 1777602796.4496102,
     "ast_hash": "04450aa6659b3e4a9ffde50eb8f6c8b2",
     "semantic_hash": ""
   },
   "src/content/docs/shaders/33-hologram.mdx": {
-    "mtime": 1779066172.3406546,
-    "seen": 1788445642.550029,
+    "mtime": 1777602796.3702233,
     "ast_hash": "77b19f3e6306c0ca4919999f6c6ff96e",
     "semantic_hash": ""
   },
   "src/content/docs/shaders/34-fireworks.mdx": {
-    "mtime": 1779066172.341654,
-    "seen": 1788445642.550029,
+    "mtime": 1777602796.4673505,
     "ast_hash": "4e1e2d49d088b287c4fa7414b9f57059",
     "semantic_hash": ""
   },
   "src/content/docs/shaders/35-lights-shading.mdx": {
-    "mtime": 1779066172.341654,
-    "seen": 1788445642.550029,
+    "mtime": 1777602796.6668696,
     "ast_hash": "faa9b9cd2f457814622524045d78350d",
     "semantic_hash": ""
   },
   "src/content/docs/shaders/36-raging-sea-shading.mdx": {
-    "mtime": 1779066172.3426535,
-    "seen": 1788445642.550029,
+    "mtime": 1777602796.4895089,
     "ast_hash": "d23b5b00f85bd137a60803974b1bf6df",
     "semantic_hash": ""
   },
   "src/content/docs/shaders/37-halftone-shading.mdx": {
-    "mtime": 1779066172.3426535,
-    "seen": 1788445642.550029,
+    "mtime": 1777602796.444461,
     "ast_hash": "c47c35337a1c4a8b71aaea1b8afba7a2",
     "semantic_hash": ""
   },
   "src/content/docs/shaders/38-earth-shaders.mdx": {
-    "mtime": 1779066172.343653,
-    "seen": 1788445642.550029,
+    "mtime": 1777602796.4367607,
     "ast_hash": "b53c7f74e3d91166c456f8d7ddcfa793",
     "semantic_hash": ""
   },
   "src/content/docs/shaders/39-particles-cursor.mdx": {
-    "mtime": 1779066172.343653,
-    "seen": 1788445642.550029,
+    "mtime": 1777602796.5228605,
     "ast_hash": "5f5cef95551ff7c0a6df485a1c22abd5",
     "semantic_hash": ""
   },
   "src/content/docs/shaders/40-particles-morphing.mdx": {
-    "mtime": 1779066172.3446527,
-    "seen": 1788445642.550029,
+    "mtime": 1777602796.5028636,
     "ast_hash": "31692f1dd2df4c5db508bdef019711c4",
     "semantic_hash": ""
   },
   "src/content/docs/shaders/41-gpgpu-flow-field.mdx": {
-    "mtime": 1779066172.3446527,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3892276,
     "ast_hash": "2d9e6a6db157e3338bb627fbb9d8d122",
     "semantic_hash": ""
   },
   "src/content/docs/shaders/42-wobbly-sphere.mdx": {
-    "mtime": 1779066172.3446527,
-    "seen": 1788445642.550029,
+    "mtime": 1777602796.5882454,
     "ast_hash": "20c087fd01893ca9ab7a7a4c860eeda9",
     "semantic_hash": ""
   },
   "src/content/docs/shaders/43-sliced-model.mdx": {
-    "mtime": 1779066172.3458245,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3895926,
     "ast_hash": "92a3669080320267dd8c70d6ab6cb01e",
     "semantic_hash": ""
   },
   "src/content/docs/shaders/44-procedural-terrain.mdx": {
-    "mtime": 1779066172.3458245,
-    "seen": 1788445642.550029,
+    "mtime": 1777602796.6132169,
     "ast_hash": "9a72815f9c7e96f297e2bc324bd738f0",
     "semantic_hash": ""
   },
   "src/content/docs/techniques/14-lights.mdx": {
-    "mtime": 1788426832.514446,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.4063587,
     "ast_hash": "cdb45e9750cf2b8355eedc377b9e4c88",
     "semantic_hash": ""
   },
   "src/content/docs/techniques/15-shadows.mdx": {
-    "mtime": 1788426832.5154455,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.4071555,
     "ast_hash": "038fda2c3e4770ac918c6ab3297a19dc",
     "semantic_hash": ""
   },
   "src/content/docs/techniques/16-haunted-house.mdx": {
-    "mtime": 1779066172.3483312,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3899071,
     "ast_hash": "844196117cab37d9fa00900778574621",
     "semantic_hash": ""
   },
   "src/content/docs/techniques/17-particles.mdx": {
-    "mtime": 1779066172.3483312,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3900921,
     "ast_hash": "e3ce7aa1936341ede980debc369ab141",
     "semantic_hash": ""
   },
   "src/content/docs/techniques/18-galaxy-generator.mdx": {
-    "mtime": 1779066172.3483312,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3904352,
     "ast_hash": "d671d9c31390324e5520d62f718fccfc",
     "semantic_hash": ""
   },
   "src/content/docs/techniques/19-scroll-based-animation.mdx": {
-    "mtime": 1779066172.3493297,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.390764,
     "ast_hash": "520db9533aaef599051b3ec71d23782f",
     "semantic_hash": ""
   },
   "src/content/docs/techniques/20-physics.mdx": {
-    "mtime": 1779066172.3493297,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3916252,
     "ast_hash": "aded56ac2f009693a66c64291647b5ed",
     "semantic_hash": ""
   },
   "src/content/docs/techniques/21-imported-models.mdx": {
-    "mtime": 1779066172.350329,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.4146585,
     "ast_hash": "68db9a32f56050576c9778ed7970a752",
     "semantic_hash": ""
   },
   "src/content/docs/techniques/22-raycaster-mouse-events.mdx": {
-    "mtime": 1779066172.350329,
-    "seen": 1788445642.550029,
+    "mtime": 1777602795.980549,
     "ast_hash": "a60aaafd751e3ff58f67dde30267cc9b",
     "semantic_hash": ""
   },
   "src/content/docs/techniques/23-custom-models-blender.mdx": {
-    "mtime": 1779066172.351329,
-    "seen": 1788445642.550029,
+    "mtime": 1777602795.982921,
     "ast_hash": "b1034bdefde95e77300c57698c0fe206",
     "semantic_hash": ""
   },
   "src/content/docs/techniques/24-environment-map.mdx": {
-    "mtime": 1779066172.351329,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.4155967,
     "ast_hash": "9c3ee36b9bc31568b6e17d716b6873f5",
     "semantic_hash": ""
   },
   "src/content/docs/techniques/25-realistic-render.mdx": {
-    "mtime": 1779066172.351329,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.39218,
     "ast_hash": "c608b34b56fb29bc152e0d5ef32a2b91",
     "semantic_hash": ""
   },
   "src/content/docs/tresjs/53-first-tresjs-app.mdx": {
-    "mtime": 1779697318.8423247,
-    "seen": 1788445642.550029,
+    "mtime": 1779318923.0503125,
     "ast_hash": "95b9a2efdf46642e475f8554e7ea21dc",
     "semantic_hash": ""
   },
   "src/content/docs/tresjs/54-cientos.mdx": {
-    "mtime": 1779697318.842832,
-    "seen": 1788445642.550029,
+    "mtime": 1779318922.9947174,
     "ast_hash": "f4081d063da177ff4e5b908a707e4ca9",
     "semantic_hash": ""
   },
   "src/content/docs/tresjs/55-debug.mdx": {
-    "mtime": 1779697318.842832,
-    "seen": 1788445642.550029,
+    "mtime": 1779318922.9466636,
     "ast_hash": "aa6dda0696fb168173a003fc8f63f540",
     "semantic_hash": ""
   },
   "src/content/docs/tresjs/56-environment-staging.mdx": {
-    "mtime": 1779697318.842832,
-    "seen": 1788445642.550029,
+    "mtime": 1779318922.9841928,
     "ast_hash": "5ad776b03b20cff1cd9293ca82139bf0",
     "semantic_hash": ""
   },
   "src/content/docs/tresjs/57-load-models.mdx": {
-    "mtime": 1779697318.8443356,
-    "seen": 1788445642.550029,
+    "mtime": 1779318923.011992,
     "ast_hash": "f5f68889a8fb6bc37a21a91d1dac01ff",
     "semantic_hash": ""
   },
   "src/content/docs/tresjs/58-3d-text.mdx": {
-    "mtime": 1779697318.8448672,
-    "seen": 1788445642.550029,
+    "mtime": 1779318922.990179,
     "ast_hash": "a52002290dbd47b52e8be9b145771260",
     "semantic_hash": ""
   },
   "src/content/docs/tresjs/59-mouse-events.mdx": {
-    "mtime": 1779697318.8458712,
-    "seen": 1788445642.550029,
+    "mtime": 1779318922.973642,
     "ast_hash": "221a614431bb8d0ce0435d0b0807cb99",
     "semantic_hash": ""
   },
   "src/content/docs/tresjs/60-post-processing.mdx": {
-    "mtime": 1779697318.8458712,
-    "seen": 1788445642.550029,
+    "mtime": 1779318923.0300488,
     "ast_hash": "e9bdfe34cd451d9791ee24492eee58a1",
     "semantic_hash": ""
   },
   "src/content/docs/tresjs/61-physics.mdx": {
-    "mtime": 1779697318.8468726,
-    "seen": 1788445642.550029,
+    "mtime": 1779318922.943683,
     "ast_hash": "88c5321e13a1b14a8c8c0a08262e318e",
     "semantic_hash": ""
   },
   "src/content/docs/tresjs/62-the-end.mdx": {
-    "mtime": 1779697318.8468726,
-    "seen": 1788445642.550029,
+    "mtime": 1779286772.5165327,
     "ast_hash": "6c1fe612d3252cb460abf2a152d0d481",
     "semantic_hash": ""
   },
   "src/lesson-code/04-transform-objects/src/index.html": {
-    "mtime": 1779066172.353204,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.0784137,
     "ast_hash": "133e02cfb539f90bcc9e0e57d7e5e0cd",
     "semantic_hash": ""
   },
   "src/lesson-code/05-animations/src/index.html": {
-    "mtime": 1779066172.3557222,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.2457798,
     "ast_hash": "032d2aca01410103a7ff932fe8a55680",
     "semantic_hash": ""
   },
   "src/lesson-code/06-cameras/src/index.html": {
-    "mtime": 1779066172.357229,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.13039,
     "ast_hash": "2afe08ab6d69ee3f59f420ecc768477e",
     "semantic_hash": ""
   },
   "src/lesson-code/07-fullscreen-and-resizing/src/index.html": {
-    "mtime": 1779066172.3592315,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1801147,
     "ast_hash": "c857b235ba7d26c384c2303b4ef855e5",
     "semantic_hash": ""
   },
   "src/lesson-code/08-geometries/src/index.html": {
-    "mtime": 1779066172.3602316,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.2065368,
     "ast_hash": "045391c04ba519a69e5bbd64a77f1648",
     "semantic_hash": ""
   },
   "src/lesson-code/09-debug-ui/src/index.html": {
-    "mtime": 1779066172.3622313,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.2096014,
     "ast_hash": "b70321d343c7e853dfa339d21297caf3",
     "semantic_hash": ""
   },
   "src/lesson-code/10-textures/src/index.html": {
-    "mtime": 1779066172.3632312,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.3208294,
     "ast_hash": "f3fc735a974cd4335a00c1b302317562",
     "semantic_hash": ""
   },
   "src/lesson-code/11-materials/src/index.html": {
-    "mtime": 1779066172.3647375,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1794884,
     "ast_hash": "068dfb0aef6e3d278bf6f9bc65d11f11",
     "semantic_hash": ""
   },
   "src/lesson-code/12-3d-text/src/index.html": {
-    "mtime": 1779066172.366743,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.2148943,
     "ast_hash": "995a0aa6b3d49d3ef2956d6f3a4683af",
     "semantic_hash": ""
   },
   "src/lesson-code/14-lights/src/index.html": {
-    "mtime": 1779066172.367972,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1607637,
     "ast_hash": "08f7afe9f700a880c4b018a51057e20a",
     "semantic_hash": ""
   },
   "src/lesson-code/15-shadows/src/index.html": {
-    "mtime": 1779066172.3699715,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.195603,
     "ast_hash": "a40728cbf73ecc5f63fb1bb4b087603a",
     "semantic_hash": ""
   },
   "src/lesson-code/16-haunted-house/src/index.html": {
-    "mtime": 1779066172.3719723,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1809335,
     "ast_hash": "466613bac2a70ada144f702465de71d8",
     "semantic_hash": ""
   },
   "src/lesson-code/17-particles/src/index.html": {
-    "mtime": 1779066172.3729703,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1857648,
     "ast_hash": "d128a5b76520a37bba59240c7fd08b07",
     "semantic_hash": ""
   },
   "src/lesson-code/18-galaxy-generator/src/index.html": {
-    "mtime": 1779066172.3739715,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1013691,
     "ast_hash": "7fb100ae69b6aeee299e6caf6e682d5e",
     "semantic_hash": ""
   },
   "src/lesson-code/19-scroll-based-animation/src/index.html": {
-    "mtime": 1779066172.375476,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.0741718,
     "ast_hash": "41a71f856cb0e02a3afaa6ee1f7892b3",
     "semantic_hash": ""
   },
   "src/lesson-code/20-physics/src/index.html": {
-    "mtime": 1779066172.3769794,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3090112,
     "ast_hash": "098310385f58d27b6df054a98248b1ee",
     "semantic_hash": ""
   },
   "src/lesson-code/21-imported-models/src/index.html": {
-    "mtime": 1779066172.3789852,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1824262,
     "ast_hash": "d88371b60b6b4f39dfbd23e827c10c36",
     "semantic_hash": ""
   },
   "src/lesson-code/22-raycaster-and-mouse-events/src/index.html": {
-    "mtime": 1779066172.3809862,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.0662804,
     "ast_hash": "c1fe8abb10f463f748959bd80a966012",
     "semantic_hash": ""
   },
   "src/lesson-code/23-custom-models-with-blender/src/index.html": {
-    "mtime": 1779066172.381986,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1894715,
     "ast_hash": "1133e46cd2213144efcba203a8d745ac",
     "semantic_hash": ""
   },
   "src/lesson-code/24-environment-map/src/index.html": {
-    "mtime": 1779066172.383986,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.0955515,
     "ast_hash": "35d41d2f91c1e0b95ba3e0b673ec02c5",
     "semantic_hash": ""
   },
   "src/lesson-code/25-realistic-render/src/index.html": {
-    "mtime": 1779066172.3849857,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1536283,
     "ast_hash": "bb5ed9dc63bc1e1ca6ce545ab802e887",
     "semantic_hash": ""
   },
   "src/lesson-code/26-code-structuring-for-bigger-projects/src/index.html": {
-    "mtime": 1779066172.392005,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3107042,
     "ast_hash": "c8f31695852e9e7365e9923831b06519",
     "semantic_hash": ""
   },
   "src/lesson-code/27-shaders/src/index.html": {
-    "mtime": 1779066172.3940065,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.2113745,
     "ast_hash": "d2f11a3a1f8df64616b4cba2dde13029",
     "semantic_hash": ""
   },
   "src/lesson-code/28-shader-patterns/src/index.html": {
-    "mtime": 1779066172.3961022,
-    "seen": 1788445642.550029,
+    "mtime": 1777602796.9754262,
     "ast_hash": "9af06a343b5641c8bff9e1f2187d7849",
     "semantic_hash": ""
   },
   "src/lesson-code/29-raging-sea/src/index.html": {
-    "mtime": 1779066172.3992863,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1958542,
     "ast_hash": "c292751017b3382a8f5dec31f8995185",
     "semantic_hash": ""
   },
   "src/lesson-code/30-animated-galaxy/src/index.html": {
-    "mtime": 1779066172.4022868,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1927986,
     "ast_hash": "12c01fa7b02523ca2e9d426d803089b9",
     "semantic_hash": ""
   },
   "src/lesson-code/31-modified-materials/src/index.html": {
-    "mtime": 1779066172.4057882,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1171417,
     "ast_hash": "5ee9ccedc0decba6b052cc93b0302fe0",
     "semantic_hash": ""
   },
   "src/lesson-code/32-coffee-smoke-shader/src/index.html": {
-    "mtime": 1779066172.407311,
-    "seen": 1788445642.550029,
+    "mtime": 1777602796.978529,
     "ast_hash": "e8099b95d3ddd9f60d42ff19b994ab7f",
     "semantic_hash": ""
   },
   "src/lesson-code/33-hologram-shader/src/index.html": {
-    "mtime": 1779066172.4103136,
-    "seen": 1788445642.550029,
+    "mtime": 1777602796.9935527,
     "ast_hash": "993012f46b03f9bce8821e9dbcbff4dc",
     "semantic_hash": ""
   },
   "src/lesson-code/34-fireworks-shaders/src/index.html": {
-    "mtime": 1779066172.4143138,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1238608,
     "ast_hash": "6c52025b49281d427f6f6c939625daf0",
     "semantic_hash": ""
   },
   "src/lesson-code/35-lights-shading-shaders/src/index.html": {
-    "mtime": 1779066172.4173248,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1654234,
     "ast_hash": "f5e4f1444d571861932fe83d99bf0a80",
     "semantic_hash": ""
   },
   "src/lesson-code/36-raging-sea-shading-shaders/src/index.html": {
-    "mtime": 1779066172.4219344,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3143044,
     "ast_hash": "f1750d02823947ed7869b374f56bc29f",
     "semantic_hash": ""
   },
   "src/lesson-code/37-halftone-shading-shaders/src/index.html": {
-    "mtime": 1779066172.4264464,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1936667,
     "ast_hash": "8d89655f4755b507fdb8ba4445a93282",
     "semantic_hash": ""
   },
   "src/lesson-code/38-earth-shaders/src/index.html": {
-    "mtime": 1779066172.42995,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.0662825,
     "ast_hash": "696ec77d9c0331bbc363cdf35754b2b7",
     "semantic_hash": ""
   },
   "src/lesson-code/39-particles-cursor-animation-shader/src/index.html": {
-    "mtime": 1779066172.4329505,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.2510507,
     "ast_hash": "b617b976ae8f02f53f012909f6202a13",
     "semantic_hash": ""
   },
   "src/lesson-code/40-particles-morphing-shader/src/index.html": {
-    "mtime": 1779066172.4364645,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.169483,
     "ast_hash": "ce3aed1b55d1ee0064019de98c35b441",
     "semantic_hash": ""
   },
   "src/lesson-code/41-gpgpu-flow-field-particles-shaders/src/index.html": {
-    "mtime": 1779066172.43971,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1381464,
     "ast_hash": "587323829a81a650b330aa6c5cfd97d2",
     "semantic_hash": ""
   },
   "src/lesson-code/42-wobbly-sphere-shader/src/index.html": {
-    "mtime": 1779066172.443102,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.0900176,
     "ast_hash": "102bad4706e9ee9c9ff8ed90b6ea8877",
     "semantic_hash": ""
   },
   "src/lesson-code/43-sliced-model-shader/src/index.html": {
-    "mtime": 1779066172.4466143,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1332152,
     "ast_hash": "384ae303c3befc1a77445debc4a23a4b",
     "semantic_hash": ""
   },
   "src/lesson-code/44-procedural-terrain-shader/src/index.html": {
-    "mtime": 1779066172.4497013,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1020727,
     "ast_hash": "c6e74dc9e263be0595e15a59498e700d",
     "semantic_hash": ""
   },
   "src/lesson-code/45-post-processing/src/index.html": {
-    "mtime": 1779066172.451699,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.091772,
     "ast_hash": "244796dfbd98e9c9c39c90eccc4c457a",
     "semantic_hash": ""
   },
   "src/lesson-code/46-performance-tips/src/index.html": {
-    "mtime": 1779066172.4542089,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1429229,
     "ast_hash": "f800d6e254b1310f40ce0e0208161470",
     "semantic_hash": ""
   },
   "src/lesson-code/47-intro-and-loading-progress/src/index.html": {
-    "mtime": 1779066172.4557126,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.3176124,
     "ast_hash": "fbd3d130dae3405b436f87a9da1f9eb8",
     "semantic_hash": ""
   },
   "src/lesson-code/48-mixing-html-and-webgl/src/index.html": {
-    "mtime": 1779066172.457719,
-    "seen": 1788445642.550029,
+    "mtime": 1779030077.317866,
     "ast_hash": "ae472c0f645c173bec98198670b2ac43",
     "semantic_hash": ""
   },
   "src/lesson-code/51-importing-and-optimizing-the-scene/src/index.html": {
-    "mtime": 1779066172.4589326,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.1580813,
     "ast_hash": "4a12da2601dcc16f3a97bdb50f4fc7f3",
     "semantic_hash": ""
   },
   "src/lesson-code/52-adding-details-to-the-scene/src/index.html": {
-    "mtime": 1779066172.459931,
-    "seen": 1788445642.550029,
+    "mtime": 1777602797.2139778,
     "ast_hash": "db56ab8c7770636d87888fa16e90c65e",
     "semantic_hash": ""
   },
   "public/android-chrome-192x192.png": {
-    "mtime": 1788445594.014,
-    "seen": 1788445642.550029,
+    "mtime": 1777698311.6731431,
     "ast_hash": "3f7faf7caa33dbc2a64885cff8176654",
     "semantic_hash": ""
   },
   "public/android-chrome-512x512.png": {
-    "mtime": 1788445594.07,
-    "seen": 1788445642.550029,
+    "mtime": 1777698311.6745713,
     "ast_hash": "9c286759dffb6bf760279a082721708e",
     "semantic_hash": ""
   },
   "public/apple-touch-icon.png": {
-    "mtime": 1788445593.975,
-    "seen": 1788445642.550029,
+    "mtime": 1777698311.67482,
     "ast_hash": "cad4df6facbd6678d31d0047f25b0e6f",
     "semantic_hash": ""
   },
   "public/downloads/32-coffee-smoke-shader/coffeeLiquide.webp": {
-    "mtime": 1779066172.2338126,
-    "seen": 1788445642.550029,
+    "mtime": 1777470483.845403,
     "ast_hash": "5756a9ae7698c90e71a456451a314581",
     "semantic_hash": ""
   },
   "public/downloads/32-coffee-smoke-shader/logo.png": {
-    "mtime": 1779066172.2651384,
-    "seen": 1788445642.550029,
+    "mtime": 1777470483.8476253,
     "ast_hash": "311ee592d8521d0995728f1f35d060e7",
     "semantic_hash": ""
   },
   "public/downloads/32-coffee-smoke-shader/wood_planks_dirt_nor_gl_4k.png": {
-    "mtime": 1779066172.2841568,
-    "seen": 1788445642.550029,
+    "mtime": 1777470483.890445,
     "ast_hash": "f96e9c25a1c829ce0221771e63362c8d",
     "semantic_hash": ""
   },
   "public/favicon-16x16.png": {
-    "mtime": 1788445593.864,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.4040492,
     "ast_hash": "57d54c6aca960e1de311fbb726c0e1b3",
     "semantic_hash": ""
   },
   "public/favicon-180x180.png": {
-    "mtime": 1788445593.975,
-    "seen": 1788445642.550029,
+    "mtime": 1777698311.6751807,
     "ast_hash": "cad4df6facbd6678d31d0047f25b0e6f",
     "semantic_hash": ""
   },
   "public/favicon-192x192.png": {
-    "mtime": 1788445594.014,
-    "seen": 1788445642.550029,
+    "mtime": 1777698311.6753242,
     "ast_hash": "3f7faf7caa33dbc2a64885cff8176654",
     "semantic_hash": ""
   },
   "public/favicon-32x32.png": {
-    "mtime": 1788445593.901,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.4041326,
     "ast_hash": "92b95960c3663acaa03eed4593e1a17d",
     "semantic_hash": ""
   },
   "public/favicon-48x48.png": {
-    "mtime": 1788445593.936,
-    "seen": 1788445642.550029,
+    "mtime": 1791073456.4042366,
     "ast_hash": "0519975ba97d555b3387045c1e5b3507",
     "semantic_hash": ""
   },
   "public/favicon-512x512.png": {
-    "mtime": 1788445594.07,
-    "seen": 1788445642.550029,
+    "mtime": 1777698311.6766348,
     "ast_hash": "9c286759dffb6bf760279a082721708e",
     "semantic_hash": ""
   },
   "public/logo.png": {
-    "mtime": 1779066172.2997108,
-    "seen": 1788445642.550029,
+    "mtime": 1777698311.6803768,
     "ast_hash": "8829f8f46c179696493e819b89e144ac",
     "semantic_hash": ""
   },
   "src/assets/houston.webp": {
-    "mtime": 1779066172.3236227,
-    "seen": 1788445642.550029,
+    "mtime": 1777169339.9063745,
     "ast_hash": "ba0d492736ce0665d6e3bcd6b66f64cc",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/schemas/acl-manifests.json": {
+    "mtime": 1777174677.6760006,
+    "ast_hash": "a673f6469181308a10ec1481e82a366b",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/schemas/android-schema.json": {
+    "mtime": 1777686005.8491678,
+    "ast_hash": "4929c2d11dd0abc1152152aaeecb7e04",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/schemas/capabilities.json": {
+    "mtime": 1777174677.6818533,
+    "ast_hash": "e04e99f1b01a6dfab195659570cb39f0",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/schemas/desktop-schema.json": {
+    "mtime": 1777174677.6812015,
+    "ast_hash": "4929c2d11dd0abc1152152aaeecb7e04",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/schemas/macOS-schema.json": {
+    "mtime": 1777174677.6812015,
+    "ast_hash": "4929c2d11dd0abc1152152aaeecb7e04",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/schemas/mobile-schema.json": {
+    "mtime": 1777686005.8491678,
+    "ast_hash": "4929c2d11dd0abc1152152aaeecb7e04",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/_webgpu/common.js": {
+    "mtime": 1791075657.260924,
+    "ast_hash": "1fbf27bbc731b01d83e58fbd75406f2c",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-01-introduction/src/script.js": {
+    "mtime": 1791074715.9780896,
+    "ast_hash": "1b9b0555af10c1b21ff6f04c4b03dd36",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-02-node-materials/src/script.js": {
+    "mtime": 1791074715.9785502,
+    "ast_hash": "448b05acaac29a61dcb5ba58637a058a",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-03-variables-references/src/script.js": {
+    "mtime": 1791074715.9792867,
+    "ast_hash": "8f4f550d08aa7f13b1507fbddc456db2",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-04-tools-debug/src/script.js": {
+    "mtime": 1791074715.9790168,
+    "ast_hash": "a3c37a2fcdaedcc96ea3c8afef596b64",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-05-math/src/script.js": {
+    "mtime": 1791074715.978837,
+    "ast_hash": "fe7f222f6f19930ec843d621c1346c25",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-06-textures/src/script.js": {
+    "mtime": 1791074715.9775128,
+    "ast_hash": "1b772710ef658aead0eb0575343edc90",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-07-uniforms-attributes/src/script.js": {
+    "mtime": 1791074715.9783676,
+    "ast_hash": "09296ef3d228063a1b5b08f75762434f",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-08-node-functions/src/script.js": {
+    "mtime": 1791074715.9781768,
+    "ast_hash": "d96cfe82398e970e32f21c8bac1973f4",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-09-patterns/src/script.js": {
+    "mtime": 1791074715.9793766,
+    "ast_hash": "0cdb61b7d5139e7d8bdc38be01a5b85d",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-10-coffee-smoke/src/script.js": {
+    "mtime": 1791075657.2610452,
+    "ast_hash": "43525f1ae7884cab724220633ee6517d",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-11-post-processing/src/script.js": {
+    "mtime": 1791074715.978266,
+    "ast_hash": "a403c1509ba04c36214403ea04ecd0b8",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-12-shield/src/script.js": {
+    "mtime": 1791074715.977814,
+    "ast_hash": "dbb9abbafff3bddc589044cd577c96b5",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-13-instances/src/script.js": {
+    "mtime": 1791074715.9789257,
+    "ast_hash": "d060aa22e100f8008ebc24ac8ee37bca",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-14-magic-explosions/src/script.js": {
+    "mtime": 1791074715.9791968,
+    "ast_hash": "db0eb7dd73da850b78f822be06d7aae0",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-15-sprites/src/script.js": {
+    "mtime": 1791074715.9786408,
+    "ast_hash": "961c92174546178a2dc60965f8d18daa",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-16-galaxy/src/script.js": {
+    "mtime": 1791074715.977613,
+    "ast_hash": "9a27e9ec0aa0cbef1d626d2796fc5996",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-17-anvil/src/script.js": {
+    "mtime": 1791074715.979103,
+    "ast_hash": "1d304193085ab57b46b91bf02921c838",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-18-clair-obscur-title/src/script.js": {
+    "mtime": 1791074715.9784598,
+    "ast_hash": "b4726104bcd4738b485d9e2156bc92de",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-19-sphere-particles-physics/src/script.js": {
+    "mtime": 1791075657.2584066,
+    "ast_hash": "1e4addba180d5713a23d569c4e8acac5",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-20-stylized-nature-scene/src/script.js": {
+    "mtime": 1791074715.9777198,
+    "ast_hash": "b1e5633b84609d64289be4b81bdb67df",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-21-snow/src/script.js": {
+    "mtime": 1791074715.9787326,
+    "ast_hash": "4cc5f40a56f177bae13e288793afec19",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/01-introduction.mdx": {
+    "mtime": 1791075888.6264172,
+    "ast_hash": "c8189416748c658a84ed34adb5989f91",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/02-node-materials.mdx": {
+    "mtime": 1791075448.864711,
+    "ast_hash": "2cebd0a478e9b1b7d4b000ac637bb4ba",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/03-variables-references.mdx": {
+    "mtime": 1791075448.8649898,
+    "ast_hash": "c7b67a3b4b2367601113eaba55580dcd",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/04-tools-debug.mdx": {
+    "mtime": 1791075448.8651342,
+    "ast_hash": "02e8d50eab98538d85b34abd80523099",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/05-math.mdx": {
+    "mtime": 1791075448.8653147,
+    "ast_hash": "0740be3cd013bf7869c49c276f788d10",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/06-textures.mdx": {
+    "mtime": 1791075448.8672469,
+    "ast_hash": "acf9d4f6f864daefbd322aa964ec562f",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/07-uniforms-attributes.mdx": {
+    "mtime": 1791075448.865497,
+    "ast_hash": "f3e8a2e2224ee525b2089ce666b566ae",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/08-node-functions.mdx": {
+    "mtime": 1791075448.8655758,
+    "ast_hash": "129f65b6ff9dc2b12393927797294800",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/09-patterns.mdx": {
+    "mtime": 1791075448.8656554,
+    "ast_hash": "c56790a7aaedc02ce9af6d15a3ec0fd7",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/10-coffee-smoke.mdx": {
+    "mtime": 1791075657.2636461,
+    "ast_hash": "6b8376bdc0aaba66cf792a21b770003d",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/11-post-processing.mdx": {
+    "mtime": 1791075448.865811,
+    "ast_hash": "acd30bde7dcac632f86bd2b7ac7bd485",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/12-shield.mdx": {
+    "mtime": 1791075448.865888,
+    "ast_hash": "a114580b8b06de0bfb4ed1dcfb4184f1",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/13-instances.mdx": {
+    "mtime": 1791075448.865969,
+    "ast_hash": "fbe972042da402c48264fdab56a92b81",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/14-magic-explosions.mdx": {
+    "mtime": 1791075448.8660452,
+    "ast_hash": "5b3a8a86d07c4c24f157d455e990a280",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/15-sprites.mdx": {
+    "mtime": 1791075448.8661249,
+    "ast_hash": "f6dae9703a29a0105ebf78612462f86b",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/16-galaxy.mdx": {
+    "mtime": 1791075888.626738,
+    "ast_hash": "ac957cde5c204815524240372de78566",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/17-anvil.mdx": {
+    "mtime": 1791075448.8664215,
+    "ast_hash": "99b4a990be743e2deea0de1d94988071",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/18-clair-obscur-title.mdx": {
+    "mtime": 1791075448.8665128,
+    "ast_hash": "5a578d0e9f9ab9393126e2aa163d8be5",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/19-sphere-particles-physics.mdx": {
+    "mtime": 1791075657.2607613,
+    "ast_hash": "a822f42c3285bc76dfccbd46b1dc7766",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/20-stylized-nature-scene.mdx": {
+    "mtime": 1791075448.866763,
+    "ast_hash": "9c9dcf942a47014c6f86d77744e150e0",
+    "semantic_hash": ""
+  },
+  "src/content/docs/webgpu-tsl/21-snow.mdx": {
+    "mtime": 1791075448.866857,
+    "ast_hash": "5c33f5b0670f672d7a3f3cf91d96d646",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-01-introduction/src/index.html": {
+    "mtime": 1791074715.9723985,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-02-node-materials/src/index.html": {
+    "mtime": 1791074715.972588,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-03-variables-references/src/index.html": {
+    "mtime": 1791074715.972768,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-04-tools-debug/src/index.html": {
+    "mtime": 1791074715.972952,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-05-math/src/index.html": {
+    "mtime": 1791074715.9731221,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-06-textures/src/index.html": {
+    "mtime": 1791074715.9732761,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-07-uniforms-attributes/src/index.html": {
+    "mtime": 1791074715.9734278,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-08-node-functions/src/index.html": {
+    "mtime": 1791074715.9735806,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-09-patterns/src/index.html": {
+    "mtime": 1791074715.9737456,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-10-coffee-smoke/src/index.html": {
+    "mtime": 1791074715.9739046,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-11-post-processing/src/index.html": {
+    "mtime": 1791074715.9740512,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-12-shield/src/index.html": {
+    "mtime": 1791074715.9742005,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-13-instances/src/index.html": {
+    "mtime": 1791074715.9743493,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-14-magic-explosions/src/index.html": {
+    "mtime": 1791074715.9745023,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-15-sprites/src/index.html": {
+    "mtime": 1791074715.9746497,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-16-galaxy/src/index.html": {
+    "mtime": 1791074715.974797,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-17-anvil/src/index.html": {
+    "mtime": 1791074715.9749403,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-18-clair-obscur-title/src/index.html": {
+    "mtime": 1791074715.9750848,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-19-sphere-particles-physics/src/index.html": {
+    "mtime": 1791074715.9752276,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-20-stylized-nature-scene/src/index.html": {
+    "mtime": 1791074715.9753726,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src/lesson-code/webgpu-21-snow/src/index.html": {
+    "mtime": 1791074715.9755144,
+    "ast_hash": "46364870572cd794a7bb06840fe71475",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-20x20@1x.png": {
+    "mtime": 1777697753.792624,
+    "ast_hash": "e6e111a890de8799877ad2925c804ff6",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-20x20@2x-1.png": {
+    "mtime": 1777697753.7774937,
+    "ast_hash": "ac71e34752016cfdb483720018c03e5e",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-20x20@2x.png": {
+    "mtime": 1777697753.8086772,
+    "ast_hash": "ac71e34752016cfdb483720018c03e5e",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-20x20@3x.png": {
+    "mtime": 1777697753.825903,
+    "ast_hash": "e304ae980a39880fbf66ec25faf81424",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-29x29@1x.png": {
+    "mtime": 1777697753.8585637,
+    "ast_hash": "e685160df7d98ba5d9cd37231628e88b",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-29x29@2x-1.png": {
+    "mtime": 1777697753.842809,
+    "ast_hash": "5e4483fab690694eec79087b255fb8e5",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-29x29@2x.png": {
+    "mtime": 1777697753.875408,
+    "ast_hash": "5e4483fab690694eec79087b255fb8e5",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-29x29@3x.png": {
+    "mtime": 1777697753.8951821,
+    "ast_hash": "7174b6c057b8e07972e5a5b894ca6c1c",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-40x40@1x.png": {
+    "mtime": 1777697753.930082,
+    "ast_hash": "ac71e34752016cfdb483720018c03e5e",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-40x40@2x-1.png": {
+    "mtime": 1777697753.9138005,
+    "ast_hash": "0ed6ce34dfa81ed18421ef6d35bfd4f9",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-40x40@2x.png": {
+    "mtime": 1777697753.9486947,
+    "ast_hash": "0ed6ce34dfa81ed18421ef6d35bfd4f9",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-40x40@3x.png": {
+    "mtime": 1777697753.9734273,
+    "ast_hash": "e92af58571ae68270e91d9b03e5c0754",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png": {
+    "mtime": 1777697755.3233447,
+    "ast_hash": "7f09e0f16794cd39e73c8fcd13012afe",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-60x60@2x.png": {
+    "mtime": 1777697753.9980907,
+    "ast_hash": "e92af58571ae68270e91d9b03e5c0754",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-60x60@3x.png": {
+    "mtime": 1777697754.0425398,
+    "ast_hash": "2a450bb3d5181aa1fba7f395d66be092",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-76x76@1x.png": {
+    "mtime": 1777697754.060793,
+    "ast_hash": "bb831c85ad398bf826395b661fba3f87",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-76x76@2x.png": {
+    "mtime": 1777697754.094659,
+    "ast_hash": "b7af3e4dfcba8bd515e0fae900f91998",
+    "semantic_hash": ""
+  },
+  "src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/AppIcon-83.5x83.5@2x.png": {
+    "mtime": 1777697754.1337812,
+    "ast_hash": "e92f9e253e539de69cb556280d6d15bd",
     "semantic_hash": ""
   }
 }

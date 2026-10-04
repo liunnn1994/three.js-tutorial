@@ -1,0 +1,69 @@
+---
+title: "15 精灵粒子"
+description: 把 12000 个面向相机的精灵批量绘制成柔和粒子云
+sidebar:
+  order: 15
+---
+
+import LessonPreview from "../../../components/LessonPreview.astro";
+
+## 本课要做什么
+
+把 12000 个面向相机的精灵批量绘制成柔和粒子云。对应目录中的 **Sprites**。先观察结果，再读代码，最后修改参数验证理解。
+
+[查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/15@2x.webp)
+
+<LessonPreview lesson="webgpu-15-sprites" />
+
+## 精灵是面向相机的小平面
+
+这里的 Sprite 与 CSS sprite sheet 不是同一个概念。Three.js 的精灵会面对相机，适合小光点、烟片和花瓣。WebGPU 不应依赖传统 WebGL 的可变 `gl_PointSize` 路径，本系列使用 `SpriteNodeMaterial` 的实例方式。[SpriteNodeMaterial 文档](https://threejs.org/docs/pages/SpriteNodeMaterial.html)
+
+参考图是彩色粒子方块。本课生成固定随机种子，便于你修改代码后比较同一组粒子。
+
+## 一份实例数据决定一个粒子
+
+```js
+const positions = instancedBufferAttribute(
+  new THREE.InstancedBufferAttribute(data, 3)
+);
+material.positionNode = positions;
+material.scaleNode = size;
+const sprites = new THREE.Sprite(material);
+sprites.count = count;
+sprites.frustumCulled = false;
+```
+
+`data` 只有 count×3 项，三项代表粒子的 XYZ。位置节点表示精灵中心；SpriteNodeMaterial 再在相机空间生成它四个角的位置。对象 count 控制批量实例数。初始数据不变，动画通过 clock 节点给中心添加小幅摆动。
+
+`scaleNode` 在本示例是世界空间尺寸，透视相机下越远越小。精灵在相机旋转后仍面向镜头，普通 Mesh 平面则不会。
+
+## 把正方形变成软圆
+
+```js
+const distance = uv().sub(0.5).length();
+material.opacityNode = smoothstep(0.05, 0.5, distance).oneMinus();
+```
+
+UV 中心是 `(0.5, 0.5)`。计算离中心距离，中心不透明、四周透明，便隐藏了小平面的方形边界。`depthWrite: false` 避免透明边界挡住后面的粒子，但透明重叠顺序仍然会影响普通混合的结果。
+
+## 数量不是唯一性能因素
+
+12000 个小粒子和 12000 个覆盖半个屏幕的大粒子，成本完全不同。很多透明面叠在同一像素上叫 **overdraw（过度绘制）**。拖大“精灵世界尺寸”，观察画面变浓，也想一想 GPU 需要重复处理多少片元。
+
+示例关闭剔除是因为实例中心由节点控制，默认单个 Sprite 边界无法代表整个云。生产里应为粒子群设置合理范围、分组或其他可见性策略。
+
+## 动手检查
+
+以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
+
+1. 在 `script.js` 顶部的 TSL import 增加 `float`，把 opacityNode 的完整赋值临时替换为 `material.opacityNode = float(1)`，应看到正方形粒子；再恢复软圆表达式。节点输入需要节点对象，不能直接赋 JS 数字 1。
+2. 拖动相机，验证粒子始终面对镜头；用“精灵世界尺寸”比较小粒子与大粒子覆盖的面积。
+3. 将 `const count = 12000` 改成 `const count = 1000`，数组和 Sprite 的 count 会一起使用这个值。重新生成预览，在相同尺寸下比较稀疏程度。
+4. 给顶部 TSL import 增加 `mix, color`，将 `material.colorNode = colors` 替换为 `material.colorNode = mix(color('#ff9b62'), color('#719dff'), positions.y.div(3))`，粒子应按高度从暖色过渡到冷色。完成后恢复数量与随机配色。
+
+## 运行与源码
+
+展开上面的“查看源码”：`script.js` 是本课完整实现，`shared/common.js` 是创建场景、相机、渲染器和调试面板的公共外壳。仓库内对应的 `src/lesson-code/webgpu-15-sprites/src/` 可直接修改；运行 `pnpm dev` 后，源代码会在启动时生成预览，修改示例后需要重新运行 `pnpm generate-previews` 并刷新 iframe。
+
+首次学习请先读 [第 01 课的运行说明](/webgpu-tsl/01-introduction/)。节点材质使用 WebGPURenderer；底部状态栏会显示 WebGPU 或 WebGL 2 回退。遇到空白，先查看状态栏和控制台，再按 [第 04 课](/webgpu-tsl/04-tools-debug/) 的顺序排查。

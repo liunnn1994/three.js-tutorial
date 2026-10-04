@@ -1,0 +1,76 @@
+---
+title: "18 Clair Obscur 标题"
+description: 组合逐渐显现的标题与漂浮花瓣，完成受 Clair Obscur 参考图启发的开场画面
+sidebar:
+  order: 18
+---
+
+import LessonPreview from "../../../components/LessonPreview.astro";
+
+## 本课要做什么
+
+组合逐渐显现的标题与漂浮花瓣，完成受 Clair Obscur 参考图启发的开场画面。对应目录中的 **Clair Obscur Title**。先观察结果，再读代码，最后修改参数验证理解。
+
+[查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/18@2x.webp)
+
+<LessonPreview lesson="webgpu-18-clair-obscur-title" />
+
+## 把排版当作透明纹理
+
+本课用浏览器 Canvas 绘制 “CLAIR OBSCUR” 与 “33”，系统 Georgia 字体负责排版，CanvasTexture 负责传给 GPU。这是参考氛围的教学实现，未使用游戏官方字标、原字体和花瓣资产。
+
+```js
+ctx.fillStyle = '#efd9b3';
+ctx.font = '60px Georgia';
+ctx.fillText('CLAIR OBSCUR', 512, 145);
+const titleMap = new THREE.CanvasTexture(canvas);
+titleMap.colorSpace = THREE.SRGBColorSpace;
+```
+
+没有画字的区域保持透明。读取纹理时同时使用 `.rgb` 和 `.a`：颜色表示字的墨色，透明度保留字的轮廓。[CanvasTexture 文档](https://threejs.org/docs/pages/CanvasTexture.html)
+
+## 从左向右显现
+
+```js
+const sampled = texture(titleMap);
+titleMaterial.colorNode = sampled.rgb.mul(1.6);
+titleMaterial.opacityNode = sampled.a
+  .mul(smoothstep(0, 0.15, reveal.sub(uv().x)));
+```
+
+reveal 从 0 增长到 1.2，UV 的 X 从左到右增长。两者相减为正的区域逐渐显现，0.15 宽度让边缘柔和。最终乘原始 alpha，所以不会把标题平面的矩形显示出来。
+
+按钮将 reveal 清零，重新播放。为交互而使用 uniform，比每帧重新画一张标题 Canvas 更省事。
+
+## 花瓣为何不是圆点
+
+精灵仍然是四边形，透明度在 UV 上画出椭圆：
+
+```js
+const p = uv().sub(0.5);
+const ellipse = vec3(p.x.mul(2), p.y, 0).length();
+petals.opacityNode = smoothstep(0.3, 0.5, ellipse).oneMinus();
+petals.rotationNode = clock.add(seed.x.mul(20));
+```
+
+横向距离乘 2，让同一阈值形成更窄的轮廓。精灵自己的尺度再让它变成长条。rotationNode 改变朝向相机的平面内旋转，不是空间中真实卷曲的花瓣。
+
+每个花瓣的高度用 `fract(seed.y - clock * 0.07)` 循环。当它落到范围底部，回到顶部。这是一种无状态循环；如果边界露在画面里，可以加顶部与底部淡出。
+
+## 图层与透明限制
+
+普通透明精灵的实例内部排序不是任意精确的，因此花瓣密度不能无限增加。标题放在单独平面上，花瓣分布在前后空间。Bloom 只负责亮部扩散，不会修复错误的深度或透明排序。[SpriteNodeMaterial](https://threejs.org/docs/pages/SpriteNodeMaterial.html)
+
+## 动手检查
+
+以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
+
+1. 点击“重新显现标题”，稍后开启“暂停动画”，文字显现与花瓣运动都应冻结。
+2. 在 `script.js` 的 `ctx.fillText('CLAIR OBSCUR', 512, 145)` 中改成自己的短标题，重新生成预览，字形改变但显现方向保持不变。
+3. 将 `petals.rotationNode = clock.add(seed.x.mul(20))` 临时换成 `petals.rotationNode = uniform(0)`。uniform 已导入，所有花瓣应不再转动且朝向一致。完成后恢复随机相位与动画。
+
+## 运行与源码
+
+展开上面的“查看源码”：`script.js` 是本课完整实现，`shared/common.js` 是创建场景、相机、渲染器和调试面板的公共外壳。仓库内对应的 `src/lesson-code/webgpu-18-clair-obscur-title/src/` 可直接修改；运行 `pnpm dev` 后，源代码会在启动时生成预览，修改示例后需要重新运行 `pnpm generate-previews` 并刷新 iframe。
+
+首次学习请先读 [第 01 课的运行说明](/webgpu-tsl/01-introduction/)。节点材质使用 WebGPURenderer；底部状态栏会显示 WebGPU 或 WebGL 2 回退。遇到空白，先查看状态栏和控制台，再按 [第 04 课](/webgpu-tsl/04-tools-debug/) 的顺序排查。

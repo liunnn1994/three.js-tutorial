@@ -38,6 +38,9 @@ function collectFiles(dir: string, basePath: string = '/') {
 }
 
 collectFiles(codeDir);
+if (lesson.startsWith('webgpu-')) {
+  collectFiles(path.join(process.cwd(), 'src/lesson-code/_webgpu'), '/shared/');
+}
 
 const highlightedFiles: { name: string; html: string }[] = [];
 
@@ -52,7 +55,7 @@ for (const file of sourceFiles) {
 
 <div class="lesson-preview" data-lesson={lesson}>
   <div class="lesson-preview-frame">
-    <iframe src={`/previews/${lesson}.html`} title={`Preview: ${lesson}`}></iframe>
+    <iframe src={`/previews/${lesson}.html`} title={`Preview: ${lesson}`} loading="lazy"></iframe>
   </div>
   <details class="lesson-code-details">
     <summary>查看源码</summary>

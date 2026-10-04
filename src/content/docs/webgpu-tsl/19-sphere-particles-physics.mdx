@@ -1,0 +1,97 @@
+---
+title: "19 球形粒子物理"
+description: 用真正的 WebGPU 计算着色器更新持久位置和速度，让粒子受到吸引并在球形边界反弹
+sidebar:
+  order: 19
+---
+
+import LessonPreview from "../../../components/LessonPreview.astro";
+
+## 本课要做什么
+
+用真正的 WebGPU 计算着色器更新持久位置和速度，让粒子受到吸引并在球形边界反弹。对应目录中的 **Sphere Particles Physics**。先观察结果，再读代码，最后修改参数验证理解。
+
+[查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/19@2x.webp)
+
+<LessonPreview lesson="webgpu-19-sphere-particles-physics" />
+
+## 这一次要记住上一帧
+
+银河的当前位置可以只根据时间算出来，物理运动则要保存上一帧的位置与速度。WebGPU **storage buffer** 是 GPU 可读取、可写入的持久数据；compute shader 对这些记录执行并行计算。[StorageBufferNode 文档](https://threejs.org/docs/pages/StorageBufferNode.html)
+
+本课明确要求 WebGPU。如果只有 WebGL 2，状态栏会说明原因，并停止物理示例的初始化。没有把 CPU for 循环伪装成 GPU compute。
+
+## 每个粒子有两条记录
+
+```js
+const positions = instancedArray(initial, 'vec3');
+const velocities = instancedArray(count, 'vec3');
+const fixedStep = 1 / 120;
+const delta = uniform(fixedStep);
+```
+
+`initial` 是 CPU 生成的球内随机位置。positions 与 velocities 各有 4096 个 vec3。`instanceIndex` 在 compute 中表示当前调用对应的记录索引，4096 个调用各自更新一个粒子。[StorageBufferAttribute 文档](https://threejs.org/docs/pages/StorageBufferAttribute.html)
+
+## 先更新速度，再更新位置
+
+```js
+const compute = Fn(() => {
+  const p = positions.element(instanceIndex);
+  const v = velocities.element(instanceIndex);
+  const force = pointer.sub(p).mul(attraction);
+  v.addAssign(force.mul(delta));
+  v.mulAssign(delta.mul(-1.8).exp());
+  p.addAssign(v.mul(delta));
+  // 球形边界判断见完整源码
+})().compute(count);
+```
+
+这里将粒子质量约定为 1，`force` 可以作为加速度使用。加速度乘时间步得到速度变化，速度乘时间步得到位置变化。先改速度再改位置是半隐式 Euler 积分。阻尼使用随时间步变化的指数衰减，避免“每帧乘 0.99”在不同帧率下表现明显不同。`delta` 固定为 1/120 秒，表示每次 compute 的积分步长，不是当前绘制帧的时长。
+
+示例还有中心排斥与旋转力，避免所有点最终重叠成一个像素。它们是保持视觉运动的外力模型，没有计算粒子之间的两两碰撞。
+
+## 碰到球边界怎么办
+
+当 `length(p) > radius`，先把位置投回球壳，再反射速度的朝外分量。法向量为 `normalize(p)`；只有 `dot(v, normal) > 0` 的朝外速度才反射。反射系数小于完全弹性反射，表示碰撞损耗。
+
+GPU 条件用 `If(nodeCondition, callback)`，不能用普通 `if (nodeCondition)`。后者判断的是 JS 对象是否存在，会在构建图时就走固定分支。
+
+## 绘制读取同一份 GPU 数据
+
+```js
+material.positionNode = positionLocal.add(positions.toAttribute());
+let accumulated = 0;
+app.animate((seconds, dt) => {
+  accumulated += Math.min(dt, 0.25);
+  while (accumulated + 1e-10 >= fixedStep) {
+    app.renderer.compute(compute);
+    accumulated = Math.max(0, accumulated - fixedStep);
+  }
+});
+```
+
+公共外壳传入真实前台 `dt`，这里先将它累加，再拆成固定的小步：60 FPS 通常每帧计算 2 步，20 FPS 通常每帧计算 6 步，因此正常低帧率不会让物理时间变慢。高帧率下若时间尚不足一步，先保留余量，下一帧再算。`1e-10` 容忍浮点累加误差，不改变实际步长。
+
+严重卡顿时每帧最多追赶 0.25 秒，主动丢弃超过它的时间，避免不断积压计算。这是物理稳定性与实时响应之间的取舍，只应用于本课积分；角色旋转、标题显现等视觉动画仍使用真实前台秒数。页面隐藏和恢复时，公共外壳重置计时基准，后台时间不会计入下一帧。
+
+公共外壳在动画更新后绘制，提交顺序是零次或多次 compute → render。实例小球从更新后的 buffer 取中心位置；没有每帧把位置下载到 CPU 再上传。[Renderer compute 文档](https://threejs.org/docs/pages/Renderer.html)
+
+每个调用只写自己的 p、v，不同时读写邻居，因此没有邻居数据竞争。如果要实现两两相互作用，先采用两个缓冲区轮换读取与写入，避免某些调用读到旧数据、另一些读到新数据；全粒子两两比较还有 O(N²) 成本，需要空间分桶等方法。
+
+## 动手检查
+
+以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
+
+1. 移动指针改变吸引中心，用面板把“吸引强度”降到 0.1，比较粒子的响应。
+2. 点击“重置到球壳”，应看到粒子回到球壳、速度清零；暂停后状态应冻结。页面切到后台再回来，不应补算后台停留时间。
+3. 在 `script.js` 的 `app.animate()` 回调中，临时把 `accumulated += Math.min(dt, 0.25)` 改成 `accumulated += 0`。compute 不再提交，粒子保持当前位置，但相机仍可拖动。完成后恢复 dt 累加。
+
+小球使用低分段 SphereGeometry，共用实例材质。每个实例矩阵为单位矩阵，顶点局部位置加上 buffer 中的中心，得到完整小球。
+
+这是球形容器中的艺术化模拟：包含边界约束、吸引和排斥，尚未实现粒子之间的刚体碰撞。
+
+## 运行与源码
+
+展开上面的“查看源码”：`script.js` 是本课完整实现，`shared/common.js` 是创建场景、相机、渲染器和调试面板的公共外壳。仓库内对应的 `src/lesson-code/webgpu-19-sphere-particles-physics/src/` 可直接修改；运行 `pnpm dev` 后，源代码会在启动时生成预览，修改示例后需要重新运行 `pnpm generate-previews` 并刷新 iframe。
+
+首次学习请先读 [第 01 课的运行说明](/webgpu-tsl/01-introduction/)。节点材质使用 WebGPURenderer；底部状态栏会显示 WebGPU 或 WebGL 2 回退。遇到空白，先查看状态栏和控制台，再按 [第 04 课](/webgpu-tsl/04-tools-debug/) 的顺序排查。

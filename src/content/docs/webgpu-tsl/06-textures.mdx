@@ -1,0 +1,79 @@
+---
+title: "06 纹理"
+description: 生成带坐标标签的测试纹理，学习采样、重复、偏移和颜色空间
+sidebar:
+  order: 6
+---
+
+import LessonPreview from "../../../components/LessonPreview.astro";
+
+## 本课要做什么
+
+生成带坐标标签的测试纹理，学习采样、重复、偏移和颜色空间。对应目录中的 **Textures**。先观察结果，再读代码，最后修改参数验证理解。
+
+[查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/06@2x.webp)
+
+<LessonPreview lesson="webgpu-06-textures" />
+
+## 纹理就是可以按坐标查询的数据表
+
+一张图片有很多像素。纹理采样根据 UV 返回对应位置的 RGBA。示例用 Canvas 画出 8×8 彩色格子和坐标标签，再创建 `CanvasTexture`，不依赖外部下载。
+
+```js
+const repeat = uniform(1), shift = uniform(0);
+const map = new THREE.CanvasTexture(canvas);
+map.colorSpace = THREE.SRGBColorSpace;
+map.wrapS = map.wrapT = THREE.RepeatWrapping;
+material.colorNode = texture(map, uv().mul(repeat).add(shift)).rgb;
+```
+
+`texture()` 的第一个参数是纹理，第二个是采样坐标。返回值的 `.rgb` 是颜色，`.a` 是透明度，`.r` 可以作为灰度数据。`RepeatWrapping` 决定采样超出 `[0, 1]` 后是否重复。[TextureNode 文档](https://threejs.org/docs/pages/TextureNode.html)
+
+## 先改坐标，再采样
+
+`uv().mul(2)` 表示整张表面从 0 采样到 2。因为开启重复，它会显示两次图片。`uv().add(0.2)` 则平移查询坐标。这里是图案在表面上移动，不是物体在场景中移动。
+
+示例沿用第 02 课的 uniform 控制 repeat 和 shift：`repeat.value` 是缩放倍数，`shift.value` 是同时加到 U、V 上的偏移。源码顶部从 `three/tsl` 导入 `uniform`，GUI 只更新 `.value`。修改 `map.wrapS` 一类纹理采样配置和修改 UV 数值，是不同层面的操作；初学先使用确定的采样配置。
+
+## 加载自己的图片
+
+独立项目可以把图片放到 `public/textures/checker.png`，替换生成纹理部分：
+
+```js
+const map = await new THREE.TextureLoader().loadAsync('/textures/checker.png');
+map.colorSpace = THREE.SRGBColorSpace;
+map.wrapS = map.wrapT = THREE.RepeatWrapping;
+material.colorNode = texture(map, uv()).rgb;
+```
+
+等待加载完成能让首次显示更明确。跨域图片还需要资源服务器允许访问。路径 `/textures/...` 指站点根路径；不要误写成电脑本地路径。
+
+## 颜色纹理与数据纹理
+
+| 用途 | `colorSpace` | 为什么 |
+| --- | --- | --- |
+| 彩色照片、Canvas 配色 | `SRGBColorSpace` | 显示颜色需要正确转换 |
+| 噪声、粗糙度、雪地高度 | `NoColorSpace` | 数值要按数据读取 |
+
+如果把一张“高度数据图”标记成 sRGB，读取到的值会经过颜色转换，变形强度就可能错误。反过来，颜色图片缺少正确标记可能显示得过亮或过暗。[Three.js 颜色管理](https://threejs.org/manual/pages/color-management.html)
+
+## 动手检查
+
+以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
+
+1. 用面板把“UV 重复”改为 3，观察球面极点和接缝。此实验无需修改源码。
+2. 在 `script.js` 顶部的 TSL import 增加 `vec3`，将整个 `material.colorNode = texture(...).rgb` 赋值替换为：
+
+```js
+material.colorNode = vec3(texture(map, uv().mul(repeat).add(shift)).r);
+```
+
+画面应变为红通道对应的灰度，同时面板的重复、偏移仍然有效。
+
+3. 恢复原来的 `.rgb` 输出。第 10 课将把噪声的红通道用于透明度。
+
+## 运行与源码
+
+展开上面的“查看源码”：`script.js` 是本课完整实现，`shared/common.js` 是创建场景、相机、渲染器和调试面板的公共外壳。仓库内对应的 `src/lesson-code/webgpu-06-textures/src/` 可直接修改；运行 `pnpm dev` 后，源代码会在启动时生成预览，修改示例后需要重新运行 `pnpm generate-previews` 并刷新 iframe。
+
+首次学习请先读 [第 01 课的运行说明](/webgpu-tsl/01-introduction/)。节点材质使用 WebGPURenderer；底部状态栏会显示 WebGPU 或 WebGL 2 回退。遇到空白，先查看状态栏和控制台，再按 [第 04 课](/webgpu-tsl/04-tools-debug/) 的顺序排查。

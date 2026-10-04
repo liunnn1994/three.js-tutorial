@@ -1,0 +1,89 @@
+---
+title: "20 风格化自然场景"
+description: 组合程序化地形、蜿蜒河流、实例草叶与铁砧，完成一个风格化自然场景
+sidebar:
+  order: 20
+---
+
+import LessonPreview from "../../../components/LessonPreview.astro";
+
+## 本课要做什么
+
+组合程序化地形、蜿蜒河流、实例草叶与铁砧，完成一个风格化自然场景。对应目录中的 **Stylized Nature Scene**。先观察结果，再读代码，最后修改参数验证理解。
+
+[查看目标参考图](https://threejs-journey.com/assets/images/webgpu-tsl-course/previews/20@2x.webp)
+
+<LessonPreview lesson="webgpu-20-stylized-nature-scene" />
+
+## 拆成四层来做
+
+参考图有高低岸线、亮色河流、草丛和铁砧。本课将它们拆成地形高度、河岸遮罩、水面与实例草叶。先有清楚的大形状，再添加大量细节，比从一开始堆草更容易接近构图。
+
+## 把平面变成缓坡
+
+```js
+const terrainHeight = (p) => sin(p.x.mul(0.65))
+  .mul(cos(p.z.mul(0.5))).mul(0.35);
+const geometry = new THREE.PlaneGeometry(10, 10, 128, 128);
+geometry.rotateX(-Math.PI / 2);
+```
+
+几何体直接旋转成水平后，local Y 就是高度方向。用两个低频波相乘产生可预测的小山丘。128×128 的细分让坡形连续，颜色纹理不需要跟着增加分辨率。
+
+## 旋转物体与旋转顶点数据
+
+PlaneGeometry 默认位于局部 XY 平面。下面两种写法都能把它摆成水平面，但 `positionLocal` 读取到的坐标不同：
+
+| 写法 | 改了什么 | 局部坐标中的平面 | 局部高度方向 |
+| --- | --- | --- | --- |
+| `mesh.rotation.x = -Math.PI / 2` | 物体变换，顶点数据保持原样 | XY | Z |
+| `geometry.rotateX(-Math.PI / 2)` | 几何体内的顶点、法线数据 | XZ | Y |
+
+第一种先在局部空间算出位置，再由物体变换转到世界空间；局部 +Z 经过这次旋转才变成世界 +Y。第二种把旋转直接写进几何体，所以本课可以在 `positionNode` 中给局部 Y 加高度，网格自身保持零旋转。使用第二种时不要再给网格重复同一次旋转。[BufferGeometry.rotateX](https://threejs.org/docs/pages/BufferGeometry.html)、[Object3D.rotation](https://threejs.org/docs/pages/Object3D.html)
+
+第 10 课的烟面保持竖直，在局部 XY 中沿 X 弯曲；第 08 课地面采用第一种旋转，再用 `positionWorld.xz` 画水平图案；本课与第 21 课雪地采用第二种。选择位移分量之前，先确认自己正在修改哪个空间中的坐标。
+
+## 同一张遮罩决定河岸颜色与河床高度
+
+```js
+const riverDistance = positionWorld.x
+  .sub(sin(positionWorld.z.mul(0.7)).mul(1.3)).abs();
+const grassMask = smoothstep(0.65, 0.9, riverDistance);
+```
+
+河中心线是 `x = sin(z * 0.7) * 1.3`。离中心线远的区域是草岸，近的区域是河床。示例将近处高度降低 0.55，再放一张 Y=-0.3 的水面，河道就实际低于两岸，而不是仅靠颜色假装。
+
+地面的 `positionNode` 与 `colorNode` 共同使用这个规律；水面用随时间移动的浅色条纹表示流动。[NodeMaterial](https://threejs.org/docs/pages/NodeMaterial.html)
+
+## 草叶根固定，草尖摆动
+
+```js
+const tip = positionLocal.y.div(0.5);
+grassMaterial.positionNode = positionLocal.add(vec3(
+  sin(clock.mul(2).add(phase)).mul(tip.pow(2)).mul(wind), 0, 0
+));
+```
+
+一片草是宽 0.045、高 0.5 的细分小平面。几何体先向上平移 0.25，使根位于 Y=0。tip 在根部为 0、尖部为 1，平方后根部几乎不动。每实例不同 phase 避免整片草同时摆向一边。[InstancedMesh](https://threejs.org/docs/pages/InstancedMesh.html)
+
+CPU 初始化时使用同样的高度公式放置草根，跳过河道与铁砧附近。这里公式简单，可以在 CPU 与 GPU 各写一份；如果修改一边而忘记另一边，草会悬空或穿进地面。
+
+## 当前示例的光照取舍
+
+顶点位移改变形状，但原始法线没有自动变成精确的坡面法线。小幅地形仍然可以看，但更大起伏需要按高度梯度构建 normalNode，或在 CPU 更新几何体后重算法线。本课保持小幅坡度，先把构图、数据与风动画讲清楚。
+
+草用 DoubleSide 便于从两面观察，这也增加可见片元成本。先减少草数和屏幕像素比，再测设备表现；实例化只减少提交开销，不会免费画完所有草。[NodeMaterial normalNode](https://threejs.org/docs/pages/NodeMaterial.html)
+
+## 动手检查
+
+以下实验以本课源码查看器中的完整 `script.js` 为起点，每次只做一项修改。修改文件后运行 `pnpm generate-previews` 并刷新预览；上一项要求恢复的代码先恢复，再进行下一项。
+
+1. 把面板“草叶风力”设为 0，观察草根是否贴地；此步骤无需修改源码。
+2. 在 `script.js` 的 GPU `riverDistance` 中把中心线幅度 `.mul(1.3)` 改为 `.mul(1.8)`，同时将 CPU 草分布判定 `Math.sin(z * 0.7) * 1.3` 的 1.3 改为 1.8。重新生成预览，河道应更弯，草仍避开河道。必须同时修改这两处。
+3. 在 `grass.instanceMatrix.needsUpdate = true; ... app.scene.add(grass);` 后临时增加 `grass.visible = false;`，只观察地形与水面。完成后删除这行，恢复两处中心线幅度。
+
+## 运行与源码
+
+展开上面的“查看源码”：`script.js` 是本课完整实现，`shared/common.js` 是创建场景、相机、渲染器和调试面板的公共外壳。仓库内对应的 `src/lesson-code/webgpu-20-stylized-nature-scene/src/` 可直接修改；运行 `pnpm dev` 后，源代码会在启动时生成预览，修改示例后需要重新运行 `pnpm generate-previews` 并刷新 iframe。
+
+首次学习请先读 [第 01 课的运行说明](/webgpu-tsl/01-introduction/)。节点材质使用 WebGPURenderer；底部状态栏会显示 WebGPU 或 WebGL 2 回退。遇到空白，先查看状态栏和控制台，再按 [第 04 课](/webgpu-tsl/04-tools-debug/) 的顺序排查。
